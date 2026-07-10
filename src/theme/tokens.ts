@@ -1,26 +1,29 @@
 export const palette = {
-  deepForest: "#0F1B17",
-  paper: "#F7F3ED",
-  paperDeep: "#EEE4D6",
-  mist: "#E7E9EC",
-  ink: "#0F1B17",
-  muted: "#625B52",
-  line: "#D8CDBF",
-  glassLine: "rgba(15, 27, 23, 0.12)",
-  glassLight: "rgba(255, 253, 248, 0.68)",
+  deepForest: "#0F3D2E",
+  seafoam: "#D6F1E5",
+  mint: "#E9F7F1",
+  sky: "#E3F1FF",
+  paper: "#F7F5EF",
+  paperDeep: "#E7E2DA",
+  mist: "#EFF7F4",
+  ink: "#111827",
+  muted: "#55615D",
+  line: "#D5E3DC",
+  glassLine: "rgba(15, 61, 46, 0.14)",
+  glassLight: "rgba(255, 255, 252, 0.72)",
   cream: "#FFFDF8",
-  sage: "#6D8B74",
-  clay: "#B76A4A",
-  indigo: "#3A4B6D",
+  sage: "#A6B39A",
+  clay: "#C86F4A",
+  indigo: "#2D63B5",
   plum: "#5A3D55",
-  sunlight: "#D9B16C",
-  gold: "#B27B2D",
+  sunlight: "#DBA85B",
+  gold: "#DBA85B",
   red: "#9E3D34",
-  dark: "#101412",
-  darkPanel: "rgba(28, 31, 27, 0.82)",
-  darkLine: "rgba(245, 238, 228, 0.14)",
-  darkText: "#F5EEE4",
-  darkMuted: "#C5B9A9"
+  dark: "#0E1715",
+  darkPanel: "rgba(18, 32, 28, 0.84)",
+  darkLine: "rgba(214, 241, 229, 0.16)",
+  darkText: "#F6FBF8",
+  darkMuted: "#B9CBC4"
 };
 
 export const spacing = {
@@ -41,17 +44,17 @@ export const radii = {
 
 export const shadows = {
   card: {
-    shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
+    shadowColor: "#0F3D2E",
+    shadowOpacity: 0.09,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 14 },
     elevation: 5
   },
   soft: {
-    shadowColor: "#2A1F16",
-    shadowOpacity: 0.07,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 16 },
+    shadowColor: "#0F3D2E",
+    shadowOpacity: 0.08,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: 18 },
     elevation: 3
   }
 };

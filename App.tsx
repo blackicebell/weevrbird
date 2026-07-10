@@ -12,7 +12,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
@@ -37,12 +36,12 @@ const tabs: Array<{ key: AppTab; icon: keyof typeof Ionicons.glyphMap }> = [
 const filters: SmartfeedFilter[] = ["Latest", "Conversations", "Reading", "Saved"];
 const contributionTypes = ["Note", "Question", "Discussion", "Recommendation", "Link", "Long Read"];
 const contributionMeta: Record<string, { icon: keyof typeof Ionicons.glyphMap; helper: string }> = {
-  Note: { icon: "reader-outline", helper: "Share a quick thought" },
-  Question: { icon: "help-circle-outline", helper: "Ask the community" },
+  Note: { icon: "create-outline", helper: "Share a quick thought" },
+  Question: { icon: "bulb-outline", helper: "Ask the community" },
   Discussion: { icon: "chatbubbles-outline", helper: "Start a conversation" },
-  Recommendation: { icon: "sparkles-outline", helper: "Share something you love" },
+  Recommendation: { icon: "ribbon-outline", helper: "Share something you love" },
   Link: { icon: "link-outline", helper: "Share an article, video, or resource" },
-  "Long Read": { icon: "document-text-outline", helper: "Write a deeper piece" }
+  "Long Read": { icon: "newspaper-outline", helper: "Write a deeper piece" }
 };
 const avatars = ["W", "A", "C", "M", "S", "L", "T", "N"];
 const feedIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -55,19 +54,18 @@ const feedIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 function useTheme() {
-  const scheme = useColorScheme();
-  const dark = scheme === "dark";
+  const dark = false;
   return {
     dark,
     bg: dark ? palette.dark : palette.paper,
-    panel: dark ? palette.darkPanel : palette.glassLight,
-    panelAlt: dark ? "rgba(34, 37, 32, 0.78)" : "rgba(231, 233, 236, 0.62)",
-    text: dark ? palette.darkText : palette.deepForest,
+    panel: dark ? palette.darkPanel : "rgba(255, 255, 252, 0.66)",
+    panelAlt: dark ? "rgba(24, 42, 37, 0.78)" : "rgba(214, 241, 229, 0.52)",
+    text: dark ? palette.darkText : palette.ink,
     muted: dark ? palette.darkMuted : palette.muted,
     line: dark ? palette.darkLine : palette.glassLine,
-    accent: dark ? palette.sunlight : palette.gold,
+    accent: dark ? palette.seafoam : palette.deepForest,
     success: dark ? "#9DB98F" : palette.sage,
-    forest: dark ? palette.darkText : palette.deepForest,
+    forest: dark ? palette.seafoam : palette.deepForest,
     serif: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
     sans: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
   };
@@ -100,7 +98,7 @@ export default function App() {
   if (!onboarded) {
     return (
       <SafeAreaProvider>
-        <StatusBar style={theme.dark ? "light" : "dark"} />
+        <StatusBar style="dark" />
         <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
           <AppBackground theme={theme} />
           <Onboarding
@@ -122,7 +120,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style={theme.dark ? "light" : "dark"} />
+      <StatusBar style="dark" />
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
         <AppBackground theme={theme} />
         <View style={styles.appShell}>
@@ -161,11 +159,13 @@ function AppBackground({ theme }: { theme: ReturnType<typeof useTheme> }) {
   return (
     <View pointerEvents="none" style={styles.backgroundLayer}>
       <LinearGradient
-        colors={theme.dark ? ["#101412", "#171C18", "#111412"] : ["#FFFDF8", "#F7F3ED", "#EEE4D6"]}
+        colors={theme.dark ? ["#0E1715", "#11231D", "#0E1715"] : ["#F8FFFB", "#EFF7F4", "#E4F4ED"]}
         style={StyleSheet.absoluteFill}
       />
-      <View style={[styles.paperVeil, styles.paperVeilOne, { backgroundColor: theme.dark ? "rgba(109, 139, 116, 0.10)" : "rgba(255, 253, 248, 0.42)" }]} />
-      <View style={[styles.paperVeil, styles.paperVeilTwo, { backgroundColor: theme.dark ? "rgba(217, 177, 108, 0.08)" : "rgba(231, 233, 236, 0.46)" }]} />
+      <View style={[styles.paperVeil, styles.paperVeilOne, { backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.08)" : "rgba(214, 241, 229, 0.72)" }]} />
+      <View style={[styles.paperVeil, styles.paperVeilTwo, { backgroundColor: theme.dark ? "rgba(45, 99, 181, 0.08)" : "rgba(227, 241, 255, 0.64)" }]} />
+      <View style={[styles.softLeaf, styles.softLeafOne, { backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.10)" : "rgba(86, 171, 130, 0.16)" }]} />
+      <View style={[styles.softLeaf, styles.softLeafTwo, { backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.08)" : "rgba(86, 171, 130, 0.12)" }]} />
     </View>
   );
 }
@@ -289,7 +289,7 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
 }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <LinearGradient colors={theme.dark ? ["rgba(20, 24, 21, 0.96)", "rgba(31, 32, 27, 0.84)"] : ["rgba(255, 253, 248, 0.94)", "rgba(239, 228, 214, 0.68)"]} style={[styles.cover, { borderColor: theme.line }]}>
+      <LinearGradient colors={theme.dark ? ["rgba(18, 32, 28, 0.96)", "rgba(18, 32, 28, 0.76)"] : ["rgba(255, 255, 252, 0.88)", "rgba(214, 241, 229, 0.46)"]} style={[styles.cover, { borderColor: theme.line }]}>
         <View style={styles.coverTop}>
           <Text style={[styles.dateText, { color: theme.accent }]}>Friday, July 10</Text>
           <View style={styles.coverActions}>
@@ -473,10 +473,14 @@ function LibraryScreen({ theme, savedItems, search, setSearch }: {
         </>
       ) : (
         <>
-          <SectionHeader title="Saved" theme={theme} />
-          {savedItems.map((item) => <FeedCard key={item.id} item={item} theme={theme} />)}
-          <SectionHeader title="Recently viewed" theme={theme} />
-          {feedItems.slice(0, 2).map((item) => <FeedCard key={`recent-${item.id}`} item={item} theme={theme} />)}
+          <View style={styles.libraryTabs}>
+            {["Saved", "History", "Collections"].map((tab, index) => (
+              <View key={tab} style={[styles.libraryTab, index === 0 && { borderBottomColor: theme.accent }]}>
+                <Text style={[styles.libraryTabText, { color: index === 0 ? theme.accent : theme.muted }]}>{tab}</Text>
+              </View>
+            ))}
+          </View>
+          {savedItems.concat(feedItems.slice(3, 5)).slice(0, 4).map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} />)}
         </>
       )}
     </ScrollView>
@@ -561,6 +565,23 @@ function FeedCard({ item, theme }: { item: FeedItem; theme: ReturnType<typeof us
   );
 }
 
+function LibraryItem({ item, theme }: { item: FeedItem; theme: ReturnType<typeof useTheme> }) {
+  const icon = item.imported ? "play-circle" : "bookmark";
+  return (
+    <View style={[styles.libraryItem, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+      <View style={styles.libraryCopy}>
+        <Text style={[styles.libraryMeta, { color: theme.accent }]}>{item.imported ? "Reading" : item.itemType.replace("_", " ")}</Text>
+        <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird"} - {item.publishedAt}</Text>
+      </View>
+      <LinearGradient colors={theme.dark ? ["#1B352C", "#10211B"] : ["#D6F1E5", "#F7F5EF"]} style={styles.libraryThumb}>
+        <Ionicons name={icon} color={theme.accent} size={24} />
+      </LinearGradient>
+      <Ionicons name={item.saved ? "bookmark" : "bookmark-outline"} color={theme.accent} size={20} />
+    </View>
+  );
+}
+
 function HeaderIcon({ name, theme, dot }: {
   name: keyof typeof Ionicons.glyphMap;
   theme: ReturnType<typeof useTheme>;
@@ -613,11 +634,12 @@ function SmartfeedFeatureCard({ feed, item, theme, onPress }: {
 function EditorialScene({ theme }: { theme: ReturnType<typeof useTheme> }) {
   return (
     <LinearGradient
-      colors={theme.dark ? ["#25302A", "#161A17"] : ["#EEE4D6", "#D9DDDC"]}
+      colors={theme.dark ? ["#1B352C", "#10211B"] : ["#E6F5ED", "#F7F5EF"]}
       style={styles.editorialScene}
     >
       <View style={[styles.sceneWindow, { borderColor: theme.line }]} />
-      <View style={[styles.sceneChair, { backgroundColor: palette.clay }]} />
+      <View style={[styles.sceneFrame, { backgroundColor: palette.gold }]} />
+      <View style={[styles.sceneChair, { backgroundColor: palette.gold }]} />
       <View style={[styles.scenePlant, { backgroundColor: palette.sage }]} />
       <View style={[styles.scenePlantSmall, { backgroundColor: palette.deepForest }]} />
     </LinearGradient>
@@ -649,7 +671,7 @@ function ParticipantStack({ theme, count }: { theme: ReturnType<typeof useTheme>
 function EditorialImage({ item, theme }: { item: FeedItem; theme: ReturnType<typeof useTheme> }) {
   return (
     <LinearGradient
-      colors={theme.dark ? ["#263128", "#131714"] : ["#F7F3ED", "#D9DDDC"]}
+      colors={theme.dark ? ["#1B352C", "#101A16"] : ["#E9F7F1", "#F8FFFB"]}
       style={styles.editorialImage}
     >
       <View style={[styles.editorialImageMark, { borderColor: theme.dark ? "rgba(245, 238, 228, 0.18)" : "rgba(15, 27, 23, 0.16)" }]}>
@@ -666,6 +688,14 @@ function ContributionTypeRow({ type, selected, onPress, theme }: {
   theme: ReturnType<typeof useTheme>;
 }) {
   const meta = contributionMeta[type];
+  const rowColors = {
+    Note: palette.seafoam,
+    Question: palette.sky,
+    Discussion: "#FFE1D3",
+    Recommendation: "#F5DFAE",
+    Link: "#E7DAFF",
+    "Long Read": palette.mint
+  };
   return (
     <Pressable
       accessibilityRole="button"
@@ -676,7 +706,7 @@ function ContributionTypeRow({ type, selected, onPress, theme }: {
         { backgroundColor: selected ? theme.panelAlt : theme.panel, borderColor: selected ? theme.accent : theme.line }
       ]}
     >
-      <View style={[styles.contributionIcon, { backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.08)" : "rgba(15, 27, 23, 0.04)", borderColor: theme.line }]}>
+      <View style={[styles.contributionIcon, { backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.08)" : rowColors[type as keyof typeof rowColors], borderColor: theme.line }]}>
         <Ionicons name={meta.icon} color={selected ? theme.accent : theme.text} size={18} />
       </View>
       <View style={styles.contributionCopy}>
@@ -839,6 +869,23 @@ const styles = StyleSheet.create({
     bottom: -110,
     left: -164,
     transform: [{ rotate: "32deg" }]
+  },
+  softLeaf: {
+    position: "absolute",
+    width: 150,
+    height: 70,
+    borderRadius: 80,
+    opacity: 0.7,
+    transform: [{ rotate: "-38deg" }]
+  },
+  softLeafOne: {
+    right: -28,
+    top: 138
+  },
+  softLeafTwo: {
+    left: 28,
+    bottom: 88,
+    transform: [{ rotate: "-48deg" }]
   },
   flex: {
     flex: 1
@@ -1004,7 +1051,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.lg,
     marginTop: -spacing.lg,
     paddingTop: spacing.xxl,
-    gap: spacing.md,
+    gap: spacing.lg,
     ...shadows.soft
   },
   coverTop: {
@@ -1044,14 +1091,14 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   sectionTitle: {
-    fontSize: 21,
+    fontSize: 20,
     fontWeight: "900"
   },
   feedSection: {
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 22,
     padding: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
     ...shadows.card
   },
   feedSectionTop: {
@@ -1065,9 +1112,9 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   feedIconBadge: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1082,8 +1129,8 @@ const styles = StyleSheet.create({
     borderRadius: 7
   },
   editorialScene: {
-    height: 132,
-    borderRadius: radii.md,
+    height: 128,
+    borderRadius: 14,
     overflow: "hidden",
     marginTop: spacing.sm,
     marginBottom: spacing.sm
@@ -1097,6 +1144,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.sm,
     backgroundColor: "rgba(255, 253, 248, 0.38)"
+  },
+  sceneFrame: {
+    position: "absolute",
+    left: "45%",
+    top: 28,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    opacity: 0.75
   },
   sceneChair: {
     position: "absolute",
@@ -1128,8 +1184,8 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   feedHeadline: {
-    fontSize: 21,
-    lineHeight: 25,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: "900",
     fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" })
   },
@@ -1207,14 +1263,14 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 22,
     padding: spacing.lg,
     gap: spacing.sm,
     ...shadows.card
   },
   editorialImage: {
     height: 142,
-    borderRadius: radii.md,
+    borderRadius: 14,
     marginBottom: spacing.sm,
     alignItems: "flex-end",
     justifyContent: "flex-end",
@@ -1285,7 +1341,7 @@ const styles = StyleSheet.create({
   editor: {
     minHeight: 290,
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 22,
     padding: spacing.lg,
     gap: spacing.sm,
     ...shadows.card
@@ -1307,7 +1363,7 @@ const styles = StyleSheet.create({
   },
   safetyPanel: {
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 22,
     padding: spacing.lg,
     flexDirection: "row",
     gap: spacing.md,
@@ -1317,9 +1373,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   contributionRow: {
-    minHeight: 70,
+    minHeight: 66,
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 16,
     padding: spacing.md,
     flexDirection: "row",
     alignItems: "center",
@@ -1327,9 +1383,9 @@ const styles = StyleSheet.create({
     ...shadows.card
   },
   contributionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: radii.md,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center"
@@ -1344,7 +1400,7 @@ const styles = StyleSheet.create({
   searchBox: {
     minHeight: 50,
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: 18,
     paddingHorizontal: spacing.md,
     flexDirection: "row",
     alignItems: "center",
@@ -1353,6 +1409,51 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15
+  },
+  libraryTabs: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xl,
+    paddingTop: spacing.sm
+  },
+  libraryTab: {
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent"
+  },
+  libraryTabText: {
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  libraryItem: {
+    minHeight: 96,
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  libraryCopy: {
+    flex: 1
+  },
+  libraryMeta: {
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "capitalize"
+  },
+  libraryTitle: {
+    fontSize: 15,
+    lineHeight: 19,
+    fontWeight: "900"
+  },
+  libraryThumb: {
+    width: 72,
+    height: 66,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center"
   },
   profileHero: {
     borderWidth: 1,
@@ -1417,7 +1518,7 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   tabBar: {
-    minHeight: 72,
+    minHeight: 76,
     borderTopWidth: 1,
     flexDirection: "row",
     paddingBottom: Platform.select({ ios: spacing.sm, default: spacing.xs }),
@@ -1431,9 +1532,9 @@ const styles = StyleSheet.create({
     gap: 2
   },
   primaryTabIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     alignItems: "center",
     justifyContent: "center",
     marginTop: -26,

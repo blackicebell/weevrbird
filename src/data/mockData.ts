@@ -8,7 +8,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Local culture, city updates, food, events, and neighborhood questions.",
     members: "2.4k linked locals",
     newItems: 11,
-    palette: "#6D8B74",
+    palette: "#56AB82",
     joined: true
   },
   {
@@ -18,7 +18,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Founders, designers, engineers, operators, and useful career signals.",
     members: "940 members",
     newItems: 7,
-    palette: "#3A4B6D",
+    palette: "#2D63B5",
     joined: true
   },
   {
@@ -28,7 +28,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Design, writing, photography, music, craft, and creative work in progress.",
     members: "1.1k members",
     newItems: 5,
-    palette: "#B76A4A",
+    palette: "#F47E4D",
     joined: true
   },
   {
@@ -38,7 +38,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Restaurants, pop-ups, recipes, cultural notes, and local recommendations.",
     members: "1.8k members",
     newItems: 3,
-    palette: "#D9B16C",
+    palette: "#DBA85B",
     joined: true
   },
   {
@@ -48,7 +48,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Thoughtful questions, mutual care, reading, gatherings, and service.",
     members: "710 members",
     newItems: 2,
-    palette: "#5A3D55",
+    palette: "#0F3D2E",
     joined: false
   },
   {
@@ -58,7 +58,7 @@ export const launchFeeds: Smartfeed[] = [
     description: "Solo trips, city guides, practical itineraries, and saved discoveries.",
     members: "1.5k members",
     newItems: 6,
-    palette: "#3E6D75",
+    palette: "#61A7D8",
     joined: false
   }
 ];
