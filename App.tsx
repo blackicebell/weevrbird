@@ -45,6 +45,14 @@ const contributionMeta: Record<string, { icon: keyof typeof Ionicons.glyphMap; h
   "Long Read": { icon: "document-text-outline", helper: "Write a deeper piece" }
 };
 const avatars = ["W", "A", "C", "M", "S", "L", "T", "N"];
+const feedIcons: Record<string, keyof typeof Ionicons.glyphMap> = {
+  atlanta: "business-outline",
+  "black-tech": "code-slash-outline",
+  "creative-community": "pencil-outline",
+  "food-culture": "restaurant-outline",
+  "faith-community": "leaf-outline",
+  travel: "airplane-outline"
+};
 
 function useTheme() {
   const scheme = useColorScheme();
@@ -283,10 +291,13 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <LinearGradient colors={theme.dark ? ["rgba(20, 24, 21, 0.96)", "rgba(31, 32, 27, 0.84)"] : ["rgba(255, 253, 248, 0.94)", "rgba(239, 228, 214, 0.68)"]} style={[styles.cover, { borderColor: theme.line }]}>
         <View style={styles.coverTop}>
-          <Image source={logo} style={styles.coverLogo} resizeMode="contain" />
-          <Text style={[styles.dateText, { color: theme.muted }]}>Friday, July 10</Text>
+          <Text style={[styles.dateText, { color: theme.accent }]}>Friday, July 10</Text>
+          <View style={styles.coverActions}>
+            <HeaderIcon name="search-outline" theme={theme} />
+            <HeaderIcon name="notifications-outline" theme={theme} dot />
+          </View>
         </View>
-        <Text style={[styles.heroTitle, { color: theme.text }]}>Good morning, Chris.</Text>
+        <Text style={[styles.heroTitle, { color: theme.text }]}>Good morning,{"\n"}Chris.</Text>
         <Text style={[styles.coverSubtitle, { color: theme.muted }]}>Here is what is happening in your world today.</Text>
       </LinearGradient>
 
@@ -294,26 +305,16 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
       {joinedFeeds.map((feed) => {
         const primary = feedItems.find((item) => item.feedId === feed.id) ?? feedItems[0];
         return (
-          <Pressable
+          <SmartfeedFeatureCard
             key={feed.id}
-            accessibilityRole="button"
+            feed={feed}
+            item={primary}
+            theme={theme}
             onPress={() => {
               setSelectedFeed(feed);
               setActiveTab("Feeds");
             }}
-            style={[styles.feedSection, { backgroundColor: theme.panel, borderColor: theme.line }]}
-          >
-            <View style={styles.feedSectionTop}>
-              <View>
-                <Text style={[styles.feedName, { color: theme.text }]}>{feed.name}</Text>
-                <Text style={[styles.meta, { color: theme.muted }]}>{feed.newItems} new items</Text>
-              </View>
-              <View style={[styles.feedDot, { backgroundColor: feed.palette }]} />
-            </View>
-            <Text style={[styles.feedHeadline, { color: theme.text }]}>{primary.title}</Text>
-            <Text style={[styles.body, { color: theme.muted }]} numberOfLines={2}>{primary.body ?? primary.excerpt}</Text>
-            <Text style={[styles.openAction, { color: theme.text }]}>Open feed  {'->'}</Text>
-          </Pressable>
+          />
         );
       })}
 
@@ -560,6 +561,91 @@ function FeedCard({ item, theme }: { item: FeedItem; theme: ReturnType<typeof us
   );
 }
 
+function HeaderIcon({ name, theme, dot }: {
+  name: keyof typeof Ionicons.glyphMap;
+  theme: ReturnType<typeof useTheme>;
+  dot?: boolean;
+}) {
+  return (
+    <View style={[styles.headerIcon, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+      <Ionicons name={name} color={theme.text} size={21} />
+      {dot && <View style={[styles.notificationDot, { backgroundColor: palette.clay }]} />}
+    </View>
+  );
+}
+
+function SmartfeedFeatureCard({ feed, item, theme, onPress }: {
+  feed: Smartfeed;
+  item: FeedItem;
+  theme: ReturnType<typeof useTheme>;
+  onPress: () => void;
+}) {
+  const showImage = feed.id === "atlanta";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={[styles.feedSection, { backgroundColor: theme.panel, borderColor: theme.line }]}
+    >
+      <View style={styles.feedSectionTop}>
+        <View style={styles.feedHeaderCluster}>
+          <View style={[styles.feedIconBadge, { backgroundColor: feed.palette }]}>
+            <Ionicons name={feedIcons[feed.id] ?? "albums-outline"} color="#FFFDF8" size={22} />
+          </View>
+          <View>
+            <Text style={[styles.feedName, { color: theme.text }]}>{feed.name}</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{feed.newItems} new items</Text>
+          </View>
+        </View>
+        <View style={[styles.feedDot, { backgroundColor: feed.palette }]} />
+      </View>
+      {showImage && <EditorialScene theme={theme} />}
+      <Text style={[styles.feedHeadline, { color: theme.text }]}>{item.title}</Text>
+      <Text style={[styles.body, { color: theme.muted }]} numberOfLines={showImage ? 3 : 4}>{item.body ?? item.excerpt}</Text>
+      <View style={styles.feedFooter}>
+        <ParticipantStack theme={theme} count={feed.id === "atlanta" ? 8 : feed.id === "black-tech" ? 5 : 3} />
+        <Text style={[styles.openAction, { color: theme.text }]}>Open feed  {'->'}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function EditorialScene({ theme }: { theme: ReturnType<typeof useTheme> }) {
+  return (
+    <LinearGradient
+      colors={theme.dark ? ["#25302A", "#161A17"] : ["#EEE4D6", "#D9DDDC"]}
+      style={styles.editorialScene}
+    >
+      <View style={[styles.sceneWindow, { borderColor: theme.line }]} />
+      <View style={[styles.sceneChair, { backgroundColor: palette.clay }]} />
+      <View style={[styles.scenePlant, { backgroundColor: palette.sage }]} />
+      <View style={[styles.scenePlantSmall, { backgroundColor: palette.deepForest }]} />
+    </LinearGradient>
+  );
+}
+
+function ParticipantStack({ theme, count }: { theme: ReturnType<typeof useTheme>; count: number }) {
+  return (
+    <View style={styles.participantRow}>
+      {people.slice(0, 3).map((person, index) => (
+        <View
+          key={person.id}
+          style={[
+            styles.miniAvatar,
+            {
+              backgroundColor: [palette.sage, palette.clay, palette.indigo][index],
+              borderColor: theme.panel
+            }
+          ]}
+        >
+          <Text style={styles.miniAvatarText}>{person.displayName[0]}</Text>
+        </View>
+      ))}
+      <Text style={[styles.participantCount, { color: theme.muted }]}>+{count}</Text>
+    </View>
+  );
+}
+
 function EditorialImage({ item, theme }: { item: FeedItem; theme: ReturnType<typeof useTheme> }) {
   return (
     <LinearGradient
@@ -611,9 +697,12 @@ function TabBar({ activeTab, setActiveTab, theme }: {
     <View style={[styles.tabBar, { backgroundColor: theme.panel, borderTopColor: theme.line }]}>
       {tabs.map((tab) => {
         const active = activeTab === tab.key;
+        const primary = tab.key === "Contribute";
         return (
           <Pressable key={tab.key} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => setActiveTab(tab.key)} style={styles.tabButton}>
-            <Ionicons name={tab.icon} color={active ? theme.accent : theme.muted} size={23} />
+            <View style={primary ? [styles.primaryTabIcon, { backgroundColor: theme.forest }] : undefined}>
+              <Ionicons name={primary ? "add" : tab.icon} color={primary ? theme.bg : active ? theme.forest : theme.muted} size={primary ? 30 : 23} />
+            </View>
             <Text style={[styles.tabLabel, { color: active ? theme.accent : theme.muted }]}>{tab.key}</Text>
           </Pressable>
         );
@@ -923,9 +1012,30 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center"
   },
+  coverActions: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.card
+  },
+  notificationDot: {
+    position: "absolute",
+    right: 10,
+    top: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 4
+  },
   dateText: {
     fontSize: 13,
-    fontWeight: "700"
+    fontWeight: "800"
   },
   sectionHeader: {
     marginTop: spacing.lg,
@@ -949,6 +1059,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center"
   },
+  feedHeaderCluster: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  feedIconBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center"
+  },
   feedName: {
     fontSize: 19,
     fontWeight: "900",
@@ -959,6 +1081,52 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: 7
   },
+  editorialScene: {
+    height: 132,
+    borderRadius: radii.md,
+    overflow: "hidden",
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm
+  },
+  sceneWindow: {
+    position: "absolute",
+    right: 18,
+    top: 16,
+    width: 94,
+    height: 70,
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 253, 248, 0.38)"
+  },
+  sceneChair: {
+    position: "absolute",
+    right: 42,
+    bottom: 18,
+    width: 86,
+    height: 32,
+    borderRadius: 16,
+    opacity: 0.82
+  },
+  scenePlant: {
+    position: "absolute",
+    left: 28,
+    bottom: 16,
+    width: 54,
+    height: 86,
+    borderTopLeftRadius: 42,
+    borderTopRightRadius: 42,
+    opacity: 0.78
+  },
+  scenePlantSmall: {
+    position: "absolute",
+    left: 86,
+    bottom: 16,
+    width: 34,
+    height: 58,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    opacity: 0.7
+  },
   feedHeadline: {
     fontSize: 21,
     lineHeight: 25,
@@ -967,6 +1135,35 @@ const styles = StyleSheet.create({
   },
   openAction: {
     fontSize: 14,
+    fontWeight: "900"
+  },
+  feedFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: spacing.sm
+  },
+  participantRow: {
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  miniAvatar: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: -7
+  },
+  miniAvatarText: {
+    color: "#FFFDF8",
+    fontSize: 10,
+    fontWeight: "900"
+  },
+  participantCount: {
+    marginLeft: spacing.md,
+    fontSize: 13,
     fontWeight: "900"
   },
   feedRail: {
@@ -1232,6 +1429,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 2
+  },
+  primaryTabIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -26,
+    ...shadows.card
   },
   tabLabel: {
     fontSize: 11,
