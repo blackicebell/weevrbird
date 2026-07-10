@@ -9,8 +9,8 @@ export const palette = {
   ink: "#111827",
   muted: "#55615D",
   line: "#D5E3DC",
-  glassLine: "rgba(15, 61, 46, 0.14)",
-  glassLight: "rgba(255, 255, 252, 0.72)",
+  glassLine: "rgba(15, 61, 46, 0.10)",
+  glassLight: "rgba(255, 255, 252, 0.84)",
   cream: "#FFFDF8",
   sage: "#A6B39A",
   clay: "#C86F4A",
@@ -45,16 +45,16 @@ export const radii = {
 export const shadows = {
   card: {
     shadowColor: "#0F3D2E",
-    shadowOpacity: 0.09,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 5
+    shadowOpacity: 0.06,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 3
   },
   soft: {
     shadowColor: "#0F3D2E",
-    shadowOpacity: 0.08,
-    shadowRadius: 34,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 3
+    shadowOpacity: 0.05,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 2
   }
 };

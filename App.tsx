@@ -1,4 +1,15 @@
 import { Ionicons } from "@expo/vector-icons";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts
+} from "@expo-google-fonts/inter";
+import {
+  PlayfairDisplay_600SemiBold,
+  PlayfairDisplay_700Bold
+} from "@expo-google-fonts/playfair-display";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import React, { useMemo, useState } from "react";
@@ -58,21 +69,33 @@ function useTheme() {
   return {
     dark,
     bg: dark ? palette.dark : palette.paper,
-    panel: dark ? palette.darkPanel : "rgba(255, 255, 252, 0.66)",
-    panelAlt: dark ? "rgba(24, 42, 37, 0.78)" : "rgba(214, 241, 229, 0.52)",
+    panel: dark ? palette.darkPanel : palette.glassLight,
+    panelAlt: dark ? "rgba(24, 42, 37, 0.78)" : "rgba(214, 241, 229, 0.38)",
     text: dark ? palette.darkText : palette.ink,
     muted: dark ? palette.darkMuted : palette.muted,
     line: dark ? palette.darkLine : palette.glassLine,
     accent: dark ? palette.seafoam : palette.deepForest,
     success: dark ? "#9DB98F" : palette.sage,
     forest: dark ? palette.seafoam : palette.deepForest,
-    serif: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
-    sans: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
+    serif: "PlayfairDisplay_700Bold",
+    serifSoft: "PlayfairDisplay_600SemiBold",
+    sans: "Inter_400Regular",
+    sansMedium: "Inter_500Medium",
+    sansSemi: "Inter_600SemiBold",
+    sansBold: "Inter_700Bold"
   };
 }
 
 export default function App() {
   const theme = useTheme();
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    PlayfairDisplay_600SemiBold,
+    PlayfairDisplay_700Bold
+  });
   const [onboarded, setOnboarded] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("welcome");
   const [selectedCity, setSelectedCity] = useState("Atlanta");
@@ -94,6 +117,10 @@ export default function App() {
     if (activeFilter === "Saved") return current.filter((item) => item.saved);
     return current;
   }, [activeFilter, selectedFeed.id]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   if (!onboarded) {
     return (
@@ -302,7 +329,7 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
       </LinearGradient>
 
       <SectionHeader title="Your Smartfeeds" action="Manage" theme={theme} />
-      {joinedFeeds.map((feed) => {
+      {joinedFeeds.slice(0, 3).map((feed) => {
         const primary = feedItems.find((item) => item.feedId === feed.id) ?? feedItems[0];
         return (
           <SmartfeedFeatureCard
@@ -318,8 +345,6 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
         );
       })}
 
-      <SectionHeader title="Conversations worth joining" theme={theme} />
-      {feedItems.filter((item) => !item.imported).slice(0, 2).map((item) => <FeedCard key={item.id} item={item} theme={theme} />)}
     </ScrollView>
   );
 }
@@ -634,14 +659,13 @@ function SmartfeedFeatureCard({ feed, item, theme, onPress }: {
 function EditorialScene({ theme }: { theme: ReturnType<typeof useTheme> }) {
   return (
     <LinearGradient
-      colors={theme.dark ? ["#1B352C", "#10211B"] : ["#E6F5ED", "#F7F5EF"]}
+      colors={theme.dark ? ["#1B352C", "#10211B"] : ["#F8FFFB", "#D6F1E5"]}
       style={styles.editorialScene}
     >
-      <View style={[styles.sceneWindow, { borderColor: theme.line }]} />
-      <View style={[styles.sceneFrame, { backgroundColor: palette.gold }]} />
-      <View style={[styles.sceneChair, { backgroundColor: palette.gold }]} />
-      <View style={[styles.scenePlant, { backgroundColor: palette.sage }]} />
-      <View style={[styles.scenePlantSmall, { backgroundColor: palette.deepForest }]} />
+      <View style={[styles.sceneGlow, { backgroundColor: "rgba(255, 255, 252, 0.62)" }]} />
+      <View style={[styles.sceneLeaf, styles.sceneLeafOne, { backgroundColor: "rgba(86, 171, 130, 0.28)" }]} />
+      <View style={[styles.sceneLeaf, styles.sceneLeafTwo, { backgroundColor: "rgba(15, 61, 46, 0.18)" }]} />
+      <View style={[styles.sceneLeaf, styles.sceneLeafThree, { backgroundColor: "rgba(219, 168, 91, 0.28)" }]} />
     </LinearGradient>
   );
 }
@@ -858,7 +882,7 @@ const styles = StyleSheet.create({
     width: 260,
     height: 520,
     borderRadius: 16,
-    opacity: 0.72,
+    opacity: 0.46,
     transform: [{ rotate: "-28deg" }]
   },
   paperVeilOne: {
@@ -875,7 +899,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 70,
     borderRadius: 80,
-    opacity: 0.7,
+    opacity: 0.42,
     transform: [{ rotate: "-38deg" }]
   },
   softLeafOne: {
@@ -895,9 +919,9 @@ const styles = StyleSheet.create({
     zIndex: 1
   },
   scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: 112,
-    gap: spacing.md
+    padding: 20,
+    paddingBottom: 126,
+    gap: 18
   },
   onboarding: {
     flex: 1,
@@ -927,7 +951,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontSize: 30,
     fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
+    fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: 0
   },
   kicker: {
@@ -937,32 +961,33 @@ const styles = StyleSheet.create({
     letterSpacing: 0
   },
   heroTitle: {
-    fontSize: 34,
-    lineHeight: 39,
+    fontSize: 36,
+    lineHeight: 42,
     fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
+    fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: 0
   },
   screenTitle: {
     fontSize: 31,
     lineHeight: 36,
     fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
+    fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: 0
   },
   coverSubtitle: {
-    fontSize: 18,
-    lineHeight: 26
+    fontSize: 15,
+    lineHeight: 23,
+    fontFamily: "Inter_400Regular"
   },
   body: {
-    fontSize: 16,
-    lineHeight: 23,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
+    fontSize: 15,
+    lineHeight: 24,
+    fontFamily: "Inter_400Regular"
   },
   meta: {
     fontSize: 12,
     lineHeight: 17,
-    fontWeight: "600"
+    fontFamily: "Inter_500Medium"
   },
   primaryButton: {
     minHeight: 52,
@@ -1047,11 +1072,11 @@ const styles = StyleSheet.create({
   cover: {
     borderWidth: 1,
     borderRadius: 0,
-    padding: spacing.xl,
-    marginHorizontal: -spacing.lg,
-    marginTop: -spacing.lg,
-    paddingTop: spacing.xxl,
-    gap: spacing.lg,
+    padding: 28,
+    marginHorizontal: -20,
+    marginTop: -20,
+    paddingTop: 34,
+    gap: 18,
     ...shadows.soft
   },
   coverTop: {
@@ -1082,23 +1107,23 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 13,
-    fontWeight: "800"
+    fontFamily: "Inter_700Bold"
   },
   sectionHeader: {
-    marginTop: spacing.lg,
+    marginTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center"
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: "900"
+    fontSize: 18,
+    fontFamily: "Inter_700Bold"
   },
   feedSection: {
     borderWidth: 1,
-    borderRadius: 22,
-    padding: spacing.lg,
-    gap: spacing.md,
+    borderRadius: 24,
+    padding: 22,
+    gap: 14,
     ...shadows.card
   },
   feedSectionTop: {
@@ -1112,28 +1137,59 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   feedIconBadge: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center"
   },
   feedName: {
-    fontSize: 19,
-    fontWeight: "900",
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
+    fontSize: 17,
+    fontFamily: "Inter_700Bold"
   },
   feedDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7
+    width: 10,
+    height: 10,
+    borderRadius: 5
   },
   editorialScene: {
-    height: 128,
-    borderRadius: 14,
+    height: 116,
+    borderRadius: 16,
     overflow: "hidden",
     marginTop: spacing.sm,
     marginBottom: spacing.sm
+  },
+  sceneGlow: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    width: "58%",
+    height: "100%",
+    borderTopLeftRadius: 80,
+    borderBottomLeftRadius: 80
+  },
+  sceneLeaf: {
+    position: "absolute",
+    width: 128,
+    height: 48,
+    borderRadius: 80
+  },
+  sceneLeafOne: {
+    right: 22,
+    top: 22,
+    transform: [{ rotate: "-28deg" }]
+  },
+  sceneLeafTwo: {
+    right: 82,
+    bottom: 18,
+    transform: [{ rotate: "22deg" }]
+  },
+  sceneLeafThree: {
+    left: 28,
+    bottom: 28,
+    width: 90,
+    height: 34,
+    transform: [{ rotate: "-12deg" }]
   },
   sceneWindow: {
     position: "absolute",
@@ -1184,29 +1240,29 @@ const styles = StyleSheet.create({
     opacity: 0.7
   },
   feedHeadline: {
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" })
+    fontSize: 21,
+    lineHeight: 28,
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold"
   },
   openAction: {
     fontSize: 14,
-    fontWeight: "900"
+    fontFamily: "Inter_700Bold"
   },
   feedFooter: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: spacing.sm
+    paddingTop: 10
   },
   participantRow: {
     flexDirection: "row",
     alignItems: "center"
   },
   miniAvatar: {
-    width: 27,
-    height: 27,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -1220,7 +1276,7 @@ const styles = StyleSheet.create({
   participantCount: {
     marginLeft: spacing.md,
     fontSize: 13,
-    fontWeight: "900"
+    fontFamily: "Inter_700Bold"
   },
   feedRail: {
     gap: spacing.sm,
@@ -1253,7 +1309,7 @@ const styles = StyleSheet.create({
     fontSize: 29,
     lineHeight: 34,
     fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
+    fontFamily: "PlayfairDisplay_700Bold",
     letterSpacing: 0
   },
   segmented: {
@@ -1263,9 +1319,9 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 22,
-    padding: spacing.lg,
-    gap: spacing.sm,
+    borderRadius: 24,
+    padding: 22,
+    gap: 12,
     ...shadows.card
   },
   editorialImage: {
@@ -1308,15 +1364,15 @@ const styles = StyleSheet.create({
     textTransform: "capitalize"
   },
   cardTitle: {
-    fontSize: 21,
+    fontSize: 20,
     lineHeight: 27,
-    fontWeight: "900",
-    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" })
+    fontWeight: "700",
+    fontFamily: "PlayfairDisplay_700Bold"
   },
   externalNotice: {
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: "700"
+    fontFamily: "Inter_600SemiBold"
   },
   actionRow: {
     flexDirection: "row",
@@ -1373,10 +1429,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   contributionRow: {
-    minHeight: 66,
+    minHeight: 70,
     borderWidth: 1,
     borderRadius: 16,
-    padding: spacing.md,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
@@ -1395,7 +1451,7 @@ const styles = StyleSheet.create({
   },
   contributionTitle: {
     fontSize: 15,
-    fontWeight: "900"
+    fontFamily: "Inter_700Bold"
   },
   searchBox: {
     minHeight: 50,
@@ -1446,7 +1502,7 @@ const styles = StyleSheet.create({
   libraryTitle: {
     fontSize: 15,
     lineHeight: 19,
-    fontWeight: "900"
+    fontFamily: "Inter_700Bold"
   },
   libraryThumb: {
     width: 72,
@@ -1542,6 +1598,6 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     fontSize: 11,
-    fontWeight: "800"
+    fontFamily: "Inter_700Bold"
   }
 });
