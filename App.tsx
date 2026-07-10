@@ -36,6 +36,14 @@ const tabs: Array<{ key: AppTab; icon: keyof typeof Ionicons.glyphMap }> = [
 
 const filters: SmartfeedFilter[] = ["Latest", "Conversations", "Reading", "Saved"];
 const contributionTypes = ["Note", "Question", "Discussion", "Recommendation", "Link", "Long Read"];
+const contributionMeta: Record<string, { icon: keyof typeof Ionicons.glyphMap; helper: string }> = {
+  Note: { icon: "reader-outline", helper: "Share a quick thought" },
+  Question: { icon: "help-circle-outline", helper: "Ask the community" },
+  Discussion: { icon: "chatbubbles-outline", helper: "Start a conversation" },
+  Recommendation: { icon: "sparkles-outline", helper: "Share something you love" },
+  Link: { icon: "link-outline", helper: "Share an article, video, or resource" },
+  "Long Read": { icon: "document-text-outline", helper: "Write a deeper piece" }
+};
 const avatars = ["W", "A", "C", "M", "S", "L", "T", "N"];
 
 function useTheme() {
@@ -44,13 +52,16 @@ function useTheme() {
   return {
     dark,
     bg: dark ? palette.dark : palette.paper,
-    panel: dark ? palette.darkPanel : palette.cream,
-    panelAlt: dark ? "#211D19" : palette.paperDeep,
-    text: dark ? palette.darkText : palette.ink,
+    panel: dark ? palette.darkPanel : palette.glassLight,
+    panelAlt: dark ? "rgba(34, 37, 32, 0.78)" : "rgba(231, 233, 236, 0.62)",
+    text: dark ? palette.darkText : palette.deepForest,
     muted: dark ? palette.darkMuted : palette.muted,
-    line: dark ? palette.darkLine : palette.line,
-    accent: dark ? "#C69A57" : palette.clay,
-    success: dark ? "#9DB98F" : palette.sage
+    line: dark ? palette.darkLine : palette.glassLine,
+    accent: dark ? palette.sunlight : palette.gold,
+    success: dark ? "#9DB98F" : palette.sage,
+    forest: dark ? palette.darkText : palette.deepForest,
+    serif: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
+    sans: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
   };
 }
 
@@ -83,6 +94,7 @@ export default function App() {
       <SafeAreaProvider>
         <StatusBar style={theme.dark ? "light" : "dark"} />
         <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
+          <AppBackground theme={theme} />
           <Onboarding
             step={onboardingStep}
             setStep={setOnboardingStep}
@@ -104,6 +116,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style={theme.dark ? "light" : "dark"} />
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
+        <AppBackground theme={theme} />
         <View style={styles.appShell}>
           {activeTab === "Today" && (
             <TodayScreen theme={theme} joinedFeeds={joinedFeeds} setSelectedFeed={setSelectedFeed} setActiveTab={setActiveTab} />
@@ -133,6 +146,19 @@ export default function App() {
         <TabBar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} />
       </SafeAreaView>
     </SafeAreaProvider>
+  );
+}
+
+function AppBackground({ theme }: { theme: ReturnType<typeof useTheme> }) {
+  return (
+    <View pointerEvents="none" style={styles.backgroundLayer}>
+      <LinearGradient
+        colors={theme.dark ? ["#101412", "#171C18", "#111412"] : ["#FFFDF8", "#F7F3ED", "#EEE4D6"]}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={[styles.paperVeil, styles.paperVeilOne, { backgroundColor: theme.dark ? "rgba(109, 139, 116, 0.10)" : "rgba(255, 253, 248, 0.42)" }]} />
+      <View style={[styles.paperVeil, styles.paperVeilTwo, { backgroundColor: theme.dark ? "rgba(217, 177, 108, 0.08)" : "rgba(231, 233, 236, 0.46)" }]} />
+    </View>
   );
 }
 
@@ -255,7 +281,7 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
 }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <LinearGradient colors={theme.dark ? ["#24201B", "#33281E"] : ["#FFFDF8", "#EFE5D8"]} style={[styles.cover, { borderColor: theme.line }]}>
+      <LinearGradient colors={theme.dark ? ["rgba(20, 24, 21, 0.96)", "rgba(31, 32, 27, 0.84)"] : ["rgba(255, 253, 248, 0.94)", "rgba(239, 228, 214, 0.68)"]} style={[styles.cover, { borderColor: theme.line }]}>
         <View style={styles.coverTop}>
           <Image source={logo} style={styles.coverLogo} resizeMode="contain" />
           <Text style={[styles.dateText, { color: theme.muted }]}>Friday, July 10</Text>
@@ -286,7 +312,7 @@ function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab }: {
             </View>
             <Text style={[styles.feedHeadline, { color: theme.text }]}>{primary.title}</Text>
             <Text style={[styles.body, { color: theme.muted }]} numberOfLines={2}>{primary.body ?? primary.excerpt}</Text>
-            <Text style={[styles.openAction, { color: theme.accent }]}>Open feed</Text>
+            <Text style={[styles.openAction, { color: theme.text }]}>Open feed  {'->'}</Text>
           </Pressable>
         );
       })}
@@ -375,9 +401,17 @@ function ContributeScreen({ theme, draftType, setDraftType, draft, setDraft }: {
     <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={styles.flex}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>Choose the shape of your contribution. Weevrbird rewards useful context, not performance.</Text>
-        <View style={styles.chipWrap}>
-          {contributionTypes.map((type) => <Chip key={type} label={type} selected={draftType === type} onPress={() => setDraftType(type)} theme={theme} />)}
+        <Text style={[styles.body, { color: theme.muted }]}>What do you want to share?</Text>
+        <View style={styles.contributionList}>
+          {contributionTypes.map((type) => (
+            <ContributionTypeRow
+              key={type}
+              type={type}
+              selected={draftType === type}
+              onPress={() => setDraftType(type)}
+              theme={theme}
+            />
+          ))}
         </View>
         <View style={[styles.editor, { backgroundColor: theme.panel, borderColor: theme.line }]}>
           <Text style={[styles.editorLabel, { color: theme.accent }]}>{draftType}</Text>
@@ -458,7 +492,7 @@ function ProfileScreen({ theme, selectedAvatar, selectedInterests }: {
       <View style={[styles.profileHero, { backgroundColor: theme.panel, borderColor: theme.line }]}>
         <AvatarButton label={avatars[selectedAvatar]} index={selectedAvatar} selected onPress={() => undefined} theme={theme} />
         <Text style={[styles.feedHeroTitle, { color: theme.text }]}>Chris Morgan</Text>
-        <Text style={[styles.meta, { color: theme.muted }]}>@chrism · Atlanta</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>@chrism - Atlanta</Text>
         <Text style={[styles.body, { color: theme.muted }]}>Reads about UX Design, Atlanta, Black Tech, and better ways to make the internet feel human.</Text>
         <View style={styles.chipWrap}>
           {selectedInterests.slice(0, 5).map((interest) => <Chip key={interest} label={interest} selected={false} onPress={() => undefined} theme={theme} />)}
@@ -504,6 +538,7 @@ function FeedCard({ item, theme }: { item: FeedItem; theme: ReturnType<typeof us
   const isExternal = item.imported;
   return (
     <View style={[styles.card, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+      {isExternal && <EditorialImage item={item} theme={theme} />}
       <View style={styles.cardMetaRow}>
         <View style={[styles.typeBadge, { backgroundColor: isExternal ? theme.panelAlt : `${theme.accent}22`, borderColor: theme.line }]}>
           <Ionicons name={isExternal ? "open-outline" : "chatbubble-ellipses-outline"} color={isExternal ? theme.muted : theme.accent} size={14} />
@@ -515,13 +550,55 @@ function FeedCard({ item, theme }: { item: FeedItem; theme: ReturnType<typeof us
       </View>
       <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
-      {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>External reading · Open source · Discuss on Weevrbird</Text>}
+      {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>External reading - Open source - Discuss on Weevrbird</Text>}
       <View style={styles.actionRow}>
         <IconLabel icon="sparkles-outline" label={item.reactionLabel} theme={theme} />
         <IconLabel icon="chatbubble-outline" label={`${item.replies} replies`} theme={theme} />
         <IconLabel icon={item.saved ? "bookmark" : "bookmark-outline"} label={item.saved ? "Saved" : "Save"} theme={theme} />
       </View>
     </View>
+  );
+}
+
+function EditorialImage({ item, theme }: { item: FeedItem; theme: ReturnType<typeof useTheme> }) {
+  return (
+    <LinearGradient
+      colors={theme.dark ? ["#263128", "#131714"] : ["#F7F3ED", "#D9DDDC"]}
+      style={styles.editorialImage}
+    >
+      <View style={[styles.editorialImageMark, { borderColor: theme.dark ? "rgba(245, 238, 228, 0.18)" : "rgba(15, 27, 23, 0.16)" }]}>
+        <Ionicons name={item.itemType === "external_podcast" ? "mic-outline" : "leaf-outline"} color={theme.dark ? palette.sunlight : palette.sage} size={36} />
+      </View>
+    </LinearGradient>
+  );
+}
+
+function ContributionTypeRow({ type, selected, onPress, theme }: {
+  type: string;
+  selected: boolean;
+  onPress: () => void;
+  theme: ReturnType<typeof useTheme>;
+}) {
+  const meta = contributionMeta[type];
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[
+        styles.contributionRow,
+        { backgroundColor: selected ? theme.panelAlt : theme.panel, borderColor: selected ? theme.accent : theme.line }
+      ]}
+    >
+      <View style={[styles.contributionIcon, { backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.08)" : "rgba(15, 27, 23, 0.04)", borderColor: theme.line }]}>
+        <Ionicons name={meta.icon} color={selected ? theme.accent : theme.text} size={18} />
+      </View>
+      <View style={styles.contributionCopy}>
+        <Text style={[styles.contributionTitle, { color: theme.text }]}>{type}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{meta.helper}</Text>
+      </View>
+      <Ionicons name={selected ? "checkmark-circle" : "chevron-forward"} color={selected ? theme.accent : theme.muted} size={20} />
+    </Pressable>
   );
 }
 
@@ -651,23 +728,46 @@ function SettingsRow({ icon, title, theme, destructive }: {
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1
+    flex: 1,
+    overflow: "hidden"
+  },
+  backgroundLayer: {
+    ...StyleSheet.absoluteFillObject
+  },
+  paperVeil: {
+    position: "absolute",
+    width: 260,
+    height: 520,
+    borderRadius: 16,
+    opacity: 0.72,
+    transform: [{ rotate: "-28deg" }]
+  },
+  paperVeilOne: {
+    top: -64,
+    right: -154
+  },
+  paperVeilTwo: {
+    bottom: -110,
+    left: -164,
+    transform: [{ rotate: "32deg" }]
   },
   flex: {
     flex: 1
   },
   appShell: {
-    flex: 1
+    flex: 1,
+    zIndex: 1
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingBottom: 110,
+    paddingBottom: 112,
     gap: spacing.md
   },
   onboarding: {
     flex: 1,
     padding: spacing.lg,
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    zIndex: 1
   },
   onboardingPanel: {
     flex: 1,
@@ -680,8 +780,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   logo: {
-    width: 42,
-    height: 42,
+    width: 52,
+    height: 52,
     borderRadius: radii.sm
   },
   coverLogo: {
@@ -689,26 +789,29 @@ const styles = StyleSheet.create({
     height: 34
   },
   wordmark: {
-    fontSize: 22,
-    fontWeight: "800",
+    fontSize: 30,
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
     letterSpacing: 0
   },
   kicker: {
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "900",
     textTransform: "uppercase",
     letterSpacing: 0
   },
   heroTitle: {
-    fontSize: 36,
-    lineHeight: 42,
-    fontWeight: "800",
+    fontSize: 34,
+    lineHeight: 39,
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
     letterSpacing: 0
   },
   screenTitle: {
     fontSize: 31,
     lineHeight: 36,
-    fontWeight: "800",
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
     letterSpacing: 0
   },
   coverSubtitle: {
@@ -717,7 +820,8 @@ const styles = StyleSheet.create({
   },
   body: {
     fontSize: 16,
-    lineHeight: 23
+    lineHeight: 23,
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
   },
   meta: {
     fontSize: 12,
@@ -806,10 +910,13 @@ const styles = StyleSheet.create({
   },
   cover: {
     borderWidth: 1,
-    borderRadius: radii.lg,
+    borderRadius: 0,
     padding: spacing.xl,
+    marginHorizontal: -spacing.lg,
+    marginTop: -spacing.lg,
+    paddingTop: spacing.xxl,
     gap: spacing.md,
-    ...shadows.card
+    ...shadows.soft
   },
   coverTop: {
     flexDirection: "row",
@@ -832,9 +939,10 @@ const styles = StyleSheet.create({
   },
   feedSection: {
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.lg,
-    gap: spacing.sm
+    gap: spacing.sm,
+    ...shadows.card
   },
   feedSectionTop: {
     flexDirection: "row",
@@ -843,7 +951,8 @@ const styles = StyleSheet.create({
   },
   feedName: {
     fontSize: 19,
-    fontWeight: "900"
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif", default: "Inter, system-ui, sans-serif" })
   },
   feedDot: {
     width: 14,
@@ -851,9 +960,10 @@ const styles = StyleSheet.create({
     borderRadius: 7
   },
   feedHeadline: {
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: "900"
+    fontSize: 21,
+    lineHeight: 25,
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" })
   },
   openAction: {
     fontSize: 14,
@@ -883,12 +993,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radii.lg,
     padding: spacing.xl,
-    gap: spacing.sm
+    gap: spacing.sm,
+    ...shadows.soft
   },
   feedHeroTitle: {
     fontSize: 29,
     lineHeight: 34,
     fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" }),
     letterSpacing: 0
   },
   segmented: {
@@ -898,9 +1010,28 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.lg,
-    gap: spacing.sm
+    gap: spacing.sm,
+    ...shadows.card
+  },
+  editorialImage: {
+    height: 142,
+    borderRadius: radii.md,
+    marginBottom: spacing.sm,
+    alignItems: "flex-end",
+    justifyContent: "flex-end",
+    overflow: "hidden",
+    padding: spacing.lg
+  },
+  editorialImageMark: {
+    width: 74,
+    height: 74,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 253, 248, 0.18)"
   },
   cardMetaRow: {
     flexDirection: "row",
@@ -926,7 +1057,8 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 21,
     lineHeight: 27,
-    fontWeight: "900"
+    fontWeight: "900",
+    fontFamily: Platform.select({ ios: "Georgia", android: "serif", default: "Georgia" })
   },
   externalNotice: {
     fontSize: 13,
@@ -954,11 +1086,12 @@ const styles = StyleSheet.create({
     gap: spacing.md
   },
   editor: {
-    minHeight: 330,
+    minHeight: 290,
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.lg,
-    gap: spacing.sm
+    gap: spacing.sm,
+    ...shadows.card
   },
   editorLabel: {
     fontSize: 12,
@@ -977,11 +1110,39 @@ const styles = StyleSheet.create({
   },
   safetyPanel: {
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     padding: spacing.lg,
     flexDirection: "row",
     gap: spacing.md,
     alignItems: "flex-start"
+  },
+  contributionList: {
+    gap: spacing.sm
+  },
+  contributionRow: {
+    minHeight: 70,
+    borderWidth: 1,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  contributionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  contributionCopy: {
+    flex: 1
+  },
+  contributionTitle: {
+    fontSize: 15,
+    fontWeight: "900"
   },
   searchBox: {
     minHeight: 50,
@@ -1063,7 +1224,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: "row",
     paddingBottom: Platform.select({ ios: spacing.sm, default: spacing.xs }),
-    paddingTop: spacing.xs
+    paddingTop: spacing.xs,
+    zIndex: 2
   },
   tabButton: {
     flex: 1,
