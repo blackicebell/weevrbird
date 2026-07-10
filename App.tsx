@@ -646,11 +646,17 @@ function SmartfeedFeatureCard({ feed, item, theme, onPress }: {
         <View style={[styles.feedDot, { backgroundColor: feed.palette }]} />
       </View>
       {showImage && <EditorialScene theme={theme} />}
+      {item.imported && item.sourceName && (
+        <Text style={[styles.sourceLine, { color: theme.accent }]}>From {item.sourceName}</Text>
+      )}
       <Text style={[styles.feedHeadline, { color: theme.text }]}>{item.title}</Text>
-      <Text style={[styles.body, { color: theme.muted }]} numberOfLines={showImage ? 3 : 4}>{item.body ?? item.excerpt}</Text>
+      <Text style={[styles.body, { color: theme.muted }]} numberOfLines={showImage ? 3 : 3}>{item.body ?? item.excerpt}</Text>
       <View style={styles.feedFooter}>
         <ParticipantStack theme={theme} count={feed.id === "atlanta" ? 8 : feed.id === "black-tech" ? 5 : 3} />
-        <Text style={[styles.openAction, { color: theme.text }]}>Open feed  {'->'}</Text>
+        <View style={styles.openActionRow}>
+          <Text style={[styles.openAction, { color: theme.accent }]}>Open feed</Text>
+          <Ionicons name="arrow-forward" color={theme.accent} size={15} />
+        </View>
       </View>
     </Pressable>
   );
@@ -754,9 +760,13 @@ function TabBar({ activeTab, setActiveTab, theme }: {
         const primary = tab.key === "Contribute";
         return (
           <Pressable key={tab.key} accessibilityRole="tab" accessibilityState={{ selected: active }} onPress={() => setActiveTab(tab.key)} style={styles.tabButton}>
-            <View style={primary ? [styles.primaryTabIcon, { backgroundColor: theme.forest }] : undefined}>
-              <Ionicons name={primary ? "add" : tab.icon} color={primary ? theme.bg : active ? theme.forest : theme.muted} size={primary ? 30 : 23} />
-            </View>
+            {primary ? (
+              <LinearGradient colors={[palette.deepForest, "#1C9A75"]} style={styles.primaryTabIcon}>
+                <Ionicons name="add" color="#FFFFFF" size={30} />
+              </LinearGradient>
+            ) : (
+              <Ionicons name={tab.icon} color={active ? theme.forest : theme.muted} size={23} />
+            )}
             <Text style={[styles.tabLabel, { color: active ? theme.accent : theme.muted }]}>{tab.key}</Text>
           </Pressable>
         );
@@ -1122,8 +1132,8 @@ const styles = StyleSheet.create({
   feedSection: {
     borderWidth: 1,
     borderRadius: 24,
-    padding: 22,
-    gap: 14,
+    padding: 24,
+    gap: 13,
     ...shadows.card
   },
   feedSectionTop: {
@@ -1191,63 +1201,25 @@ const styles = StyleSheet.create({
     height: 34,
     transform: [{ rotate: "-12deg" }]
   },
-  sceneWindow: {
-    position: "absolute",
-    right: 18,
-    top: 16,
-    width: 94,
-    height: 70,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 253, 248, 0.38)"
-  },
-  sceneFrame: {
-    position: "absolute",
-    left: "45%",
-    top: 28,
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    opacity: 0.75
-  },
-  sceneChair: {
-    position: "absolute",
-    right: 42,
-    bottom: 18,
-    width: 86,
-    height: 32,
-    borderRadius: 16,
-    opacity: 0.82
-  },
-  scenePlant: {
-    position: "absolute",
-    left: 28,
-    bottom: 16,
-    width: 54,
-    height: 86,
-    borderTopLeftRadius: 42,
-    borderTopRightRadius: 42,
-    opacity: 0.78
-  },
-  scenePlantSmall: {
-    position: "absolute",
-    left: 86,
-    bottom: 16,
-    width: 34,
-    height: 58,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    opacity: 0.7
-  },
   feedHeadline: {
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 22,
+    lineHeight: 30,
     fontWeight: "700",
     fontFamily: "PlayfairDisplay_700Bold"
+  },
+  sourceLine: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
   },
   openAction: {
     fontSize: 14,
     fontFamily: "Inter_700Bold"
+  },
+  openActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
   },
   feedFooter: {
     flexDirection: "row",
@@ -1260,9 +1232,9 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   miniAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
@@ -1270,12 +1242,12 @@ const styles = StyleSheet.create({
   },
   miniAvatarText: {
     color: "#FFFDF8",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900"
   },
   participantCount: {
     marginLeft: spacing.md,
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: "Inter_700Bold"
   },
   feedRail: {
