@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Weevrbird",
+    "slug": "weevrbird",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "weevrbird",
+    "assetBundlePatterns": [
+      "assets/**/*",
+      "Weevrbird Logos/PNG-01.png",
+      "Weevrbird Logos/PNG-02.png",
+      "Weevrbird Logos/PNG-03.png",
+      "Weevrbird Logos/PNG-04.png",
+      "Weevrbird Logos/PNG-05.png",
+      "Weevrbird Logos/PNG-06.png"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.weevrbird.app"
+    },
+    "android": {
+      "package": "com.weevrbird.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F4EFE6"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
