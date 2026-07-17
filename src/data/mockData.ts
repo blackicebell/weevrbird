@@ -5,8 +5,8 @@ export const launchFeeds: Smartfeed[] = [
     id: "atlanta",
     name: "Atlanta",
     type: "city",
-    description: "Local culture, city updates, food, events, and neighborhood questions.",
-    members: "2.4k linked locals",
+    description: "Local culture, city updates, public notices, events, and neighborhood recommendations.",
+    members: "2.4k local readers",
     newItems: 11,
     palette: "#56AB82",
     joined: true
@@ -16,7 +16,7 @@ export const launchFeeds: Smartfeed[] = [
     name: "Black Tech",
     type: "community",
     description: "Founders, designers, engineers, operators, and useful career signals.",
-    members: "940 members",
+    members: "940 builders",
     newItems: 7,
     palette: "#2D63B5",
     joined: true
@@ -26,7 +26,7 @@ export const launchFeeds: Smartfeed[] = [
     name: "Creative Community",
     type: "interest",
     description: "Design, writing, photography, music, craft, and creative work in progress.",
-    members: "1.1k members",
+    members: "1.1k working creatives",
     newItems: 5,
     palette: "#F47E4D",
     joined: true
@@ -36,7 +36,7 @@ export const launchFeeds: Smartfeed[] = [
     name: "Food and Culture",
     type: "interest",
     description: "Restaurants, pop-ups, recipes, cultural notes, and local recommendations.",
-    members: "1.8k members",
+    members: "1.8k local regulars",
     newItems: 3,
     palette: "#DBA85B",
     joined: true
@@ -46,7 +46,7 @@ export const launchFeeds: Smartfeed[] = [
     name: "Faith and Community",
     type: "community",
     description: "Thoughtful questions, mutual care, reading, gatherings, and service.",
-    members: "710 members",
+    members: "710 thoughtful readers",
     newItems: 2,
     palette: "#0F3D2E",
     joined: false
@@ -56,7 +56,7 @@ export const launchFeeds: Smartfeed[] = [
     name: "Travel",
     type: "interest",
     description: "Solo trips, city guides, practical itineraries, and saved discoveries.",
-    members: "1.5k members",
+    members: "1.5k field-note keepers",
     newItems: 6,
     palette: "#61A7D8",
     joined: false
@@ -74,7 +74,7 @@ export const feedItems: FeedItem[] = [
     excerpt: "A compact guide to galleries, listening rooms, bookstores, and neighborhood events worth keeping on your radar.",
     url: "https://example.com/atlanta-culture",
     publishedAt: "Today",
-    createdAt: "2026-07-10T09:00:00Z",
+    createdAt: "2026-07-17T09:00:00Z",
     imported: true,
     saved: true,
     replies: 14,
@@ -87,8 +87,8 @@ export const feedItems: FeedItem[] = [
     authorId: "maya",
     title: "Where would you take someone for a first Atlanta food weekend?",
     body: "Looking for places that feel specific to the city, not just the obvious lists. Bonus points for a good walking plan between stops.",
-    publishedAt: "36m ago",
-    createdAt: "2026-07-10T10:15:00Z",
+    publishedAt: "38m ago",
+    createdAt: "2026-07-17T10:15:00Z",
     imported: false,
     replies: 23,
     reactionLabel: "This sparked discussion"
@@ -101,11 +101,11 @@ export const feedItems: FeedItem[] = [
     title: "What makes a career community actually useful?",
     body: "I keep seeing big communities turn into job boards and launch announcements. What small rituals make people keep showing up?",
     publishedAt: "1h ago",
-    createdAt: "2026-07-10T09:40:00Z",
+    createdAt: "2026-07-17T09:40:00Z",
     imported: false,
     saved: true,
     replies: 18,
-    reactionLabel: "Several members saved this"
+    reactionLabel: "Builders saved this"
   },
   {
     id: "item-4",
@@ -116,7 +116,7 @@ export const feedItems: FeedItem[] = [
     excerpt: "A conversation about editorial interfaces, quieter social spaces, and the value of letting people read before reacting.",
     url: "https://example.com/design-podcast",
     publishedAt: "Yesterday",
-    createdAt: "2026-07-09T15:00:00Z",
+    createdAt: "2026-07-16T15:00:00Z",
     imported: true,
     replies: 9,
     reactionLabel: "Thought-provoking"
@@ -129,10 +129,10 @@ export const feedItems: FeedItem[] = [
     title: "Try the Sunday market near Grant Park before noon",
     body: "Better parking, quieter lines, and the flower vendor still has the good bundles. The coffee stand is worth the wait.",
     publishedAt: "2h ago",
-    createdAt: "2026-07-10T08:05:00Z",
+    createdAt: "2026-07-17T08:05:00Z",
     imported: false,
     replies: 11,
-    reactionLabel: "Members want to try this"
+    reactionLabel: "Locals want to try this"
   },
   {
     id: "item-6",
@@ -142,7 +142,7 @@ export const feedItems: FeedItem[] = [
     title: "Notes on making portfolio work feel less performative",
     excerpt: "A practical essay about showing thinking, constraints, and taste without turning every project into a stage.",
     publishedAt: "3h ago",
-    createdAt: "2026-07-10T07:15:00Z",
+    createdAt: "2026-07-17T07:15:00Z",
     imported: false,
     replies: 7,
     reactionLabel: "Useful to creatives"
@@ -156,10 +156,10 @@ export const feedItems: FeedItem[] = [
     excerpt: "A short official update with closures, transit notes, and expected reopening times.",
     url: "https://example.com/city-update",
     publishedAt: "Today",
-    createdAt: "2026-07-10T06:30:00Z",
+    createdAt: "2026-07-17T06:30:00Z",
     imported: true,
     replies: 4,
-    reactionLabel: "Saved by local members"
+    reactionLabel: "Saved by local readers"
   }
 ];
 
