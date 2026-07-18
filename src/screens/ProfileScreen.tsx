@@ -147,7 +147,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         <FromYouEmptyState theme={theme} onOpenContribute={onOpenContribute} />
       )}
 
-      <SectionHeader title="From This Person" action="Browse Contributions" onAction={() => setShowContributionBrowser(true)} theme={theme} />
+      <SectionHeader title="From This Person" action="Browse" onAction={() => setShowContributionBrowser(true)} theme={theme} />
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
       <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
