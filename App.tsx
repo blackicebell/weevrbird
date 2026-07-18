@@ -26,6 +26,7 @@ import {
   selectFeed,
   setActiveFilter as setUserActiveFilter,
   setActiveTab as setUserActiveTab,
+  setIssuePace as setUserIssuePace,
   submitContribution,
   toggleSavedItem as toggleUserSavedItem,
   toggleUsefulItem as toggleUserUsefulItem,
@@ -46,7 +47,7 @@ import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { palette, radii, shadows, spacing } from "./src/theme/tokens";
 import { useTheme } from "./src/theme/useTheme";
-import { ContributionActivity, FeedItem } from "./src/types/product";
+import { ContributionActivity, FeedItem, IssuePace } from "./src/types/product";
 
 export default function App() {
   return (
@@ -77,6 +78,7 @@ function AppContent() {
   const [detailItem, setDetailItem] = useState<FeedItem | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [tuneOpen, setTuneOpen] = useState(false);
   const [todaySearch, setTodaySearch] = useState("");
   const [search, setSearch] = useState("");
 
@@ -128,21 +130,30 @@ function AppContent() {
   const openDetail = (item: FeedItem) => {
     setActivityOpen(false);
     setSearchOpen(false);
+    setTuneOpen(false);
     setDetailItem(item);
   };
 
   const openSearch = () => {
     setActivityOpen(false);
+    setTuneOpen(false);
     setSearchOpen(true);
     setTodaySearch("");
   };
 
   const openActivity = () => {
     setSearchOpen(false);
+    setTuneOpen(false);
     setActivityOpen(true);
     if (unseenContributionActivity.length > 0) {
       setUserAppState((current) => markContributionActivitySeen(current, unseenContributionActivity.map((item) => item.id)));
     }
+  };
+
+  const openTune = () => {
+    setSearchOpen(false);
+    setActivityOpen(false);
+    setTuneOpen(true);
   };
 
   const closeDetail = () => {
@@ -230,10 +241,12 @@ function AppContent() {
               joinedFeeds={joinedFeeds}
               submittedContributionCount={reviewContributionCount}
               contributionActivityCount={unseenContributionActivity.length}
+              issuePace={userAppState.issuePace}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
               onOpenSearch={openSearch}
               onOpenActivity={openActivity}
+              onOpenTune={openTune}
               onOpenDetail={openDetail}
             />
           )}
@@ -341,10 +354,99 @@ function AppContent() {
               />
             </View>
           )}
+          {tuneOpen && (
+            <View style={[styles.detailOverlay, { backgroundColor: theme.bg }]}>
+              <AppBackground theme={theme} />
+              <TunePanel
+                theme={theme}
+                selectedPace={userAppState.issuePace}
+                onBack={() => setTuneOpen(false)}
+                onSelectPace={(issuePace) => setUserAppState((current) => setUserIssuePace(current, issuePace))}
+              />
+            </View>
+          )}
         </View>
-        {!detailItem && !activityOpen && !searchOpen && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
+        {!detailItem && !activityOpen && !searchOpen && !tuneOpen && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
       </SafeAreaView>
     </>
+  );
+}
+
+function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
+  theme: ReturnType<typeof useTheme>;
+  selectedPace: IssuePace;
+  onBack: () => void;
+  onSelectPace: (pace: IssuePace) => void;
+}) {
+  const options: Array<{ pace: IssuePace; title: string; body: string; meta: string; icon: keyof typeof Ionicons.glyphMap }> = [
+    {
+      pace: "Brief",
+      title: "Brief",
+      body: "A short issue for checking what changed and getting out quickly.",
+      meta: "4 pieces / about 7 min",
+      icon: "flash-outline"
+    },
+    {
+      pace: "Balanced",
+      title: "Balanced",
+      body: "A normal issue with reading, saving, and one useful conversation.",
+      meta: "6 pieces / about 12 min",
+      icon: "newspaper-outline"
+    },
+    {
+      pace: "Deep",
+      title: "Deep",
+      body: "More context when you actually want to settle in and follow a thread.",
+      meta: "9 pieces / about 20 min",
+      icon: "library-outline"
+    }
+  ];
+
+  return (
+    <ScrollView contentContainerStyle={styles.tuneContent}>
+      <View style={styles.panelHeader}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close issue tuning"
+          onPress={onBack}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+        >
+          <Ionicons name="chevron-back" color={theme.text} size={22} />
+        </Pressable>
+        <Text style={[styles.panelKicker, { color: theme.accent }]}>TUNE TODAY</Text>
+      </View>
+
+      <Text style={[styles.panelTitle, { color: theme.text }]}>Choose the pace of your issue.</Text>
+      <Text style={[styles.panelBody, { color: theme.muted }]}>This changes how Weevrbird frames the day: quick check-in, balanced catch-up, or a slower read with more context.</Text>
+
+      <View style={styles.activityStack}>
+        {options.map((option) => {
+          const selected = option.pace === selectedPace;
+          return (
+            <Pressable
+              key={option.pace}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              accessibilityLabel={`Set Today pace to ${option.title}`}
+              onPress={() => onSelectPace(option.pace)}
+              style={({ pressed }) => [styles.tuneOption, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: selected ? theme.accent : theme.line }]}
+            >
+              <View style={[styles.activityIcon, { backgroundColor: selected ? `${theme.accent}18` : theme.panelAlt }]}>
+                <Ionicons name={option.icon} color={theme.accent} size={19} />
+              </View>
+              <View style={styles.activityCopy}>
+                <View style={styles.activityRowTop}>
+                  <Text style={[styles.activityTitle, { color: theme.text }]}>{option.title}</Text>
+                  <Ionicons name={selected ? "checkmark-circle" : "ellipse-outline"} color={selected ? theme.accent : theme.muted} size={19} />
+                </View>
+                <Text style={[styles.activityBody, { color: theme.muted }]}>{option.body}</Text>
+                <Text style={[styles.activityMeta, { color: theme.muted }]}>{option.meta}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+    </ScrollView>
   );
 }
 
@@ -570,6 +672,7 @@ function loadInitialAppState(): Partial<UserAppState> {
     activeTab: tab ?? "Contribute",
     selectedFeedId: feedId,
     activeFilter: "Latest",
+    issuePace: "Balanced",
     draftType: "Recommendation",
     draft: "",
     savedItemIds: ["item-1", "item-3", "local-qa-placed"],
@@ -675,6 +778,11 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
     gap: 16
   },
+  tuneContent: {
+    padding: 20,
+    paddingBottom: 110,
+    gap: 16
+  },
   panelHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -770,6 +878,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     fontFamily: "Inter_700Bold"
+  },
+  tuneOption: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    ...shadows.card
   },
   activityStack: {
     gap: spacing.md,

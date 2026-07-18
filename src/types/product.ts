@@ -13,6 +13,8 @@ export type FeedItemType =
 
 export type SmartfeedFilter = "Latest" | "Conversations" | "Reading" | "Saved";
 
+export type IssuePace = "Brief" | "Balanced" | "Deep";
+
 export type ContentLayer = "Editorial" | "Reading" | "Community";
 
 export type EditionModuleType =

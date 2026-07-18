@@ -1,5 +1,5 @@
 import { AppTab } from "./editorial";
-import { SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
+import { IssuePace, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
 
 export type UserAppState = {
   onboarded: boolean;
@@ -9,6 +9,7 @@ export type UserAppState = {
   activeTab: AppTab;
   selectedFeedId: string;
   activeFilter: SmartfeedFilter;
+  issuePace: IssuePace;
   draftType: string;
   draft: string;
   savedItemIds: string[];
@@ -27,6 +28,7 @@ export const DEFAULT_USER_APP_STATE: UserAppState = {
   activeTab: "Today",
   selectedFeedId: "atlanta",
   activeFilter: "Latest",
+  issuePace: "Balanced",
   draftType: "Note",
   draft: "",
   savedItemIds: [],
@@ -50,6 +52,7 @@ export function hydrateUserAppState(
     ...createDefaultUserAppState(defaultSavedItemIds),
     ...persistedState,
     selectedInterests: persistedState.selectedInterests ?? DEFAULT_USER_APP_STATE.selectedInterests,
+    issuePace: persistedState.issuePace ?? DEFAULT_USER_APP_STATE.issuePace,
     savedItemIds: persistedState.savedItemIds ?? defaultSavedItemIds,
     usefulItemIds: persistedState.usefulItemIds ?? [],
     seenContributionActivityIds: persistedState.seenContributionActivityIds ?? [],
@@ -78,6 +81,10 @@ export function selectFeed(state: UserAppState, selectedFeedId: string): UserApp
 
 export function setActiveFilter(state: UserAppState, activeFilter: SmartfeedFilter): UserAppState {
   return { ...state, activeFilter };
+}
+
+export function setIssuePace(state: UserAppState, issuePace: IssuePace): UserAppState {
+  return { ...state, issuePace };
 }
 
 export function toggleSavedItem(state: UserAppState, itemId: string): UserAppState {

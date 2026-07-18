@@ -13,20 +13,23 @@ import {
 import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { EditionModule, FeedItem, Smartfeed } from "../types/product";
+import { EditionModule, FeedItem, IssuePace, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, setSelectedFeed, setActiveTab, onOpenSearch, onOpenActivity, onOpenDetail }: {
+export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, setSelectedFeed, setActiveTab, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
   theme: AppTheme;
   joinedFeeds: Smartfeed[];
   submittedContributionCount: number;
   contributionActivityCount: number;
+  issuePace: IssuePace;
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
   onOpenSearch: () => void;
   onOpenActivity: () => void;
+  onOpenTune: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(), [joinedFeeds]);
+  const issuePromise = getIssuePromise(issuePace);
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
 
@@ -60,9 +63,9 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
         </View>
         <Text style={[styles.mastheadTitle, { color: theme.text }]}>Good{"\n"}morning.</Text>
         <View style={[styles.coverRule, { backgroundColor: theme.text }]} />
-        <Text style={[styles.coverSubtitle, { color: theme.muted }]}>One personal issue. See what changed, save what matters, join one useful conversation, then leave caught up.</Text>
+        <Text style={[styles.coverSubtitle, { color: theme.muted }]}>{issuePromise.subtitle}</Text>
         <View style={styles.issuePromiseRow}>
-          {["6 pieces", "12 min", "Clear ending"].map((item) => (
+          {issuePromise.chips.map((item) => (
             <View key={item} style={[styles.issuePromisePill, { borderColor: theme.line, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.56)" }]}>
               <Text style={[styles.issuePromiseText, { color: theme.text }]}>{item}</Text>
             </View>
@@ -92,7 +95,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
         </Pressable>
       )}
 
-      <SectionHeader title="Today, In Order" action="Tune" theme={theme} />
+      <SectionHeader title="Today, In Order" action="Tune" onAction={onOpenTune} theme={theme} />
       {leadModule && (
         <EditionModuleCard
           module={leadModule}
@@ -167,6 +170,27 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
       </View>
     </View>
   );
+}
+
+function getIssuePromise(issuePace: IssuePace) {
+  if (issuePace === "Brief") {
+    return {
+      subtitle: "A tighter personal issue. See what changed, keep the useful parts, and leave with less open.",
+      chips: ["4 pieces", "7 min", "Quiet finish"]
+    };
+  }
+
+  if (issuePace === "Deep") {
+    return {
+      subtitle: "A slower personal issue. Read with context, follow one conversation, and save what deserves a return.",
+      chips: ["9 pieces", "20 min", "More context"]
+    };
+  }
+
+  return {
+    subtitle: "One personal issue. See what changed, save what matters, join one useful conversation, then leave caught up.",
+    chips: ["6 pieces", "12 min", "Clear ending"]
+  };
 }
 
 function EditionModuleCard({ module, theme, featured, onOpenFeed, onOpenLibrary, onOpenDetail }: {
