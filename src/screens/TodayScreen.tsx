@@ -105,7 +105,14 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, se
       )}
       {remainingModules.map((module) => (
         module.type === "caught_up" ? (
-          <CaughtUpEnding key={module.id} module={module} theme={theme} onOpenLibrary={() => setActiveTab("Library")} />
+          <CaughtUpEnding
+            key={module.id}
+            module={module}
+            theme={theme}
+            submittedContributionCount={submittedContributionCount}
+            onOpenLibrary={() => setActiveTab("Library")}
+            onOpenContribute={() => setActiveTab("Contribute")}
+          />
         ) : (
           <EditionModuleCard
             key={module.id}
@@ -131,9 +138,9 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
     Editorial: modules.filter((module) => module.layer === "Editorial").length
   };
   const path = [
-    { label: "Changed", value: counts.Editorial, tone: getLayerTone("Editorial") },
-    { label: "Worth reading", value: counts.Reading, tone: getLayerTone("Reading") },
-    { label: "Worth joining", value: counts.Community, tone: getLayerTone("Community") }
+    { label: "Read", body: `${counts.Editorial + counts.Reading} finite item${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
+    { label: "Save", body: "Keep what may matter later", tone: getLayerTone("Reading") },
+    { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} useful prompt${counts.Community === 1 ? "" : "s"}` : "Place signal privately", tone: getLayerTone("Community") }
   ];
 
   return (
@@ -142,15 +149,15 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
         <Text style={[styles.kicker, { color: theme.accent }]}>MORNING FLIGHT</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>Built to finish</Text>
       </View>
-      <Text style={[styles.editionBriefTitle, { color: theme.text }]}>Your issue has three jobs.</Text>
-      <Text style={[styles.body, { color: theme.muted }]}>Catch up quickly, choose what to keep, and spend your attention in one place on purpose.</Text>
+      <Text style={[styles.editionBriefTitle, { color: theme.text }]}>Read, save, contribute.</Text>
+      <Text style={[styles.body, { color: theme.muted }]}>Catch up quickly, keep the useful parts, and add signal only when you know where it belongs.</Text>
       <View style={styles.issuePath}>
         {path.map((step, index) => (
           <View key={step.label} style={[styles.issuePathItem, { borderColor: `${step.tone}36`, backgroundColor: `${step.tone}10` }]}>
             <Text style={[styles.issuePathNumber, { color: step.tone }]}>{index + 1}</Text>
             <View style={styles.issuePathCopy}>
               <Text style={[styles.issuePathLabel, { color: theme.text }]}>{step.label}</Text>
-              <Text style={[styles.meta, { color: theme.muted }]}>{step.value} item{step.value === 1 ? "" : "s"}</Text>
+              <Text style={[styles.meta, { color: theme.muted }]}>{step.body}</Text>
             </View>
           </View>
         ))}
@@ -304,10 +311,12 @@ function QuietActionRow({ module, theme, editorial }: { module: EditionModule; t
   );
 }
 
-function CaughtUpEnding({ module, theme, onOpenLibrary }: {
+function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibrary, onOpenContribute }: {
   module: EditionModule;
   theme: AppTheme;
+  submittedContributionCount: number;
   onOpenLibrary: () => void;
+  onOpenContribute: () => void;
 }) {
   const editorial = feedEditorialMeta[module.feed.id] ?? feedEditorialMeta.atlanta;
   return (
@@ -318,6 +327,17 @@ function CaughtUpEnding({ module, theme, onOpenLibrary }: {
       <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>END OF ISSUE</Text>
       <Text style={[styles.caughtUpTitle, { color: theme.text }]}>You can leave now.</Text>
       <Text style={[styles.caughtUpBody, { color: theme.muted }]}>Six useful pieces. Three saved. One conversation waiting if you want it. Nothing urgent is hiding below.</Text>
+      <View style={styles.afterIssueStack}>
+        <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} onPress={onOpenLibrary} />
+        <AfterIssueRow
+          icon="create-outline"
+          title={submittedContributionCount > 0 ? "Private signals are waiting" : "Add signal when it is useful"}
+          body={submittedContributionCount > 0 ? `${submittedContributionCount} contribution${submittedContributionCount === 1 ? "" : "s"} ready to place.` : "Write privately first, then choose the right Smartfeed."}
+          theme={theme}
+          editorial={editorial}
+          onPress={onOpenContribute}
+        />
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open Library"
@@ -328,6 +348,31 @@ function CaughtUpEnding({ module, theme, onOpenLibrary }: {
         <Ionicons name="arrow-forward" color="#FFFDF8" size={15} />
       </Pressable>
     </View>
+  );
+}
+
+function AfterIssueRow({ icon, title, body, theme, editorial, onPress }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+  theme: AppTheme;
+  editorial: (typeof feedEditorialMeta)[string];
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={({ pressed }) => [styles.afterIssueRow, pressed && styles.caughtUpButtonPressed, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.56)" }]}
+    >
+      <Ionicons name={icon} color={editorial.accent} size={18} />
+      <View style={styles.afterIssueCopy}>
+        <Text style={[styles.afterIssueTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{body}</Text>
+      </View>
+      <Ionicons name="chevron-forward" color={theme.muted} size={16} />
+    </Pressable>
   );
 }
 
@@ -817,6 +862,29 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlign: "center",
     fontFamily: "Inter_400Regular"
+  },
+  afterIssueStack: {
+    width: "100%",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm
+  },
+  afterIssueRow: {
+    minHeight: 62,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  afterIssueCopy: {
+    flex: 1,
+    gap: 2
+  },
+  afterIssueTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
   },
   caughtUpButton: {
     minHeight: 44,
