@@ -356,7 +356,8 @@ function AppContent() {
                 onOpenDetail={openDetail}
                 onOpenLibrary={() => {
                   setSearchOpen(false);
-                  setSearch(todaySearch);
+                  const query = todaySearch.trim();
+                  setSearch(query);
                   setActiveTab("Library");
                 }}
               />
