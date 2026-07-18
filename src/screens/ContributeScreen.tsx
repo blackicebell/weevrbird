@@ -37,6 +37,8 @@ export function ContributeScreen({
   onSubmitContribution: (contribution: SubmittedContribution) => void;
   onPlaceContribution: (contributionId: string, feedId: string) => void;
 }) {
+  const scrollViewRef = React.useRef<ScrollView | null>(null);
+  const handoffYRef = React.useRef(0);
   const [submittedContributionId, setSubmittedContributionId] = React.useState<string | null>(null);
   const [selectedReviewFeedId, setSelectedReviewFeedId] = React.useState<string | null>(null);
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
@@ -55,6 +57,15 @@ export function ContributeScreen({
   const reviewContributions = submittedContributions.filter((contribution) => contribution.status === "review");
   const placedContributionCount = submittedContributions.filter((contribution) => contribution.status === "placed").length;
   const placementFeeds = localDataService.getFeeds().filter((feed) => feed.joined).slice(0, 4);
+
+  const scrollToHandoff = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(handoffYRef.current - 12, 0),
+        animated: true
+      });
+    }, 80);
+  };
 
   const submit = () => {
     if (!trimmedDraft) {
@@ -80,11 +91,12 @@ export function ContributeScreen({
       createdAt,
       status: "review"
     });
+    scrollToHandoff();
   };
 
   return (
     <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.kicker, { color: theme.accent }]}>ADD USEFUL SIGNAL</Text>
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
         <Text style={[styles.body, { color: theme.muted }]}>Write one useful contribution, keep it private while you choose where it belongs, then send it to a Smartfeed.</Text>
@@ -157,24 +169,26 @@ export function ContributeScreen({
             guidance={contributionGuidance}
           />
         )}
-        {latestContribution && (
-          <ContributionConfirmation contribution={latestContribution} theme={theme} />
-        )}
-        {reviewContributions.length > 0 && (
-          <InlineReviewPlacement
-            contribution={reviewContributions[0]}
-            selectedFeedId={selectedReviewFeedId ?? reviewContributions[0].feedId}
-            placementFeeds={placementFeeds}
-            theme={theme}
-            onSelectFeed={setSelectedReviewFeedId}
-            onPlace={() => {
-              const feedId = selectedReviewFeedId ?? reviewContributions[0].feedId;
-              onPlaceContribution(reviewContributions[0].id, feedId);
-              setSubmittedContributionId(reviewContributions[0].id);
-              setSelectedReviewFeedId(null);
-            }}
-          />
-        )}
+        <View style={styles.handoffStack} onLayout={(event) => { handoffYRef.current = event.nativeEvent.layout.y; }}>
+          {latestContribution && (
+            <ContributionConfirmation contribution={latestContribution} theme={theme} />
+          )}
+          {reviewContributions.length > 0 && (
+            <InlineReviewPlacement
+              contribution={reviewContributions[0]}
+              selectedFeedId={selectedReviewFeedId ?? reviewContributions[0].feedId}
+              placementFeeds={placementFeeds}
+              theme={theme}
+              onSelectFeed={setSelectedReviewFeedId}
+              onPlace={() => {
+                const feedId = selectedReviewFeedId ?? reviewContributions[0].feedId;
+                onPlaceContribution(reviewContributions[0].id, feedId);
+                setSubmittedContributionId(reviewContributions[0].id);
+                setSelectedReviewFeedId(null);
+              }}
+            />
+          )}
+        </View>
         <View style={[styles.reviewQueue, { borderColor: theme.line, backgroundColor: theme.panel }]}>
           <Text style={[styles.qualityTitle, { color: theme.text }]}>Recent contributions</Text>
           {submittedContributions.length > 0 ? (
@@ -517,6 +531,9 @@ const styles = StyleSheet.create({
   },
   saveAction: {
     gap: spacing.sm
+  },
+  handoffStack: {
+    gap: 18
   },
   saveActionNote: {
     fontSize: 12,
