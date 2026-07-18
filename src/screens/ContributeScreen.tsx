@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 190,
-    gap: 18
+    gap: 16
   },
   kicker: {
     fontSize: 12,
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   handoffStack: {
-    gap: 18
+    gap: spacing.md
   },
   saveActionNote: {
     fontSize: 12,
@@ -730,8 +730,8 @@ const styles = StyleSheet.create({
   inlineReviewPanel: {
     borderWidth: 1,
     borderRadius: 14,
-    padding: spacing.lg,
-    gap: spacing.md,
+    padding: spacing.md,
+    gap: spacing.sm,
     ...shadows.card
   },
   inlineReviewTop: {
