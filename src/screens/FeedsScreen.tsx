@@ -143,9 +143,9 @@ function FromYouFeedMarker({ theme, editorial, feed, count }: {
         <Ionicons name="checkmark-circle-outline" color={editorial.accent} size={19} />
       </View>
       <View style={styles.fromYouMarkerCopy}>
-        <Text style={[styles.fromYouMarkerTitle, { color: theme.text }]}>From You</Text>
+        <Text style={[styles.fromYouMarkerTitle, { color: theme.text }]}>Placed from your review</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>
-          {count} placed signal{count === 1 ? "" : "s"} now living in {feed.name}.
+          {count} signal{count === 1 ? "" : "s"} you chose to make visible in {feed.name}.
         </Text>
       </View>
     </View>

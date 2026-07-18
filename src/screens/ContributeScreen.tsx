@@ -53,6 +53,7 @@ export function ContributeScreen({
     ? submittedContributions.find((contribution) => contribution.id === submittedContributionId)
     : submittedContributions[0];
   const reviewContributions = submittedContributions.filter((contribution) => contribution.status === "review");
+  const placedContributionCount = submittedContributions.filter((contribution) => contribution.status === "placed").length;
   const placementFeeds = localDataService.getFeeds().filter((feed) => feed.joined).slice(0, 4);
 
   const submit = () => {
@@ -85,7 +86,8 @@ export function ContributeScreen({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.kicker, { color: theme.accent }]}>ADD USEFUL SIGNAL</Text>
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>Share something specific enough to help someone read, save, try, or join with less noise.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>Write one useful signal, keep it private while you choose where it belongs, then place it inside a Smartfeed.</Text>
+        <ContributionLoopSummary reviewCount={reviewContributions.length} placedCount={placedContributionCount} theme={theme} />
         <View style={[styles.guidancePanel, { backgroundColor: theme.panel, borderColor: theme.line }]}>
           <View style={[styles.guidanceIcon, { backgroundColor: contributionGuidance.color }]}>
             <Ionicons name={contributionGuidance.icon} color={theme.text} size={18} />
@@ -123,15 +125,17 @@ export function ContributeScreen({
             <Text style={[styles.meta, { color: theme.muted }]}>Draft preserved locally</Text>
           </View>
         </View>
-        <View style={[styles.qualityPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
-          <Text style={[styles.qualityTitle, { color: theme.text }]}>Before it joins an issue</Text>
-          {qualityChecks.map((check) => (
-            <View key={check.label} style={styles.qualityRow}>
-              <Ionicons name={check.complete ? "checkmark-circle" : "ellipse-outline"} color={check.complete ? theme.success : theme.muted} size={18} />
-              <Text style={[styles.meta, { color: check.complete ? theme.text : theme.muted }]}>{check.label}</Text>
-            </View>
-          ))}
-        </View>
+        {!!trimmedDraft && (
+          <View style={[styles.qualityPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+            <Text style={[styles.qualityTitle, { color: theme.text }]}>Before it goes anywhere</Text>
+            {qualityChecks.map((check) => (
+              <View key={check.label} style={styles.qualityRow}>
+                <Ionicons name={check.complete ? "checkmark-circle" : "ellipse-outline"} color={check.complete ? theme.success : theme.muted} size={18} />
+                <Text style={[styles.meta, { color: check.complete ? theme.text : theme.muted }]}>{check.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
         {!!trimmedDraft && (
           <ContributionPreview
             type={draftType}
@@ -169,9 +173,35 @@ export function ContributeScreen({
           <Ionicons name="shield-checkmark-outline" color={theme.success} size={22} />
           <Text style={[styles.body, { color: theme.muted }]}>Specific beats viral. Useful context helps people decide whether to save, reply, or move on.</Text>
         </View>
-        <PrimaryButton label="Save to review queue" icon="send-outline" onPress={submit} theme={theme} />
+        <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function ContributionLoopSummary({ reviewCount, placedCount, theme }: {
+  reviewCount: number;
+  placedCount: number;
+  theme: AppTheme;
+}) {
+  const steps = [
+    { icon: "create-outline", label: "Write", body: "Capture the useful bit." },
+    { icon: "file-tray-outline", label: "Review", body: reviewCount > 0 ? `${reviewCount} waiting` : "Choose where it fits." },
+    { icon: "checkmark-circle-outline", label: "Place", body: placedCount > 0 ? `${placedCount} placed` : "Make it visible." }
+  ] as const;
+
+  return (
+    <View style={[styles.loopSummary, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      {steps.map((step, index) => (
+        <View key={step.label} style={styles.loopStep}>
+          <View style={[styles.loopStepIcon, { backgroundColor: index === 1 && reviewCount > 0 ? theme.panelAlt : "rgba(221, 240, 228, 0.48)" }]}>
+            <Ionicons name={step.icon} color={theme.accent} size={16} />
+          </View>
+          <Text style={[styles.loopStepLabel, { color: theme.text }]}>{step.label}</Text>
+          <Text style={[styles.loopStepBody, { color: theme.muted }]}>{step.body}</Text>
+        </View>
+      ))}
+    </View>
   );
 }
 
@@ -199,8 +229,8 @@ function InlineReviewPlacement({
           <Ionicons name="file-tray-full-outline" color={theme.text} size={18} />
         </View>
         <View style={styles.guidanceCopy}>
-          <Text style={[styles.qualityTitle, { color: theme.text }]}>Place this signal now</Text>
-          <Text style={[styles.meta, { color: theme.muted }]}>Choose where it belongs before it joins the issue.</Text>
+          <Text style={[styles.qualityTitle, { color: theme.text }]}>Ready to place</Text>
+          <Text style={[styles.meta, { color: theme.muted }]}>Pick the Smartfeed where this will be most useful.</Text>
         </View>
       </View>
       <Text style={[styles.submittedBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
@@ -263,7 +293,7 @@ function ContributionPreview({ type, body, theme, guidance }: {
       </View>
       <Text style={[styles.previewBody, { color: theme.text }]}>{body}</Text>
       <View style={[styles.previewRule, { backgroundColor: theme.line }]} />
-      <Text style={[styles.meta, { color: theme.muted }]}>Status after saving: ready to place</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>After saving: private until you place it</Text>
     </View>
   );
 }
@@ -275,9 +305,9 @@ function ContributionConfirmation({ contribution, theme }: { contribution: Submi
     <View style={[styles.confirmationPanel, { borderColor: "#CFE8DA", backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.08)" : "#F2FBF6" }]}>
       <Ionicons name={placed ? "checkmark-done-circle-outline" : "checkmark-circle"} color={theme.success} size={22} />
       <View style={styles.guidanceCopy}>
-        <Text style={[styles.qualityTitle, { color: theme.text }]}>{placed ? "Placed in an issue" : "Saved and ready to place"}</Text>
+        <Text style={[styles.qualityTitle, { color: theme.text }]}>{placed ? "Placed in a Smartfeed" : "Saved privately"}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>
-          {placed ? `${contribution.type} / Marked for a future issue` : `${contribution.type} / Choose a Smartfeed below`}
+          {placed ? `${contribution.type} / People can now find it where it belongs` : `${contribution.type} / Choose a Smartfeed below when you are ready`}
         </Text>
       </View>
     </View>
@@ -292,10 +322,10 @@ function SubmittedContributionRow({ contribution, theme }: { contribution: Submi
     <View style={[styles.submittedRow, { borderColor: theme.line, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.68)" }]}>
       <View style={styles.submittedTop}>
         <Text style={[styles.previewKicker, { color: theme.accent }]}>{contribution.type}</Text>
-        <Text style={[styles.statusPill, { color: theme.success }]}>{placed ? "Placed" : "Review"}</Text>
+        <Text style={[styles.statusPill, { color: theme.success }]}>{placed ? "Placed" : "Private"}</Text>
       </View>
       <Text style={[styles.submittedBody, { color: theme.text }]} numberOfLines={2}>{contribution.body}</Text>
-      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${new Date(contribution.placedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : `Saved ${savedAt}`}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${new Date(contribution.placedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : `Saved privately ${savedAt}`}</Text>
     </View>
   );
 }
@@ -639,5 +669,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.md,
     alignItems: "flex-start"
+  },
+  loopSummary: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  loopStep: {
+    flex: 1,
+    minHeight: 72,
+    gap: 5
+  },
+  loopStepIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  loopStepLabel: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  loopStepBody: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_500Medium"
   }
 });

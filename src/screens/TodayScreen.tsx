@@ -72,7 +72,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, se
       {submittedContributionCount > 0 && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open contribution review queue"
+          accessibilityLabel="Open private contributions"
           onPress={() => setActiveTab("Contribute")}
           style={({ pressed }) => [styles.reviewNudge, pressed && styles.reviewNudgePressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
         >
@@ -81,9 +81,9 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, se
           </View>
           <View style={styles.reviewNudgeCopy}>
             <Text style={[styles.reviewNudgeTitle, { color: theme.text }]}>
-              {submittedContributionCount} contribution{submittedContributionCount === 1 ? "" : "s"} waiting in review
+              {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} ready to place
             </Text>
-            <Text style={[styles.meta, { color: theme.muted }]}>Your signal is saved locally before it joins an issue.</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>Choose the Smartfeed where each signal will help most.</Text>
           </View>
           <Ionicons name="chevron-forward" color={theme.muted} size={18} />
         </Pressable>

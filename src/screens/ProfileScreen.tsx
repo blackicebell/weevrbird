@@ -120,7 +120,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
       <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
-      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} in review` : "Placed" : "Start"} theme={theme} />
+      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Placed" : "Start"} theme={theme} />
       {submittedContributions.length > 0 ? (
         <View style={styles.fromYouStack}>
           {submittedContributions.slice(0, 3).map((contribution) => (
@@ -254,7 +254,7 @@ function FromYouEmptyState({ theme, onOpenContribute }: { theme: AppTheme; onOpe
       </View>
       <View style={styles.profileCollectionCopy}>
         <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Add one useful signal</Text>
-        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Write something specific, save it to review, then place it inside a Smartfeed.</Text>
+        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Save it privately first. Place it when you know which Smartfeed needs it.</Text>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -288,12 +288,12 @@ function SubmittedContributionCard({ contribution, theme, onOpen }: {
       <View style={styles.submittedContributionTop}>
         <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>{contribution.type} in {feed.name}</Text>
         <View style={[styles.reviewBadge, { borderColor: editorial.secondary, backgroundColor: `${editorial.secondary}88` }]}>
-          <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Review"}</Text>
+          <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Private"}</Text>
         </View>
       </View>
       <Text style={[styles.submittedContributionBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
-      <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{placed ? `Placed in ${feed.name}.` : "Waiting to be placed in a future issue."}</Text>
-      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved ${savedAt}`}</Text>
+      <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{placed ? `Visible in ${feed.name}.` : "Private until you choose where it belongs."}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved privately ${savedAt}`}</Text>
     </Pressable>
   );
 }
@@ -319,10 +319,10 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
         <View style={styles.submittedContributionTop}>
           <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>{contribution.type} / {feed.name}</Text>
           <View style={[styles.reviewBadge, { borderColor: editorial.secondary, backgroundColor: `${editorial.secondary}88` }]}>
-            <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Review"}</Text>
+            <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Private"}</Text>
           </View>
         </View>
-        <Text style={[styles.shelfTitle, { color: theme.text }]}>{placed ? "Your signal is placed." : "Review where this belongs."}</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>{placed ? "Your signal is placed." : "Choose where this belongs."}</Text>
         <Text style={[styles.submittedDetailBody, { color: theme.text }]}>{contribution.body}</Text>
         {!placed && (
           <View style={styles.placementPanel}>
@@ -356,7 +356,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
             <View style={[styles.placementPreview, { borderColor: selectedEditorial.secondary, backgroundColor: selectedEditorial.paper }]}>
               <Text style={[styles.moduleEyebrow, { color: selectedEditorial.accent }]}>{selectedFeed.name} preview</Text>
               <Text style={[styles.submittedContributionBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
-              <Text style={[styles.profileContributionSignal, { color: selectedEditorial.accent }]}>This will move from review into a future {selectedFeed.name} issue.</Text>
+              <Text style={[styles.profileContributionSignal, { color: selectedEditorial.accent }]}>This will become visible inside {selectedFeed.name}.</Text>
             </View>
             <Pressable
               accessibilityRole="button"
@@ -372,8 +372,8 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
         <View style={[styles.submittedStatusPanel, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.64)" }]}>
           <Ionicons name={placed ? "checkmark-circle-outline" : "time-outline"} color={editorial.accent} size={20} />
           <View style={styles.profileCollectionCopy}>
-            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Placed in ${feed.name}` : "Not public yet"}</Text>
-            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "This is in your local review queue until you choose where it belongs."}</Text>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Placed in ${feed.name}` : "Private for now"}</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "Only you can see this until you place it."}</Text>
           </View>
         </View>
         <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved ${formatContributionTime(contribution.createdAt)}`}</Text>
