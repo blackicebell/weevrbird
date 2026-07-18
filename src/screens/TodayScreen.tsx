@@ -15,14 +15,18 @@ import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { EditionModule, FeedItem, IssuePace, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, setSelectedFeed, setActiveTab, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
+export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, savedItemIds, usefulItemIds, setSelectedFeed, setActiveTab, toggleSavedItem, toggleUsefulItem, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
   theme: AppTheme;
   joinedFeeds: Smartfeed[];
   submittedContributionCount: number;
   contributionActivityCount: number;
   issuePace: IssuePace;
+  savedItemIds: string[];
+  usefulItemIds: string[];
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
+  toggleSavedItem: (itemId: string) => void;
+  toggleUsefulItem: (itemId: string) => void;
   onOpenSearch: () => void;
   onOpenActivity: () => void;
   onOpenTune: () => void;
@@ -101,6 +105,10 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
           module={leadModule}
           theme={theme}
           featured
+          savedItemIds={savedItemIds}
+          usefulItemIds={usefulItemIds}
+          toggleSavedItem={toggleSavedItem}
+          toggleUsefulItem={toggleUsefulItem}
           onOpenFeed={(feed) => {
             setSelectedFeed(feed);
             setActiveTab("Feeds");
@@ -124,6 +132,10 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
             key={module.id}
             module={module}
             theme={theme}
+            savedItemIds={savedItemIds}
+            usefulItemIds={usefulItemIds}
+            toggleSavedItem={toggleSavedItem}
+            toggleUsefulItem={toggleUsefulItem}
             onOpenFeed={(feed) => {
               setSelectedFeed(feed);
               setActiveTab("Feeds");
@@ -193,10 +205,14 @@ function getIssuePromise(issuePace: IssuePace) {
   };
 }
 
-function EditionModuleCard({ module, theme, featured, onOpenFeed, onOpenLibrary, onOpenDetail }: {
+function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenFeed, onOpenLibrary, onOpenDetail }: {
   module: EditionModule;
   theme: AppTheme;
   featured?: boolean;
+  savedItemIds: string[];
+  usefulItemIds: string[];
+  toggleSavedItem: (itemId: string) => void;
+  toggleUsefulItem: (itemId: string) => void;
   onOpenFeed: (feed: Smartfeed) => void;
   onOpenLibrary: () => void;
   onOpenDetail: (item: FeedItem) => void;
@@ -258,7 +274,15 @@ function EditionModuleCard({ module, theme, featured, onOpenFeed, onOpenLibrary,
           <Ionicons name="arrow-forward" color={editorial.accent} size={15} />
         </View>
       </View>
-      <QuietActionRow module={module} theme={theme} editorial={editorial} />
+      <QuietActionRow
+        module={module}
+        theme={theme}
+        editorial={editorial}
+        savedItemIds={savedItemIds}
+        usefulItemIds={usefulItemIds}
+        toggleSavedItem={toggleSavedItem}
+        toggleUsefulItem={toggleUsefulItem}
+      />
     </Pressable>
   );
 }
@@ -310,7 +334,16 @@ function ReadingListModule({ module, theme, editorial }: { module: EditionModule
   );
 }
 
-function QuietActionRow({ module, theme, editorial }: { module: EditionModule; theme: AppTheme; editorial: (typeof feedEditorialMeta)[string] }) {
+function QuietActionRow({ module, theme, editorial, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem }: {
+  module: EditionModule;
+  theme: AppTheme;
+  editorial: (typeof feedEditorialMeta)[string];
+  savedItemIds: string[];
+  usefulItemIds: string[];
+  toggleSavedItem: (itemId: string) => void;
+  toggleUsefulItem: (itemId: string) => void;
+}) {
+  const targetItem = module.item ?? module.items?.[0];
   const actions = module.type === "recommendation"
     ? ["Want to try", "Save"]
     : module.type === "community_question"
@@ -319,23 +352,55 @@ function QuietActionRow({ module, theme, editorial }: { module: EditionModule; t
 
   return (
     <View style={styles.quietActionRow}>
-      {actions.map((action) => (
-        <Pressable
-          key={`${module.id}-${action}`}
-          accessibilityRole="button"
-          accessibilityLabel={`${action} ${module.title}`}
-          onPress={() => undefined}
-          style={({ pressed }) => [
-            styles.quietActionPill,
-            pressed && styles.quietActionPillPressed,
-            { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.56)" }
-          ]}
-        >
-          <Text style={[styles.quietActionText, { color: theme.muted }]}>{action}</Text>
-        </Pressable>
-      ))}
+      {actions.map((action) => {
+        const isSaveAction = action === "Save";
+        const selected = targetItem ? isSaveAction ? savedItemIds.includes(targetItem.id) : usefulItemIds.includes(targetItem.id) : false;
+        const label = getQuietActionLabel(action, selected);
+
+        return (
+          <Pressable
+            key={`${module.id}-${action}`}
+            accessibilityRole="button"
+            accessibilityLabel={`${label} ${module.title}`}
+            accessibilityState={{ selected }}
+            disabled={!targetItem}
+            onPress={(event) => {
+              event.stopPropagation();
+              if (!targetItem) return;
+              isSaveAction ? toggleSavedItem(targetItem.id) : toggleUsefulItem(targetItem.id);
+            }}
+            style={({ pressed }) => [
+              styles.quietActionPill,
+              selected && styles.quietActionPillSelected,
+              pressed && styles.quietActionPillPressed,
+              {
+                borderColor: selected ? editorial.accent : editorial.secondary,
+                backgroundColor: selected ? `${editorial.secondary}AA` : theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.56)"
+              }
+            ]}
+          >
+            <Ionicons name={selected ? "checkmark-circle" : getQuietActionIcon(action)} color={selected ? editorial.accent : theme.muted} size={15} />
+            <Text style={[styles.quietActionText, { color: selected ? editorial.accent : theme.muted }]}>{label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
+}
+
+function getQuietActionLabel(action: string, selected: boolean) {
+  if (!selected) return action;
+  if (action === "Save") return "Saved";
+  if (action === "Follow") return "Following";
+  if (action === "Want to try") return "Want to try";
+  return "Useful";
+}
+
+function getQuietActionIcon(action: string): keyof typeof Ionicons.glyphMap {
+  if (action === "Save") return "bookmark-outline";
+  if (action === "Follow") return "notifications-outline";
+  if (action === "Want to try") return "sparkles-outline";
+  return "checkmark-circle-outline";
 }
 
 function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibrary, onOpenContribute }: {
@@ -850,10 +915,21 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   quietActionPill: {
+    minHeight: 34,
     borderWidth: 1,
     borderRadius: radii.round,
     paddingHorizontal: spacing.md,
-    paddingVertical: 7
+    paddingVertical: 7,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  quietActionPillSelected: {
+    shadowColor: "#0F3D2E",
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 1
   },
   quietActionPillPressed: {
     opacity: 0.72,

@@ -242,8 +242,12 @@ function AppContent() {
               submittedContributionCount={reviewContributionCount}
               contributionActivityCount={unseenContributionActivity.length}
               issuePace={userAppState.issuePace}
+              savedItemIds={userAppState.savedItemIds}
+              usefulItemIds={userAppState.usefulItemIds}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
+              toggleSavedItem={toggleSavedItem}
+              toggleUsefulItem={toggleUsefulItem}
               onOpenSearch={openSearch}
               onOpenActivity={openActivity}
               onOpenTune={openTune}
