@@ -202,7 +202,7 @@ function LibraryTabContent({
   if (activeTab === "Opened") {
     return openedItems.length > 0 ? (
       <>
-        <SectionHeader title="Recently opened" theme={theme} />
+        <SectionHeader title="Private reading history" theme={theme} />
         {openedItems.map((item) => <LibraryItem key={`library-opened-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
       </>
     ) : (
