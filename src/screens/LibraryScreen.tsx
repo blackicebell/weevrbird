@@ -18,6 +18,7 @@ export function LibraryScreen({
   theme,
   savedItems,
   submittedContributions,
+  selectedInterests,
   search,
   setSearch,
   savedItemIds,
@@ -29,6 +30,7 @@ export function LibraryScreen({
   theme: AppTheme;
   savedItems: FeedItem[];
   submittedContributions: SubmittedContribution[];
+  selectedInterests: string[];
   search: string;
   setSearch: (value: string) => void;
   savedItemIds: string[];
@@ -106,6 +108,7 @@ export function LibraryScreen({
                 key={item.id}
                 item={{ ...item, saved: savedItemIds.includes(item.id) }}
                 theme={theme}
+                viewerInterests={selectedInterests}
                 saved={savedItemIds.includes(item.id)}
                 markedUseful={usefulItemIds.includes(item.id)}
                 onToggleSaved={() => toggleSavedItem(item.id)}

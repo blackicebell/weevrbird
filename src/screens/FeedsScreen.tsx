@@ -13,6 +13,7 @@ import { FeedItem, Smartfeed, SmartfeedFilter } from "../types/product";
 export function FeedsScreen(props: {
   theme: AppTheme;
   selectedFeed: Smartfeed;
+  selectedInterests: string[];
   setSelectedFeed: (feed: Smartfeed) => void;
   activeFilter: SmartfeedFilter;
   setActiveFilter: (filter: SmartfeedFilter) => void;
@@ -23,7 +24,7 @@ export function FeedsScreen(props: {
   toggleUsefulItem: (itemId: string) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const { theme, selectedFeed, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
+  const { theme, selectedFeed, selectedInterests, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
   const editorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
   const pace = getFeedPace(selectedFeed);
   const feedFit = getFeedFitSignal(selectedFeed);
@@ -95,6 +96,7 @@ export function FeedsScreen(props: {
                   key={item.id}
                   item={item}
                   theme={theme}
+                  viewerInterests={selectedInterests}
                   saved={savedItemIds.includes(item.id)}
                   markedUseful={usefulItemIds.includes(item.id)}
                   onToggleSaved={() => toggleSavedItem(item.id)}
@@ -109,6 +111,7 @@ export function FeedsScreen(props: {
               key={item.id}
               item={item}
               theme={theme}
+              viewerInterests={selectedInterests}
               saved={savedItemIds.includes(item.id)}
               markedUseful={usefulItemIds.includes(item.id)}
               onToggleSaved={() => toggleSavedItem(item.id)}
@@ -122,6 +125,7 @@ export function FeedsScreen(props: {
               key={item.id}
               item={item}
               theme={theme}
+              viewerInterests={selectedInterests}
               saved={savedItemIds.includes(item.id)}
               markedUseful={usefulItemIds.includes(item.id)}
               onToggleSaved={() => toggleSavedItem(item.id)}

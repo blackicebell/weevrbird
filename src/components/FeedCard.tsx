@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { avatars, feedEditorialMeta } from "../app/editorial";
@@ -8,15 +8,18 @@ import { shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, Person } from "../types/product";
 
-export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = false, onToggleSaved, onToggleUseful, onOpen }: {
+export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.saved, markedUseful = false, onToggleSaved, onToggleUseful, onOpen }: {
   item: FeedItem;
   theme: AppTheme;
+  viewerInterests?: string[];
   saved?: boolean;
   markedUseful?: boolean;
   onToggleSaved?: () => void;
   onToggleUseful?: () => void;
   onOpen?: () => void;
 }) {
+  const [authorPreviewOpen, setAuthorPreviewOpen] = useState(false);
+  const [connectRequested, setConnectRequested] = useState(false);
   const isExternal = item.imported;
   const isUserContribution = item.authorId === "you";
   const author = item.authorId && !isUserContribution
@@ -60,7 +63,35 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
         </View>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.publishedAt}</Text>
       </View>
-      {author && <AuthorContextRow author={author} item={item} feedName={feed.name} theme={theme} accent={editorial.accent} />}
+      {author && (
+        <AuthorContextRow
+          author={author}
+          item={item}
+          feedName={feed.name}
+          theme={theme}
+          accent={editorial.accent}
+          expanded={authorPreviewOpen}
+          onOpen={(event) => {
+            event.stopPropagation();
+            setAuthorPreviewOpen((current) => !current);
+          }}
+        />
+      )}
+      {authorPreviewOpen && author && (
+        <AuthorPreviewPanel
+          author={author}
+          item={item}
+          feedName={feed.name}
+          theme={theme}
+          accent={editorial.accent}
+          viewerInterests={viewerInterests}
+          connectRequested={connectRequested}
+          onConnect={(event) => {
+            event.stopPropagation();
+            if (!author.linked) setConnectRequested(true);
+          }}
+        />
+      )}
       <Text style={[styles.storySignal, { color: storyType === "official" ? "#49626B" : editorial.accent }]}>{signalLabel}</Text>
       <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
@@ -119,21 +150,100 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
   );
 }
 
-function AuthorContextRow({ author, item, feedName, theme, accent }: {
+function AuthorContextRow({ author, item, feedName, theme, accent, expanded, onOpen }: {
   author: Person;
   item: FeedItem;
   feedName: string;
   theme: AppTheme;
   accent: string;
+  expanded: boolean;
+  onOpen: (event: GestureResponderEvent) => void;
 }) {
   return (
-    <View style={[styles.authorContextRow, { borderColor: `${accent}24`, backgroundColor: `${accent}0F` }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${expanded ? "Close" : "Open"} profile preview for ${author.displayName}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.authorContextRow, pressed && styles.authorContextRowPressed, { borderColor: `${accent}24`, backgroundColor: `${accent}0F` }]}
+    >
       <View style={[styles.authorAvatar, { borderColor: `${accent}44` }]}>
         <Text style={[styles.authorAvatarText, { color: accent }]}>{avatars[author.avatar] ?? author.displayName.charAt(0)}</Text>
       </View>
       <View style={styles.authorContextCopy}>
         <Text style={[styles.authorContextName, { color: theme.text }]}>{author.displayName}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{formatAuthorContributionContext(item)} in {feedName} / @{author.username}</Text>
+      </View>
+      <Ionicons name={expanded ? "chevron-up" : "person-circle-outline"} color={theme.muted} size={18} />
+    </Pressable>
+  );
+}
+
+function AuthorPreviewPanel({ author, item, feedName, theme, accent, viewerInterests, connectRequested, onConnect }: {
+  author: Person;
+  item: FeedItem;
+  feedName: string;
+  theme: AppTheme;
+  accent: string;
+  viewerInterests: string[];
+  connectRequested: boolean;
+  onConnect: (event: GestureResponderEvent) => void;
+}) {
+  const sharedInterests = getSharedInterests(author.interests, viewerInterests);
+  const connectionLabel = author.linked ? "Linked" : connectRequested ? "Request sent" : "Connect";
+  const reason = sharedInterests.length > 0
+    ? `You both pay attention to ${formatList(sharedInterests)}.`
+    : `${author.displayName} appeared through a useful ${formatAuthorContributionContext(item).toLowerCase()} in ${feedName}.`;
+
+  return (
+    <View style={[styles.authorPreviewPanel, { borderColor: `${accent}33`, backgroundColor: `${accent}0D` }]}>
+      <View style={styles.authorPreviewTop}>
+        <View style={[styles.authorPreviewAvatar, { backgroundColor: `${accent}18`, borderColor: `${accent}44` }]}>
+          <Text style={[styles.authorPreviewAvatarText, { color: accent }]}>{avatars[author.avatar] ?? author.displayName.charAt(0)}</Text>
+        </View>
+        <View style={styles.authorPreviewIdentity}>
+          <Text style={[styles.authorPreviewKicker, { color: accent }]}>PROFILE PREVIEW</Text>
+          <Text style={[styles.authorPreviewName, { color: theme.text }]}>{author.displayName}</Text>
+          <Text style={[styles.meta, { color: theme.muted }]}>@{author.username} / {author.city}</Text>
+        </View>
+      </View>
+      <View style={styles.authorPreviewBlock}>
+        <Text style={[styles.authorPreviewLabel, { color: accent }]}>What they pay attention to</Text>
+        <Text style={[styles.authorPreviewBio, { color: theme.text }]}>{author.bio}</Text>
+      </View>
+      <View style={[styles.authorReasonPanel, { borderColor: `${accent}24`, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.58)" }]}>
+        <Ionicons name="link-outline" color={accent} size={16} />
+        <Text style={[styles.authorReasonText, { color: theme.muted }]}>{reason}</Text>
+      </View>
+      {sharedInterests.length > 0 && (
+        <View style={styles.authorInterestRow}>
+          {sharedInterests.map((interest) => (
+            <View key={`${author.id}-${interest}`} style={[styles.authorInterestPill, { borderColor: `${accent}33`, backgroundColor: `${accent}10` }]}>
+              <Text style={[styles.authorInterestText, { color: accent }]}>{interest}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      <View style={[styles.authorFeaturedContribution, { borderTopColor: `${accent}22` }]}>
+        <Text style={[styles.authorPreviewLabel, { color: accent }]}>Featured contribution</Text>
+        <Text style={[styles.authorFeaturedTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{formatAuthorContributionContext(item)} in {feedName}</Text>
+      </View>
+      <View style={styles.authorPreviewActions}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={author.linked ? `${author.displayName} is linked` : connectRequested ? `Connection request sent to ${author.displayName}` : `Send connect request to ${author.displayName}`}
+          accessibilityState={{ disabled: author.linked || connectRequested }}
+          disabled={author.linked || connectRequested}
+          onPress={onConnect}
+          style={({ pressed }) => [
+            styles.authorConnectButton,
+            pressed && styles.actionPillPressed,
+            { backgroundColor: author.linked || connectRequested ? `${accent}14` : accent, borderColor: `${accent}55` }
+          ]}
+        >
+          <Ionicons name={author.linked ? "checkmark-circle" : connectRequested ? "time-outline" : "person-add-outline"} color={author.linked || connectRequested ? accent : "#FFFDF8"} size={16} />
+          <Text style={[styles.authorConnectButtonText, { color: author.linked || connectRequested ? accent : "#FFFDF8" }]}>{connectionLabel}</Text>
+        </Pressable>
       </View>
     </View>
   );
@@ -146,6 +256,25 @@ function formatAuthorContributionContext(item: FeedItem) {
   if (item.itemType === "long_read") return "Long read";
   if (item.itemType === "link") return "Link";
   return "Contribution";
+}
+
+function getSharedInterests(authorInterests: string[], viewerInterests: string[]) {
+  const normalizedViewerInterests = viewerInterests.map(normalizeInterest);
+  return authorInterests.filter((interest) => normalizedViewerInterests.includes(normalizeInterest(interest))).slice(0, 3);
+}
+
+function normalizeInterest(interest: string) {
+  const value = interest.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (value === "ux" || value === "uxdesign") return "uxdesign";
+  if (value === "localfood" || value === "food") return "food";
+  if (value === "culture") return "culture";
+  return value;
+}
+
+function formatList(items: string[]) {
+  if (items.length <= 1) return items[0] ?? "a shared interest";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
 }
 
 function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
@@ -324,6 +453,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm
   },
+  authorContextRowPressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.99 }]
+  },
   authorAvatar: {
     width: 34,
     height: 34,
@@ -345,6 +478,121 @@ const styles = StyleSheet.create({
   authorContextName: {
     fontSize: 13,
     lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  authorPreviewPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    gap: spacing.md
+  },
+  authorPreviewTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  authorPreviewAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  authorPreviewAvatarText: {
+    fontSize: 20,
+    lineHeight: 25,
+    fontFamily: "Inter_700Bold"
+  },
+  authorPreviewIdentity: {
+    flex: 1,
+    gap: 2
+  },
+  authorPreviewKicker: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  authorPreviewName: {
+    fontSize: 19,
+    lineHeight: 24,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  authorPreviewBlock: {
+    gap: 4
+  },
+  authorPreviewLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  authorPreviewBio: {
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: "Inter_600SemiBold"
+  },
+  authorReasonPanel: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs
+  },
+  authorReasonText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
+  },
+  authorInterestRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  authorInterestPill: {
+    minHeight: 28,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    justifyContent: "center"
+  },
+  authorInterestText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold"
+  },
+  authorFeaturedContribution: {
+    borderTopWidth: 1,
+    paddingTop: spacing.md,
+    gap: 3
+  },
+  authorFeaturedTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  authorPreviewActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  authorConnectButton: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  authorConnectButtonText: {
+    fontSize: 12,
+    lineHeight: 16,
     fontFamily: "Inter_700Bold"
   },
   storyTypePanel: {

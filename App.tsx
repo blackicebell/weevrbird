@@ -259,6 +259,7 @@ function AppContent() {
             <FeedsScreen
               theme={theme}
               selectedFeed={selectedFeed}
+              selectedInterests={userAppState.selectedInterests}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               activeFilter={userAppState.activeFilter}
               setActiveFilter={(activeFilter) => setUserAppState((current) => setUserActiveFilter(current, activeFilter))}
@@ -287,6 +288,7 @@ function AppContent() {
               theme={theme}
               savedItems={savedItems}
               submittedContributions={userAppState.submittedContributions}
+              selectedInterests={userAppState.selectedInterests}
               search={search}
               setSearch={setSearch}
               savedItemIds={userAppState.savedItemIds}
