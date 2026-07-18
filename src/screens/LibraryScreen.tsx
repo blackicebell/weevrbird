@@ -79,10 +79,12 @@ export function LibraryScreen({
           </View>
         ))}
       </View>
-      <View style={styles.archivePrivacyNote}>
-        <Ionicons name="lock-closed-outline" color={theme.accent} size={15} />
-        <Text style={[styles.archivePrivacyText, { color: theme.muted }]}>Private history is only for you. Saving and opening pieces helps Weevrbird make your archive easier to return to.</Text>
-      </View>
+      {archiveItems.length > 0 && (
+        <View style={styles.archivePrivacyNote}>
+          <Ionicons name="lock-closed-outline" color={theme.accent} size={15} />
+          <Text style={[styles.archivePrivacyText, { color: theme.muted }]}>Private history is only for you. Saving and opening pieces helps Weevrbird make your archive easier to return to.</Text>
+        </View>
+      )}
       <View style={[styles.searchBox, { backgroundColor: theme.panel, borderColor: theme.line }]}>
         <Ionicons name="search-outline" color={theme.muted} size={20} />
         <TextInput
