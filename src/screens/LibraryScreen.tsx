@@ -47,6 +47,7 @@ export function LibraryScreen({
   const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
   const usefulItems = allLibraryItems.filter((item) => usefulItemIds.includes(item.id) && !savedItemIds.includes(item.id));
   const openedItems = archiveItems.filter((item) => !savedItemIds.includes(item.id));
+  const tabContext = getLibraryTabContext(activeTab);
 
   if (activeShelf) {
     return (
@@ -131,6 +132,10 @@ export function LibraryScreen({
                 <Text style={[styles.libraryTabText, { color: activeTab === tab ? theme.accent : theme.muted }]}>{tab}</Text>
               </Pressable>
             ))}
+          </View>
+          <View style={styles.libraryTabContext}>
+            <Ionicons name={tabContext.icon} color={theme.accent} size={16} />
+            <Text style={[styles.libraryTabContextText, { color: theme.muted }]}>{tabContext.body}</Text>
           </View>
           <LibraryTabContent
             activeTab={activeTab}
@@ -247,6 +252,30 @@ function LibraryTabContent({
       )}
     </>
   );
+}
+
+function getLibraryTabContext(tab: LibraryTab): {
+  icon: keyof typeof Ionicons.glyphMap;
+  body: string;
+} {
+  if (tab === "Opened") {
+    return {
+      icon: "time-outline",
+      body: "Opened keeps your reading trail, including pieces you did not save but may want to find again."
+    };
+  }
+
+  if (tab === "Shelves") {
+    return {
+      icon: "albums-outline",
+      body: "Shelves group saved pieces into personal collections you can return to with less searching."
+    };
+  }
+
+  return {
+    icon: "bookmark-outline",
+    body: "Saved for later is your private shelf for pieces, questions, and placed signals worth keeping."
+  };
 }
 
 function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
@@ -432,6 +461,18 @@ const styles = StyleSheet.create({
   libraryTabText: {
     fontSize: 13,
     fontFamily: "Inter_700Bold"
+  },
+  libraryTabContext: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm
+  },
+  libraryTabContextText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   libraryItem: {
     borderWidth: 1,
