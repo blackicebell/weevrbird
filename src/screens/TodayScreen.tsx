@@ -190,24 +190,25 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
 
 function getIssuePromise(issuePace: IssuePace, date: Date) {
   const subtitle = getTimeAwareSubtitle(date);
+  const daypartChip = getTimeAwareChip(date);
 
   if (issuePace === "Brief") {
     return {
       subtitle,
-      chips: ["4 pieces", "7 min", "Quiet finish"]
+      chips: ["4 pieces", "7 min", daypartChip]
     };
   }
 
   if (issuePace === "Deep") {
     return {
       subtitle,
-      chips: ["9 pieces", "20 min", "More context"]
+      chips: ["9 pieces", "20 min", daypartChip]
     };
   }
 
   return {
     subtitle,
-    chips: ["6 pieces", "12 min", "Clear ending"]
+    chips: ["6 pieces", "12 min", daypartChip]
   };
 }
 
@@ -216,6 +217,13 @@ function getTimeAwareSubtitle(date: Date) {
   if (hour < 12) return "Start with what changed, keep what matters, and leave with a finite issue you can actually finish.";
   if (hour < 17) return "Return to the useful signals from today, save what deserves another look, and close the tabs in your head.";
   return "Close the loop on today: save what matters, place private contributions, and leave caught up without more scrolling.";
+}
+
+function getTimeAwareChip(date: Date) {
+  const hour = date.getHours();
+  if (hour < 12) return "Start clean";
+  if (hour < 17) return "Return later";
+  return "Close loops";
 }
 
 function formatCoverDate(date: Date) {
