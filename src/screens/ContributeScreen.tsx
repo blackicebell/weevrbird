@@ -292,7 +292,7 @@ function InlineReviewPlacement({
         style={({ pressed }) => [styles.inlinePlaceButton, pressed && styles.contributionRowPressed, { backgroundColor: theme.accent }]}
       >
         <Ionicons name="checkmark-circle-outline" color="#FFFDF8" size={18} />
-        <Text style={styles.inlinePlaceButtonText}>Make visible in {selectedFeed.name}</Text>
+        <Text style={styles.inlinePlaceButtonText}>Make visible</Text>
       </Pressable>
     </View>
   );
