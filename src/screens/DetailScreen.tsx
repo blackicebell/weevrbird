@@ -90,7 +90,7 @@ export function DetailScreen({
         <View style={[styles.replyPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
           <Text style={[styles.kicker, { color: theme.accent }]}>IN CONTEXT</Text>
           <Text style={[styles.replyTitle, { color: theme.text }]}>Placed, not performed.</Text>
-          <Text style={[styles.body, { color: theme.muted }]}>Weevrbird treats your contribution as useful context first. Conversation can gather around it later, but it does not need fake activity to feel complete.</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Weevrbird treats your contribution as useful context first. Conversation can gather around it later, but the piece can stand on its own.</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Return to ${feed.name}`}

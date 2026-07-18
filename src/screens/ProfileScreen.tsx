@@ -492,7 +492,7 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
         <Ionicons name="refresh-circle-outline" color={palette.red} size={24} />
         <View style={styles.profileCollectionCopy}>
           <Text style={[styles.profileCollectionTitle, { color: palette.red }]}>Reset Weevrbird</Text>
-          <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Clear this demo state and return to the first onboarding screen.</Text>
+          <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Clear your local setup and return to the first onboarding screen.</Text>
         </View>
         <Ionicons name="chevron-forward" color={palette.red} size={17} />
       </Pressable>
