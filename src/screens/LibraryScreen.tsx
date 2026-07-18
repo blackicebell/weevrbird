@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import React from "react";
+import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { profileCollections } from "../app/editorial";
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
 import { SectionHeader } from "../components/SectionHeader";
@@ -9,6 +10,8 @@ import { localDataService } from "../data/localDataService";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, SubmittedContribution } from "../types/product";
+
+type LibraryTab = "Saved for later" | "Opened" | "Shelves";
 
 export function LibraryScreen({
   theme,
@@ -33,11 +36,13 @@ export function LibraryScreen({
   toggleUsefulItem: (itemId: string) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
+  const [activeTab, setActiveTab] = useState<LibraryTab>("Saved for later");
   const userContentState = { savedItemIds, usefulItemIds };
   const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
   const results = localDataService.searchLibrary(search, submittedContributions);
   const savedUserItems = savedItems.filter((item) => item.authorId === "you");
-  const regularArchiveItems = archiveItems.filter((item) => item.authorId !== "you");
+  const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
+  const openedItems = archiveItems.filter((item) => !savedItemIds.includes(item.id));
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -98,40 +103,142 @@ export function LibraryScreen({
       ) : (
         <>
           <View style={styles.libraryTabs}>
-            {["Saved for later", "Opened", "Shelves"].map((tab, index) => (
-              <View key={tab} style={[styles.libraryTab, index === 0 && { borderBottomColor: theme.accent }]}>
-                <Text style={[styles.libraryTabText, { color: index === 0 ? theme.accent : theme.muted }]}>{tab}</Text>
-              </View>
+            {(["Saved for later", "Opened", "Shelves"] as LibraryTab[]).map((tab) => (
+              <Pressable
+                key={tab}
+                accessibilityRole="tab"
+                accessibilityLabel={tab}
+                accessibilityState={{ selected: activeTab === tab }}
+                onPress={() => setActiveTab(tab)}
+                style={({ pressed }) => [styles.libraryTab, pressed && styles.libraryTabPressed, activeTab === tab && { borderBottomColor: theme.accent }]}
+              >
+                <Text style={[styles.libraryTabText, { color: activeTab === tab ? theme.accent : theme.muted }]}>{tab}</Text>
+              </Pressable>
             ))}
           </View>
-          {archiveItems.length > 0 ? (
-            <>
-              {savedUserItems.length > 0 && (
-                <>
-                  <SectionHeader title="Your placed signals" theme={theme} />
-                  {savedUserItems.map((item) => (
-                    <LibraryItem key={`library-from-you-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
-                  ))}
-                </>
-              )}
-              {regularArchiveItems.length > 0 && (
-                <>
-                  <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved and opened"} theme={theme} />
-                  {regularArchiveItems.map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
-                </>
-              )}
-            </>
-          ) : (
-            <EmptyState
-              icon="bookmark-outline"
-              title="Your library is ready when you are."
-              body="Save a guide, a question, or a useful recommendation from Today and it will collect here."
-              theme={theme}
-            />
-          )}
+          <LibraryTabContent
+            activeTab={activeTab}
+            savedUserItems={savedUserItems}
+            regularSavedItems={regularSavedItems}
+            openedItems={openedItems}
+            theme={theme}
+            onOpenDetail={onOpenDetail}
+          />
         </>
       )}
     </ScrollView>
+  );
+}
+
+function LibraryTabContent({
+  activeTab,
+  savedUserItems,
+  regularSavedItems,
+  openedItems,
+  theme,
+  onOpenDetail
+}: {
+  activeTab: LibraryTab;
+  savedUserItems: FeedItem[];
+  regularSavedItems: FeedItem[];
+  openedItems: FeedItem[];
+  theme: AppTheme;
+  onOpenDetail: (item: FeedItem) => void;
+}) {
+  if (activeTab === "Shelves") {
+    return (
+      <>
+        <SectionHeader title="Shelves" action="3 collections" theme={theme} />
+        {profileCollections.map((collection) => {
+          const shelfItems = localDataService.getShelfItems(collection.title);
+          return (
+            <ShelfRow
+              key={`library-shelf-${collection.title}`}
+              collection={collection}
+              itemCount={shelfItems.length}
+              theme={theme}
+              onOpen={() => {
+                const firstItem = shelfItems[0];
+                if (firstItem) onOpenDetail(firstItem);
+              }}
+            />
+          );
+        })}
+      </>
+    );
+  }
+
+  if (activeTab === "Opened") {
+    return openedItems.length > 0 ? (
+      <>
+        <SectionHeader title="Recently opened" theme={theme} />
+        {openedItems.map((item) => <LibraryItem key={`library-opened-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+      </>
+    ) : (
+      <EmptyState
+        icon="time-outline"
+        title="Nothing opened yet."
+        body="Read a piece from Today or a Smartfeed and it will appear here for quick return."
+        theme={theme}
+      />
+    );
+  }
+
+  if (savedUserItems.length === 0 && regularSavedItems.length === 0) {
+    return (
+      <EmptyState
+        icon="bookmark-outline"
+        title="Your library is ready when you are."
+        body="Save a guide, a question, or a useful recommendation from Today and it will collect here."
+        theme={theme}
+      />
+    );
+  }
+
+  return (
+    <>
+      {savedUserItems.length > 0 && (
+        <>
+          <SectionHeader title="Your placed signals" theme={theme} />
+          {savedUserItems.map((item) => (
+            <LibraryItem key={`library-from-you-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
+          ))}
+        </>
+      )}
+      {regularSavedItems.length > 0 && (
+        <>
+          <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved for later"} theme={theme} />
+          {regularSavedItems.map((item) => <LibraryItem key={`library-saved-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+        </>
+      )}
+    </>
+  );
+}
+
+function ShelfRow({ collection, itemCount, theme, onOpen }: {
+  collection: (typeof profileCollections)[number];
+  itemCount: number;
+  theme: AppTheme;
+  onOpen: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open shelf ${collection.title}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.libraryItem, pressed && styles.libraryItemPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
+    >
+      <View style={[styles.libraryIcon, { backgroundColor: theme.panelAlt }]}>
+        <Ionicons name={collection.icon} color={theme.accent} size={18} />
+      </View>
+      <View style={styles.libraryCopy}>
+        <Text style={[styles.libraryMeta, { color: theme.accent }]}>Shelf</Text>
+        <Text style={[styles.libraryTitle, { color: theme.text }]}>{collection.title}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{itemCount} pieces / {collection.meta}</Text>
+        <Text style={[styles.libraryReason, { color: theme.muted }]}>{collection.description}</Text>
+      </View>
+      <Ionicons name="arrow-forward" color={theme.accent} size={18} />
+    </Pressable>
   );
 }
 
@@ -241,6 +348,9 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
     borderBottomWidth: 2,
     borderBottomColor: "transparent"
+  },
+  libraryTabPressed: {
+    opacity: 0.7
   },
   libraryTabText: {
     fontSize: 13,
