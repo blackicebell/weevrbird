@@ -482,6 +482,7 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
 }) {
   const suggestions = getSearchSuggestions(selectedCity);
   const normalizedQuery = query.trim();
+  const librarySearchLabel = normalizedQuery ? "Search the full Library with this query" : "Open full Library";
 
   return (
     <ScrollView contentContainerStyle={styles.searchContent}>
@@ -559,12 +560,12 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Open Library search"
+        accessibilityLabel={librarySearchLabel}
         onPress={onOpenLibrary}
         style={({ pressed }) => [styles.searchLibraryButton, pressed && styles.activityCardPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
       >
         <Ionicons name="albums-outline" color={theme.accent} size={18} />
-        <Text style={[styles.searchLibraryText, { color: theme.text }]}>Search the full Library with this query</Text>
+        <Text style={[styles.searchLibraryText, { color: theme.text }]}>{librarySearchLabel}</Text>
         <Ionicons name="arrow-forward" color={theme.muted} size={16} />
       </Pressable>
     </ScrollView>
