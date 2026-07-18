@@ -171,6 +171,7 @@ export function ContributeScreen({
               const feedId = selectedReviewFeedId ?? reviewContributions[0].feedId;
               onPlaceContribution(reviewContributions[0].id, feedId);
               setSubmittedContributionId(reviewContributions[0].id);
+              setSelectedReviewFeedId(null);
             }}
           />
         )}
