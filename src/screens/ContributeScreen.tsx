@@ -53,7 +53,7 @@ export function ContributeScreen({
   const readyToSubmit = qualityChecks.every((check) => check.complete);
   const latestContribution = submittedContributionId
     ? submittedContributions.find((contribution) => contribution.id === submittedContributionId)
-    : submittedContributions[0];
+    : null;
   const reviewContributions = submittedContributions.filter((contribution) => contribution.status === "review");
   const placedContributionCount = submittedContributions.filter((contribution) => contribution.status === "placed").length;
   const placementFeeds = localDataService.getFeeds().filter((feed) => feed.joined).slice(0, 4);
