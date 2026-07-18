@@ -43,7 +43,7 @@ export function ContributeScreen({
   const [selectedReviewFeedId, setSelectedReviewFeedId] = React.useState<string | null>(null);
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const [draftNotice, setDraftNotice] = React.useState<string | null>(null);
-  const charLimit = draftType === "Long Read" ? 5000 : draftType === "Note" ? 280 : 900;
+  const charLimit = getContributionCharLimit(draftType);
   const contributionGuidance = getContributionGuidance(draftType);
   const trimmedDraft = draft.trim();
   const qualityChecks = [
@@ -66,6 +66,25 @@ export function ContributeScreen({
         animated: true
       });
     }, 80);
+  };
+
+  const pasteFromClipboard = async () => {
+    const clipboardText = await readClipboardText();
+
+    if (!clipboardText) {
+      setValidationMessage("Copy an article, image, or video link first, then paste it here.");
+      setDraftNotice(null);
+      return;
+    }
+
+    const nextDraft = draft.trim()
+      ? `${draft.trim()}\n${clipboardText}`
+      : clipboardText;
+
+    setDraftType("Link");
+    setDraft(nextDraft.slice(0, getContributionCharLimit("Link")));
+    setValidationMessage(null);
+    setDraftNotice("Pasted from clipboard. Add why it is worth sharing before saving.");
   };
 
   const submit = () => {
@@ -127,6 +146,15 @@ export function ContributeScreen({
               <Text style={[styles.editorLabel, { color: theme.accent }]}>{draftType}</Text>
               <Text style={[styles.meta, { color: theme.muted }]}>{contributionGuidance.body}</Text>
             </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Paste article, image, or video link"
+              onPress={() => { void pasteFromClipboard(); }}
+              style={({ pressed }) => [styles.pasteButton, pressed && styles.contributionRowPressed, { borderColor: theme.line, backgroundColor: theme.panelAlt }]}
+            >
+              <Ionicons name="clipboard-outline" color={theme.accent} size={16} />
+              <Text style={[styles.pasteButtonText, { color: theme.accent }]}>Paste</Text>
+            </Pressable>
           </View>
           <TextInput
             accessibilityLabel={`${draftType} contribution editor`}
@@ -335,6 +363,24 @@ function getPlacementReason(feed: ReturnType<typeof localDataService.getFeed>, c
   const feedRole = feed.type === "city" ? "local context" : feed.type === "community" ? "shared practice" : "focused discovery";
 
   return `${typeReason[contributionType] ?? typeReason.Note} ${feed.name} brings ${feedRole}, ${feed.members}, and the right surrounding signals.`;
+}
+
+function getContributionCharLimit(type: string) {
+  if (type === "Long Read") return 5000;
+  if (type === "Note") return 280;
+  return 900;
+}
+
+async function readClipboardText() {
+  if (Platform.OS !== "web" || typeof navigator === "undefined" || !navigator.clipboard?.readText) {
+    return "";
+  }
+
+  try {
+    return (await navigator.clipboard.readText()).trim();
+  } catch {
+    return "";
+  }
 }
 
 function getDefaultFeedId(type: string) {
@@ -613,6 +659,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md
+  },
+  pasteButton: {
+    minHeight: 36,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  pasteButtonText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
   },
   textInput: {
     minHeight: 230,

@@ -207,20 +207,53 @@ function ProfileContributionBrowser({ theme, submittedContributions, publicContr
   onOpenSubmitted: (contribution: SubmittedContribution) => void;
   onOpenPublic: (item: FeedItem) => void;
 }) {
+  const [activeCategory, setActiveCategory] = useState("All");
+  const contributionCategories = getBrowserContributionCategories(submittedContributions, publicContributions);
+  const filteredSubmittedContributions = submittedContributions.filter((contribution) => contributionMatchesCategory(contribution.type, activeCategory));
+  const filteredPublicContributions = publicContributions.filter((item) => publicContributionMatchesCategory(item, activeCategory));
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <BackButton label="Back to profile" theme={theme} onPress={onBack} />
       <View style={[styles.shelfHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>BROWSE CONTRIBUTIONS</Text>
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Contributions by topic and community.</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>Browse what this person has added without turning their profile into a popularity feed.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>Start by type, then open the pieces that match what you are curious about.</Text>
       </View>
 
-      {submittedContributions.length > 0 && (
+      <SectionHeader title="Browse by Type" theme={theme} />
+      <View style={styles.profileTypeGrid}>
+        {contributionCategories.map((category) => {
+          const selected = activeCategory === category.label;
+
+          return (
+            <Pressable
+              key={`browse-category-${category.label}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Show ${category.label.toLowerCase()} contributions`}
+              accessibilityState={{ selected }}
+              onPress={() => setActiveCategory(category.label)}
+              style={({ pressed }) => [
+                styles.profileTypeTile,
+                pressed && styles.profileRowPressed,
+                {
+                  borderColor: selected ? theme.accent : theme.line,
+                  backgroundColor: selected ? theme.panelAlt : "rgba(255, 255, 252, 0.58)"
+                }
+              ]}
+            >
+              <Text style={[styles.profileTypeLabel, { color: theme.text }]}>{category.label}</Text>
+              <Text style={[styles.profileTypeCount, { color: theme.muted }]}>{category.count} contribution{category.count === 1 ? "" : "s"}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {filteredSubmittedContributions.length > 0 && (
         <>
           <SectionHeader title="From You" theme={theme} />
           <View style={styles.fromYouStack}>
-            {submittedContributions.map((contribution) => (
+            {filteredSubmittedContributions.map((contribution) => (
               <SubmittedContributionCard
                 key={`browse-submitted-${contribution.id}`}
                 contribution={contribution}
@@ -233,11 +266,11 @@ function ProfileContributionBrowser({ theme, submittedContributions, publicContr
       )}
 
       <SectionHeader title="Public Contributions" theme={theme} />
-      {publicContributions.map((item) => (
+      {filteredPublicContributions.map((item) => (
         <ProfileContribution
           key={`browse-public-${item.id}`}
           item={item}
-          label={`${formatContributionType(item)} in ${localDataService.getFeed(item.feedId).name}`}
+          label={`${formatContributionLabel(item)} in ${localDataService.getFeed(item.feedId).name}`}
           theme={theme}
           onOpen={() => onOpenPublic(item)}
         />
@@ -246,7 +279,51 @@ function ProfileContributionBrowser({ theme, submittedContributions, publicContr
   );
 }
 
-function formatContributionType(item: FeedItem) {
+function getBrowserContributionCategories(submittedContributions: SubmittedContribution[], publicContributions: FeedItem[]) {
+  const counts = new Map<string, number>();
+
+  submittedContributions.forEach((contribution) => {
+    const category = getSubmittedContributionCategory(contribution.type);
+    counts.set(category, (counts.get(category) ?? 0) + 1);
+  });
+
+  publicContributions.forEach((item) => {
+    const category = getPublicContributionCategory(item);
+    counts.set(category, (counts.get(category) ?? 0) + 1);
+  });
+
+  const categories = ["Questions", "Recommendations", "Notes", "Reading Lists"]
+    .map((label) => ({ label, count: counts.get(label) ?? 0 }))
+    .filter((category) => category.count > 0);
+
+  return [{ label: "All", count: submittedContributions.length + publicContributions.length }].concat(categories);
+}
+
+function contributionMatchesCategory(type: string, activeCategory: string) {
+  if (activeCategory === "All") return true;
+  return getSubmittedContributionCategory(type) === activeCategory;
+}
+
+function publicContributionMatchesCategory(item: FeedItem, activeCategory: string) {
+  if (activeCategory === "All") return true;
+  return getPublicContributionCategory(item) === activeCategory;
+}
+
+function getSubmittedContributionCategory(type: string) {
+  if (type === "Question" || type === "Discussion") return "Questions";
+  if (type === "Recommendation") return "Recommendations";
+  if (type === "Link" || type === "Long Read") return "Reading Lists";
+  return "Notes";
+}
+
+function getPublicContributionCategory(item: FeedItem) {
+  if (item.itemType === "recommendation") return "Recommendations";
+  if (item.itemType === "question" || item.itemType === "discussion") return "Questions";
+  if (item.itemType === "official_update") return "Notes";
+  return "Notes";
+}
+
+function formatContributionLabel(item: FeedItem) {
   if (item.itemType === "recommendation") return "Recommendation";
   if (item.itemType === "question" || item.itemType === "discussion") return "Question";
   if (item.itemType === "official_update") return "Update";

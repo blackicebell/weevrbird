@@ -2,11 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { feedEditorialMeta } from "../app/editorial";
+import { avatars, feedEditorialMeta } from "../app/editorial";
 import { localDataService } from "../data/localDataService";
 import { shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem } from "../types/product";
+import { FeedItem, Person } from "../types/product";
 
 export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = false, onToggleSaved, onToggleUseful, onOpen }: {
   item: FeedItem;
@@ -19,6 +19,9 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
 }) {
   const isExternal = item.imported;
   const isUserContribution = item.authorId === "you";
+  const author = item.authorId && !isUserContribution
+    ? localDataService.getPeople().find((person) => person.id === item.authorId)
+    : null;
   const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[item.feedId] ?? feedEditorialMeta.atlanta;
   const storyType = isUserContribution ? "fromYou" : item.itemType === "recommendation" ? "recommendation" : item.itemType === "official_update" ? "official" : isExternal ? "reading" : "community";
@@ -57,6 +60,7 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
         </View>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.publishedAt}</Text>
       </View>
+      {author && <AuthorContextRow author={author} item={item} feedName={feed.name} theme={theme} accent={editorial.accent} />}
       <Text style={[styles.storySignal, { color: storyType === "official" ? "#49626B" : editorial.accent }]}>{signalLabel}</Text>
       <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
@@ -113,6 +117,35 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
       )}
     </Pressable>
   );
+}
+
+function AuthorContextRow({ author, item, feedName, theme, accent }: {
+  author: Person;
+  item: FeedItem;
+  feedName: string;
+  theme: AppTheme;
+  accent: string;
+}) {
+  return (
+    <View style={[styles.authorContextRow, { borderColor: `${accent}24`, backgroundColor: `${accent}0F` }]}>
+      <View style={[styles.authorAvatar, { borderColor: `${accent}44` }]}>
+        <Text style={[styles.authorAvatarText, { color: accent }]}>{avatars[author.avatar] ?? author.displayName.charAt(0)}</Text>
+      </View>
+      <View style={styles.authorContextCopy}>
+        <Text style={[styles.authorContextName, { color: theme.text }]}>{author.displayName}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{formatAuthorContributionContext(item)} in {feedName} / @{author.username}</Text>
+      </View>
+    </View>
+  );
+}
+
+function formatAuthorContributionContext(item: FeedItem) {
+  if (item.itemType === "recommendation") return "Recommendation";
+  if (item.itemType === "question") return "Question";
+  if (item.itemType === "discussion") return "Discussion";
+  if (item.itemType === "long_read") return "Long read";
+  if (item.itemType === "link") return "Link";
+  return "Contribution";
 }
 
 function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
@@ -282,6 +315,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Inter_600SemiBold"
+  },
+  authorContextRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  authorAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 252, 0.72)"
+  },
+  authorAvatarText: {
+    fontSize: 15,
+    lineHeight: 19,
+    fontFamily: "Inter_700Bold"
+  },
+  authorContextCopy: {
+    flex: 1,
+    gap: 1
+  },
+  authorContextName: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
   },
   storyTypePanel: {
     borderWidth: 1,
