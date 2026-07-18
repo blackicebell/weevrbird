@@ -358,15 +358,20 @@ function ContributionConfirmation({ contribution, theme }: { contribution: Submi
 function SubmittedContributionRow({ contribution, theme }: { contribution: SubmittedContribution; theme: AppTheme }) {
   const savedAt = new Date(contribution.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   const placed = contribution.status === "placed";
+  const feed = localDataService.getFeed(contribution.feedId);
+  const placedAt = contribution.placedAt ? new Date(contribution.placedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
 
   return (
     <View style={[styles.submittedRow, { borderColor: theme.line, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.68)" }]}>
       <View style={styles.submittedTop}>
         <Text style={[styles.previewKicker, { color: theme.accent }]}>{contribution.type}</Text>
-        <Text style={[styles.statusPill, { color: theme.success }]}>{placed ? "Placed" : "Private"}</Text>
+        <View style={styles.submittedStatus}>
+          {placed && <View style={[styles.submittedFeedDot, { backgroundColor: feed.palette }]} />}
+          <Text style={[styles.statusPill, { color: placed ? theme.success : theme.muted }]}>{placed ? feed.name : "Private"}</Text>
+        </View>
       </View>
       <Text style={[styles.submittedBody, { color: theme.text }]} numberOfLines={2}>{contribution.body}</Text>
-      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${new Date(contribution.placedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : `Saved privately ${savedAt}`}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{placed ? `Placed in ${feed.name}${placedAt ? ` at ${placedAt}` : ""}` : `Saved privately ${savedAt}`}</Text>
     </View>
   );
 }
@@ -726,7 +731,19 @@ const styles = StyleSheet.create({
   submittedTop: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     gap: spacing.sm
+  },
+  submittedStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    flexShrink: 1
+  },
+  submittedFeedDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4
   },
   submittedBody: {
     fontSize: 14,
