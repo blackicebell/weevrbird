@@ -77,7 +77,10 @@ function AppContent() {
   const selectedFeed = useMemo(() => localDataService.getFeed(userAppState.selectedFeedId), [userAppState.selectedFeedId]);
   const userContentState = useMemo(() => getUserContentState(userAppState), [userAppState.savedItemIds, userAppState.usefulItemIds]);
   const joinedFeeds = useMemo(() => localDataService.getJoinedFeeds(), []);
-  const savedItems = useMemo(() => localDataService.getSavedItems(userContentState), [userContentState]);
+  const savedItems = useMemo(
+    () => localDataService.getSavedItems(userContentState, userAppState.submittedContributions),
+    [userContentState, userAppState.submittedContributions]
+  );
   const visibleFeedItems = useMemo(
     () => localDataService.getFeedItems(selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions),
     [selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions]
@@ -224,6 +227,7 @@ function AppContent() {
             <LibraryScreen
               theme={theme}
               savedItems={savedItems}
+              submittedContributions={userAppState.submittedContributions}
               search={search}
               setSearch={setSearch}
               savedItemIds={userAppState.savedItemIds}
@@ -284,7 +288,7 @@ function loadInitialAppState(): Partial<UserAppState> {
     activeFilter: "Latest",
     draftType: "Recommendation",
     draft: "",
-    savedItemIds: ["item-1", "item-3"],
+    savedItemIds: ["item-1", "item-3", "local-qa-placed"],
     usefulItemIds: [],
     submittedContributions: [
       {

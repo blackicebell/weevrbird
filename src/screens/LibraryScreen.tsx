@@ -8,11 +8,12 @@ import { SectionHeader } from "../components/SectionHeader";
 import { localDataService } from "../data/localDataService";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem } from "../types/product";
+import { FeedItem, SubmittedContribution } from "../types/product";
 
 export function LibraryScreen({
   theme,
   savedItems,
+  submittedContributions,
   search,
   setSearch,
   savedItemIds,
@@ -23,6 +24,7 @@ export function LibraryScreen({
 }: {
   theme: AppTheme;
   savedItems: FeedItem[];
+  submittedContributions: SubmittedContribution[];
   search: string;
   setSearch: (value: string) => void;
   savedItemIds: string[];
@@ -32,8 +34,10 @@ export function LibraryScreen({
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const userContentState = { savedItemIds, usefulItemIds };
-  const archiveItems = localDataService.getArchiveItems(userContentState);
-  const results = localDataService.searchLibrary(search);
+  const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
+  const results = localDataService.searchLibrary(search, submittedContributions);
+  const savedUserItems = savedItems.filter((item) => item.authorId === "you");
+  const regularArchiveItems = archiveItems.filter((item) => item.authorId !== "you");
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -101,7 +105,18 @@ export function LibraryScreen({
             ))}
           </View>
           {archiveItems.length > 0 ? (
-            archiveItems.map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)
+            <>
+              {savedUserItems.length > 0 && (
+                <>
+                  <SectionHeader title="Your placed signals" theme={theme} />
+                  {savedUserItems.map((item) => (
+                    <LibraryItem key={`library-from-you-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
+                  ))}
+                </>
+              )}
+              <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved and opened"} theme={theme} />
+              {regularArchiveItems.map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+            </>
           ) : (
             <EmptyState
               icon="bookmark-outline"
@@ -117,7 +132,8 @@ export function LibraryScreen({
 }
 
 function LibraryItem({ item, theme, onOpen }: { item: FeedItem; theme: AppTheme; onOpen: () => void }) {
-  const icon = item.imported ? "book-outline" : "chatbubble-ellipses-outline";
+  const isUserContribution = item.authorId === "you";
+  const icon = isUserContribution ? "checkmark-circle-outline" : item.imported ? "book-outline" : "chatbubble-ellipses-outline";
   const reason = getSaveReason(item);
   return (
     <Pressable
@@ -130,7 +146,7 @@ function LibraryItem({ item, theme, onOpen }: { item: FeedItem; theme: AppTheme;
         <Ionicons name={icon} color={theme.accent} size={18} />
       </View>
       <View style={styles.libraryCopy}>
-        <Text style={[styles.libraryMeta, { color: theme.accent }]}>{item.imported ? "Reading" : item.itemType.replace("_", " ")}</Text>
+        <Text style={[styles.libraryMeta, { color: theme.accent }]}>{isUserContribution ? "From You" : item.imported ? "Reading" : item.itemType.replace("_", " ")}</Text>
         <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird"} / {item.publishedAt}</Text>
         <Text style={[styles.libraryReason, { color: theme.muted }]}>{reason}</Text>
@@ -141,6 +157,7 @@ function LibraryItem({ item, theme, onOpen }: { item: FeedItem; theme: AppTheme;
 }
 
 function getSaveReason(item: FeedItem) {
+  if (item.authorId === "you") return `You placed this in ${localDataService.getFeed(item.feedId).name}. Saved for later context.`;
   if (item.saved) return "Saved from your issue";
   if (item.imported) return "Opened from a Smartfeed";
   if (item.itemType === "recommendation") return "Kept for a future plan";

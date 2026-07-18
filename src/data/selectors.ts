@@ -54,6 +54,11 @@ export function getArchiveItems(items: FeedItem[], state: UserContentState) {
   return archiveItems.filter((item, index) => archiveItems.findIndex((entry) => entry.id === item.id) === index).slice(0, 4);
 }
 
+export function getLibraryItems(items: FeedItem[], contributions: SubmittedContribution[]) {
+  const placedItems = getPlacedContributionFeedItems(contributions);
+  return placedItems.concat(items);
+}
+
 function getContributionItemType(type: string): FeedItemType {
   if (type === "Question") return "question";
   if (type === "Discussion") return "discussion";

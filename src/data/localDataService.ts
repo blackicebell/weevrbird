@@ -5,6 +5,7 @@ import {
   getFeedById,
   getDefaultSavedItemIds,
   getJoinedFeeds,
+  getLibraryItems,
   getPlacedContributionFeedItems,
   getSavedItems as selectSavedItems,
   getShelfItems as selectShelfItems,
@@ -45,14 +46,14 @@ export const localDataService = {
     const placedItems = getPlacedContributionFeedItems(contributions);
     return getVisibleFeedItems({ items: placedItems.concat(feedItems), selectedFeedId: feedId, activeFilter, state });
   },
-  getSavedItems(state: UserContentState) {
-    return selectSavedItems(feedItems, state);
+  getSavedItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
+    return selectSavedItems(getLibraryItems(feedItems, contributions), state);
   },
-  getArchiveItems(state: UserContentState) {
-    return selectArchiveItems(feedItems, state);
+  getArchiveItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
+    return selectArchiveItems(getLibraryItems(feedItems, contributions), state);
   },
-  searchLibrary(query: string) {
-    return searchLibraryItems(feedItems, query);
+  searchLibrary(query: string, contributions: SubmittedContribution[] = []) {
+    return searchLibraryItems(getLibraryItems(feedItems, contributions), query);
   },
   getShelfItems(title: string) {
     return selectShelfItems(title, feedItems);
