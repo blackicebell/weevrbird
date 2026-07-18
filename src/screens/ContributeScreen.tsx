@@ -174,14 +174,22 @@ export function ContributeScreen({
             }}
           />
         )}
-        {submittedContributions.length > 0 && (
-          <View style={[styles.reviewQueue, { borderColor: theme.line, backgroundColor: theme.panel }]}>
-            <Text style={[styles.qualityTitle, { color: theme.text }]}>Recent contributions</Text>
-            {submittedContributions.slice(0, 3).map((contribution) => (
+        <View style={[styles.reviewQueue, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+          <Text style={[styles.qualityTitle, { color: theme.text }]}>Recent contributions</Text>
+          {submittedContributions.length > 0 ? (
+            submittedContributions.slice(0, 3).map((contribution) => (
               <SubmittedContributionRow key={contribution.id} contribution={contribution} theme={theme} />
-            ))}
-          </View>
-        )}
+            ))
+          ) : (
+            <View style={[styles.emptyContributions, { borderColor: theme.line, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.64)" }]}>
+              <Ionicons name="file-tray-outline" color={theme.accent} size={19} />
+              <View style={styles.guidanceCopy}>
+                <Text style={[styles.submittedBody, { color: theme.text }]}>Nothing saved yet</Text>
+                <Text style={[styles.meta, { color: theme.muted }]}>Your private drafts will appear here before you place them in a Smartfeed.</Text>
+              </View>
+            </View>
+          )}
+        </View>
         <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -661,6 +669,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: spacing.md,
+    gap: spacing.sm
+  },
+  emptyContributions: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: spacing.sm
   },
   inlineReviewPanel: {
