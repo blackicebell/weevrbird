@@ -12,6 +12,7 @@ import { AppTheme } from "../theme/useTheme";
 import { FeedItem, SubmittedContribution } from "../types/product";
 
 type LibraryTab = "Saved for later" | "Opened" | "Shelves";
+type LibraryCollection = (typeof profileCollections)[number];
 
 export function LibraryScreen({
   theme,
@@ -37,12 +38,24 @@ export function LibraryScreen({
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const [activeTab, setActiveTab] = useState<LibraryTab>("Saved for later");
+  const [activeShelf, setActiveShelf] = useState<LibraryCollection | null>(null);
   const userContentState = { savedItemIds, usefulItemIds };
   const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
   const results = localDataService.searchLibrary(search, submittedContributions);
   const savedUserItems = savedItems.filter((item) => item.authorId === "you");
   const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
   const openedItems = archiveItems.filter((item) => !savedItemIds.includes(item.id));
+
+  if (activeShelf) {
+    return (
+      <LibraryShelfDetail
+        collection={activeShelf}
+        theme={theme}
+        onBack={() => setActiveShelf(null)}
+        onOpenDetail={onOpenDetail}
+      />
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -123,6 +136,7 @@ export function LibraryScreen({
             openedItems={openedItems}
             theme={theme}
             onOpenDetail={onOpenDetail}
+            onOpenShelf={setActiveShelf}
           />
         </>
       )}
@@ -136,7 +150,8 @@ function LibraryTabContent({
   regularSavedItems,
   openedItems,
   theme,
-  onOpenDetail
+  onOpenDetail,
+  onOpenShelf
 }: {
   activeTab: LibraryTab;
   savedUserItems: FeedItem[];
@@ -144,6 +159,7 @@ function LibraryTabContent({
   openedItems: FeedItem[];
   theme: AppTheme;
   onOpenDetail: (item: FeedItem) => void;
+  onOpenShelf: (collection: LibraryCollection) => void;
 }) {
   if (activeTab === "Shelves") {
     return (
@@ -157,10 +173,7 @@ function LibraryTabContent({
               collection={collection}
               itemCount={shelfItems.length}
               theme={theme}
-              onOpen={() => {
-                const firstItem = shelfItems[0];
-                if (firstItem) onOpenDetail(firstItem);
-              }}
+              onOpen={() => onOpenShelf(collection)}
             />
           );
         })}
@@ -215,8 +228,44 @@ function LibraryTabContent({
   );
 }
 
+function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
+  collection: LibraryCollection;
+  theme: AppTheme;
+  onBack: () => void;
+  onOpenDetail: (item: FeedItem) => void;
+}) {
+  const shelfItems = localDataService.getShelfItems(collection.title);
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <BackButton label="Back to Library" theme={theme} onPress={onBack} />
+      <View style={[styles.shelfHero, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+        <View style={[styles.libraryIcon, { backgroundColor: theme.panelAlt }]}>
+          <Ionicons name={collection.icon} color={theme.accent} size={19} />
+        </View>
+        <Text style={[styles.libraryMeta, { color: theme.accent }]}>Shelf</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>{collection.title}</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>{collection.description}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{shelfItems.length} pieces / {collection.meta}</Text>
+      </View>
+      {shelfItems.map((item) => (
+        <LibraryItem key={`library-shelf-item-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
+      ))}
+    </ScrollView>
+  );
+}
+
+function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.backButton}>
+      <Ionicons name="chevron-back" color={theme.text} size={20} />
+      <Text style={[styles.backButtonText, { color: theme.text }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function ShelfRow({ collection, itemCount, theme, onOpen }: {
-  collection: (typeof profileCollections)[number];
+  collection: LibraryCollection;
   itemCount: number;
   theme: AppTheme;
   onOpen: () => void;
@@ -367,6 +416,29 @@ const styles = StyleSheet.create({
   libraryItemPressed: {
     opacity: 0.82,
     transform: [{ scale: 0.99 }]
+  },
+  backButton: {
+    minHeight: 42,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  backButtonText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  shelfHero: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    gap: spacing.sm
+  },
+  shelfTitle: {
+    fontSize: 30,
+    lineHeight: 36,
+    fontFamily: "PlayfairDisplay_700Bold"
   },
   libraryIcon: {
     width: 38,
