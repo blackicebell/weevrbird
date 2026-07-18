@@ -38,6 +38,9 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
   const issuePromise = getIssuePromise(issuePace, coverDate);
   const coverIssue = `${formatCoverDate(coverDate)} / ${selectedCity}`;
   const greeting = getCoverGreeting(coverDate);
+  const activityLabel = contributionActivityCount > 0
+    ? `Open ${contributionActivityCount} new contribution update${contributionActivityCount === 1 ? "" : "s"}`
+    : "Open contribution activity";
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
 
@@ -66,7 +69,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
           </View>
           <View style={styles.coverActions}>
             <HeaderIcon name="search-outline" label="Search Today" theme={theme} onPress={onOpenSearch} />
-            <HeaderIcon name="notifications-outline" label="Open contribution activity" theme={theme} onPress={onOpenActivity} dot={contributionActivityCount > 0} />
+            <HeaderIcon name="notifications-outline" label={activityLabel} theme={theme} onPress={onOpenActivity} dot={contributionActivityCount > 0} />
           </View>
         </View>
         <Text style={[styles.mastheadTitle, { color: theme.text }]}>{greeting}</Text>
