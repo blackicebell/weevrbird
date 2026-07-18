@@ -866,16 +866,20 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   placementChip: {
+    minWidth: 92,
+    maxWidth: "100%",
     minHeight: 38,
     borderWidth: 1,
     borderRadius: radii.round,
     paddingHorizontal: spacing.md,
-    justifyContent: "center"
+    justifyContent: "center",
+    alignItems: "center"
   },
   placementChipText: {
     fontSize: 13,
     lineHeight: 17,
-    fontFamily: "Inter_700Bold"
+    fontFamily: "Inter_700Bold",
+    textAlign: "center"
   },
   placementPreview: {
     borderWidth: 1,
