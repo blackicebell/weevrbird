@@ -238,6 +238,7 @@ function AppContent() {
           {userAppState.activeTab === "Today" && (
             <TodayScreen
               theme={theme}
+              selectedCity={userAppState.selectedCity}
               joinedFeeds={joinedFeeds}
               submittedContributionCount={reviewContributionCount}
               contributionActivityCount={unseenContributionActivity.length}

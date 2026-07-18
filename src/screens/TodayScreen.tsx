@@ -15,8 +15,9 @@ import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { EditionModule, FeedItem, IssuePace, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, savedItemIds, usefulItemIds, setSelectedFeed, setActiveTab, toggleSavedItem, toggleUsefulItem, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
+export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, savedItemIds, usefulItemIds, setSelectedFeed, setActiveTab, toggleSavedItem, toggleUsefulItem, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
   theme: AppTheme;
+  selectedCity: string;
   joinedFeeds: Smartfeed[];
   submittedContributionCount: number;
   contributionActivityCount: number;
@@ -34,6 +35,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(issuePace), [joinedFeeds, issuePace]);
   const issuePromise = getIssuePromise(issuePace);
+  const coverIssue = `${formatCoverDate(new Date())} / ${selectedCity}`;
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
 
@@ -58,7 +60,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
         <View style={styles.coverTop}>
           <View>
             <Text style={[styles.dateText, { color: theme.accent }]}>TODAY'S EDITION</Text>
-            <Text style={[styles.coverIssue, { color: theme.muted }]}>Friday, July 17 / Atlanta</Text>
+            <Text style={[styles.coverIssue, { color: theme.muted }]}>{coverIssue}</Text>
           </View>
           <View style={styles.coverActions}>
             <HeaderIcon name="search-outline" label="Search Today" theme={theme} onPress={onOpenSearch} />
@@ -203,6 +205,14 @@ function getIssuePromise(issuePace: IssuePace) {
     subtitle: "One personal issue. See what changed, save what matters, join one useful conversation, then leave caught up.",
     chips: ["6 pieces", "12 min", "Clear ending"]
   };
+}
+
+function formatCoverDate(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric"
+  });
 }
 
 function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenFeed, onOpenLibrary, onOpenDetail }: {
