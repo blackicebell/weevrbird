@@ -250,8 +250,8 @@ function InlineReviewPlacement({
           <Ionicons name="file-tray-full-outline" color={theme.text} size={18} />
         </View>
         <View style={styles.guidanceCopy}>
-          <Text style={[styles.qualityTitle, { color: theme.text }]}>Ready to place</Text>
-          <Text style={[styles.meta, { color: theme.muted }]}>Pick the Smartfeed where this will be most useful.</Text>
+          <Text style={[styles.qualityTitle, { color: theme.text }]}>Ready for a Smartfeed</Text>
+          <Text style={[styles.meta, { color: theme.muted }]}>Choose where this should become visible.</Text>
         </View>
       </View>
       <Text style={[styles.submittedBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
@@ -262,7 +262,7 @@ function InlineReviewPlacement({
             <Pressable
               key={feed.id}
               accessibilityRole="button"
-              accessibilityLabel={`Place in ${feed.name}`}
+              accessibilityLabel={`Choose ${feed.name} for this contribution`}
               accessibilityState={{ selected }}
               onPress={() => onSelectFeed(feed.id)}
               style={({ pressed }) => [
@@ -287,12 +287,12 @@ function InlineReviewPlacement({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Place contribution in ${selectedFeed.name}`}
+        accessibilityLabel={`Make contribution visible in ${selectedFeed.name}`}
         onPress={onPlace}
         style={({ pressed }) => [styles.inlinePlaceButton, pressed && styles.contributionRowPressed, { backgroundColor: theme.accent }]}
       >
         <Ionicons name="checkmark-circle-outline" color="#FFFDF8" size={18} />
-        <Text style={styles.inlinePlaceButtonText}>Place in {selectedFeed.name}</Text>
+        <Text style={styles.inlinePlaceButtonText}>Make visible in {selectedFeed.name}</Text>
       </Pressable>
     </View>
   );
@@ -337,7 +337,7 @@ function ContributionPreview({ type, body, theme, guidance }: {
       </View>
       <Text style={[styles.previewBody, { color: theme.text }]}>{body}</Text>
       <View style={[styles.previewRule, { backgroundColor: theme.line }]} />
-      <Text style={[styles.meta, { color: theme.muted }]}>After saving: private until you place it</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>After saving: private until you choose a Smartfeed</Text>
     </View>
   );
 }
