@@ -268,7 +268,7 @@ function getLibraryTabContext(tab: LibraryTab): {
   if (tab === "Opened") {
     return {
       icon: "time-outline",
-      body: "Opened keeps your reading trail, including pieces you did not save but may want to find again."
+      body: "Opened is your private trail back to pieces you glanced at, even when they were not worth saving yet."
     };
   }
 
