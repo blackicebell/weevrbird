@@ -333,6 +333,8 @@ function ContributionPreview({ type, body, theme, guidance }: {
 
 function ContributionConfirmation({ contribution, theme }: { contribution: SubmittedContribution; theme: AppTheme }) {
   const placed = contribution.status === "placed";
+  const feed = localDataService.getFeed(contribution.feedId);
+  const placedTime = contribution.placedAt ? new Date(contribution.placedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : null;
 
   return (
     <View style={[styles.confirmationPanel, { borderColor: "#CFE8DA", backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.08)" : "#F2FBF6" }]}>
@@ -340,8 +342,14 @@ function ContributionConfirmation({ contribution, theme }: { contribution: Submi
       <View style={styles.guidanceCopy}>
         <Text style={[styles.qualityTitle, { color: theme.text }]}>{placed ? "Placed in a Smartfeed" : "Saved privately"}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>
-          {placed ? `${contribution.type} / People can now find it where it belongs` : `${contribution.type} / Choose a Smartfeed below when you are ready`}
+          {placed ? `${contribution.type} / Visible in ${feed.name}${placedTime ? ` at ${placedTime}` : ""}` : `${contribution.type} / Choose a Smartfeed below when you are ready`}
         </Text>
+        {placed && (
+          <View style={styles.placedReceiptRow}>
+            <View style={[styles.placedFeedDot, { backgroundColor: feed.palette }]} />
+            <Text style={[styles.placedReceiptText, { color: theme.accent }]}>Now discoverable by {feed.members}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -627,6 +635,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.md,
     alignItems: "flex-start"
+  },
+  placedReceiptRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: 4
+  },
+  placedFeedDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4
+  },
+  placedReceiptText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
   },
   reviewQueue: {
     borderWidth: 1,
