@@ -352,6 +352,7 @@ function AppContent() {
                 results={todaySearchResults}
                 savedItemIds={userAppState.savedItemIds}
                 usefulItemIds={userAppState.usefulItemIds}
+                hasContributionContext={userAppState.submittedContributions.length > 0}
                 onBack={() => setSearchOpen(false)}
                 onOpenDetail={openDetail}
                 onOpenLibrary={() => {
@@ -469,7 +470,7 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
   );
 }
 
-function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemIds, usefulItemIds, onBack, onOpenDetail, onOpenLibrary }: {
+function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemIds, usefulItemIds, hasContributionContext, onBack, onOpenDetail, onOpenLibrary }: {
   theme: ReturnType<typeof useTheme>;
   selectedCity: string;
   query: string;
@@ -477,11 +478,12 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
   results: FeedItem[];
   savedItemIds: string[];
   usefulItemIds: string[];
+  hasContributionContext: boolean;
   onBack: () => void;
   onOpenDetail: (item: FeedItem) => void;
   onOpenLibrary: () => void;
 }) {
-  const suggestions = getSearchSuggestions(selectedCity);
+  const suggestions = getSearchSuggestions(selectedCity, hasContributionContext);
   const normalizedQuery = query.trim();
   const librarySearchLabel = normalizedQuery ? "Search the full Library with this query" : "Open full Library";
 
@@ -573,8 +575,11 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
   );
 }
 
-function getSearchSuggestions(selectedCity: string) {
-  return Array.from(new Map([selectedCity, "Black Tech", "weekend", "design"].map((suggestion) => [suggestion.toLowerCase(), suggestion])).values());
+function getSearchSuggestions(selectedCity: string, hasContributionContext: boolean) {
+  const baseSuggestions = [selectedCity, "Black Tech", "weekend", "design"];
+  const suggestions = hasContributionContext ? [selectedCity, "private signal", "Black Tech", "weekend", "design"] : baseSuggestions;
+
+  return Array.from(new Map(suggestions.map((suggestion) => [suggestion.toLowerCase(), suggestion])).values());
 }
 
 function SearchResultRow({ item, theme, saved, markedUseful, onOpen }: {
