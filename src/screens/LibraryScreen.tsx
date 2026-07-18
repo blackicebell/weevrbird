@@ -43,6 +43,7 @@ export function LibraryScreen({
   const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
   const results = localDataService.searchLibrary(search, submittedContributions);
   const allLibraryItems = localDataService.searchLibrary("", submittedContributions);
+  const searchQuery = search.trim();
   const savedUserItems = savedItems.filter((item) => item.authorId === "you");
   const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
   const usefulItems = allLibraryItems.filter((item) => usefulItemIds.includes(item.id) && !savedItemIds.includes(item.id));
@@ -92,7 +93,7 @@ export function LibraryScreen({
       </View>
       {search ? (
         <>
-          <SectionHeader title="Grouped search results" theme={theme} />
+          <SectionHeader title={`Results for "${searchQuery || search}"`} action={`${results.length} found`} theme={theme} />
           {results.length > 0 ? (
             results.map((item) => (
               <FeedCard
