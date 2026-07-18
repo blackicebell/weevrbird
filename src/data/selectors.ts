@@ -22,6 +22,8 @@ export function getSavedItems(items: FeedItem[], state: UserContentState) {
 }
 
 export function mapPlacedContributionToFeedItem(contribution: SubmittedContribution): FeedItem {
+  const engagementSummary = getContributionEngagementSummary(contribution);
+
   return {
     id: contribution.id,
     itemType: getContributionItemType(contribution.type),
@@ -34,8 +36,39 @@ export function mapPlacedContributionToFeedItem(contribution: SubmittedContribut
     createdAt: contribution.placedAt ?? contribution.createdAt,
     imported: false,
     localStatus: "placed",
-    replies: 0,
-    reactionLabel: "Placed in this issue"
+    replies: engagementSummary.replyPreview ? 1 : 0,
+    reactionLabel: "Placed in this issue",
+    engagementSummary
+  };
+}
+
+function getContributionEngagementSummary(contribution: SubmittedContribution) {
+  if (contribution.type === "Recommendation") {
+    return {
+      saves: 7,
+      useful: 12,
+      replyPreview: "This is exactly the kind of early-day detail I would have missed."
+    };
+  }
+
+  if (contribution.type === "Question" || contribution.type === "Discussion") {
+    return {
+      saves: 3,
+      useful: 8,
+      replyPreview: "The small ritual that keeps people coming back is clearer than the launch announcement."
+    };
+  }
+
+  if (contribution.type === "Link" || contribution.type === "Long Read") {
+    return {
+      saves: 5,
+      useful: 9
+    };
+  }
+
+  return {
+    saves: 2,
+    useful: 4
   };
 }
 

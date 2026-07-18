@@ -113,11 +113,21 @@ function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
   theme: AppTheme;
   accent: string;
 }) {
+  const engagement = item.engagementSummary;
+  const signal = engagement?.replyPreview
+    ? "1 thoughtful reply"
+    : engagement && engagement.saves > 0
+      ? `${engagement.saves} saved it`
+      : "No replies yet";
+
   return (
     <View style={styles.userContributionFooter}>
-      <View style={styles.userContributionStatus}>
-        <Ionicons name="checkmark-circle-outline" color={accent} size={17} />
-        <Text style={[styles.meta, { color: theme.muted }]}>Placed in this issue</Text>
+      <View style={styles.userContributionFooterCopy}>
+        <View style={styles.userContributionStatus}>
+          <Ionicons name="checkmark-circle-outline" color={accent} size={17} />
+          <Text style={[styles.meta, { color: theme.muted }]}>Placed in this issue</Text>
+        </View>
+        <Text style={[styles.userContributionSignal, { color: accent }]}>{signal}</Text>
       </View>
       <ActionPill
         icon={saved ? "bookmark" : "bookmark-outline"}
@@ -294,10 +304,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   userContributionStatus: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs
+  },
+  userContributionFooterCopy: {
+    flex: 1,
+    gap: 3
+  },
+  userContributionSignal: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
   },
   actionPill: {
     minHeight: 34,

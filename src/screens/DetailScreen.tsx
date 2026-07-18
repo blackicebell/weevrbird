@@ -61,6 +61,10 @@ export function DetailScreen({
           </View>
         )}
 
+        {isUserContribution && (
+          <ContributionEngagement item={item} theme={theme} accent={editorial.accent} />
+        )}
+
         <View style={[styles.contextPanel, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.62)" }]}>
           <Text style={[styles.contextTitle, { color: theme.text }]}>{isUserContribution ? "Why it belongs here" : "Why this is in your issue"}</Text>
           <Text style={[styles.body, { color: theme.muted }]}>{getDetailReason(item, feed.name)}</Text>
@@ -135,6 +139,47 @@ function DetailAction({ icon, label, active, onPress, theme, accent }: {
       <Ionicons name={icon} color={active ? accent : theme.muted} size={18} />
       <Text style={[styles.detailActionText, { color: active ? accent : theme.text }]}>{label}</Text>
     </Pressable>
+  );
+}
+
+function ContributionEngagement({ item, theme, accent }: {
+  item: FeedItem;
+  theme: AppTheme;
+  accent: string;
+}) {
+  const engagement = item.engagementSummary;
+  const saves = engagement?.saves ?? 0;
+  const useful = engagement?.useful ?? 0;
+
+  return (
+    <View style={[styles.engagementPanel, { borderColor: `${accent}33`, backgroundColor: `${accent}0F` }]}>
+      <View style={styles.engagementStats}>
+        <EngagementStat icon="bookmark-outline" label={saves > 0 ? `${saves} saved` : "No saves yet"} theme={theme} accent={accent} />
+        <EngagementStat icon="sparkles-outline" label={useful > 0 ? `${useful} useful` : "Waiting for signal"} theme={theme} accent={accent} />
+      </View>
+      {engagement?.replyPreview ? (
+        <View style={styles.replyPreview}>
+          <Text style={[styles.contextTitle, { color: theme.text }]}>One thoughtful reply</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>{engagement.replyPreview}</Text>
+        </View>
+      ) : (
+        <Text style={[styles.body, { color: theme.muted }]}>No replies yet. The piece is still useful as a saved signal.</Text>
+      )}
+    </View>
+  );
+}
+
+function EngagementStat({ icon, label, theme, accent }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  theme: AppTheme;
+  accent: string;
+}) {
+  return (
+    <View style={styles.engagementStat}>
+      <Ionicons name={icon} color={accent} size={17} />
+      <Text style={[styles.meta, { color: theme.muted }]}>{label}</Text>
+    </View>
   );
 }
 
@@ -228,6 +273,29 @@ const styles = StyleSheet.create({
   },
   placedPanelCopy: {
     flex: 1,
+    gap: spacing.xs
+  },
+  engagementPanel: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.md,
+    gap: spacing.md
+  },
+  engagementStats: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  engagementStat: {
+    minHeight: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  replyPreview: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(18, 31, 27, 0.1)",
+    paddingTop: spacing.md,
     gap: spacing.xs
   },
   contextTitle: {

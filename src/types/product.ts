@@ -52,6 +52,11 @@ export interface FeedItem {
   saved?: boolean;
   replies: number;
   reactionLabel: string;
+  engagementSummary?: {
+    saves: number;
+    useful: number;
+    replyPreview?: string;
+  };
 }
 
 export interface EditionModule {
