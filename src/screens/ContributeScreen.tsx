@@ -230,6 +230,7 @@ function InlineReviewPlacement({
   onPlace: () => void;
 }) {
   const selectedFeed = localDataService.getFeed(selectedFeedId);
+  const placementReason = getPlacementReason(selectedFeed, contribution.type);
 
   return (
     <View style={[styles.inlineReviewPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
@@ -264,6 +265,15 @@ function InlineReviewPlacement({
           );
         })}
       </View>
+      <View style={[styles.placementReason, { borderColor: theme.line, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "#FBF8F0" }]}>
+        <View style={[styles.placementReasonIcon, { backgroundColor: selectedFeed.palette }]}>
+          <Ionicons name="git-branch-outline" color="#FFFDF8" size={15} />
+        </View>
+        <View style={styles.guidanceCopy}>
+          <Text style={[styles.previewKicker, { color: theme.accent }]}>Why this fits</Text>
+          <Text style={[styles.meta, { color: theme.muted }]}>{placementReason}</Text>
+        </View>
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`Place contribution in ${selectedFeed.name}`}
@@ -275,6 +285,20 @@ function InlineReviewPlacement({
       </Pressable>
     </View>
   );
+}
+
+function getPlacementReason(feed: ReturnType<typeof localDataService.getFeed>, contributionType: string) {
+  const typeReason: Record<string, string> = {
+    Question: "Questions work best where people already share enough context to answer thoughtfully.",
+    Discussion: "Discussions need a room with the right shared language.",
+    Recommendation: "Recommendations are strongest when readers can act on them soon.",
+    Link: "Links are easier to trust when they sit beside related reading.",
+    "Long Read": "Long reads need a slower audience that saves and returns.",
+    Note: "Notes become useful when they land near the people watching that signal."
+  };
+  const feedRole = feed.type === "city" ? "local context" : feed.type === "community" ? "shared practice" : "focused discovery";
+
+  return `${typeReason[contributionType] ?? typeReason.Note} ${feed.name} brings ${feedRole}, ${feed.members}, and the right surrounding signals.`;
 }
 
 function getDefaultFeedId(type: string) {
@@ -638,6 +662,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 17,
     fontFamily: "Inter_700Bold"
+  },
+  placementReason: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  placementReasonIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center"
   },
   inlinePlaceButton: {
     minHeight: 44,
