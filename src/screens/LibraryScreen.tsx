@@ -286,6 +286,7 @@ function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const shelfItems = localDataService.getShelfItems(collection.title);
+  const shelfPurpose = getShelfPurpose(collection);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -297,13 +298,30 @@ function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
         <Text style={[styles.libraryMeta, { color: theme.accent }]}>Shelf</Text>
         <Text style={[styles.shelfTitle, { color: theme.text }]}>{collection.title}</Text>
         <Text style={[styles.body, { color: theme.muted }]}>{collection.description}</Text>
-        <Text style={[styles.meta, { color: theme.muted }]}>{shelfItems.length} pieces / {collection.meta}</Text>
+        <View style={[styles.shelfSummary, { borderColor: theme.line, backgroundColor: theme.panelAlt }]}>
+          <View style={styles.shelfSummaryItem}>
+            <Text style={[styles.archiveSummaryValue, { color: theme.text }]}>{shelfItems.length}</Text>
+            <Text style={[styles.archiveSummaryLabel, { color: theme.muted }]}>Pieces</Text>
+          </View>
+          <View style={styles.shelfSummaryCopy}>
+            <Text style={[styles.libraryReason, { color: theme.accent }]}>{collection.meta}</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{shelfPurpose}</Text>
+          </View>
+        </View>
       </View>
       {shelfItems.map((item) => (
         <LibraryItem key={`library-shelf-item-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
       ))}
     </ScrollView>
   );
+}
+
+function getShelfPurpose(collection: LibraryCollection) {
+  if (collection.title.includes("Atlanta")) return "A local memory shelf for places, plans, and city signals you expect to use again.";
+  if (collection.title.includes("attention")) return "A slower reading shelf for ideas that shape how you want to think and design.";
+  if (collection.title.includes("artists")) return "A practical shelf for tools, resources, and references worth keeping close.";
+
+  return "A focused shelf for saved pieces that belong together.";
 }
 
 function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
@@ -518,6 +536,22 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: spacing.lg,
     gap: spacing.sm
+  },
+  shelfSummary: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  shelfSummaryItem: {
+    minWidth: 58,
+    gap: 2
+  },
+  shelfSummaryCopy: {
+    flex: 1,
+    gap: 3
   },
   shelfTitle: {
     fontSize: 30,
