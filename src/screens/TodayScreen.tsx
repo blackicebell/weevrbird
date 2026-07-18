@@ -328,16 +328,25 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
       <Text style={[styles.caughtUpTitle, { color: theme.text }]}>You can leave now.</Text>
       <Text style={[styles.caughtUpBody, { color: theme.muted }]}>Six useful pieces. Three saved. One conversation waiting if you want it. Nothing urgent is hiding below.</Text>
       <View style={styles.afterIssueStack}>
-        <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} onPress={onOpenLibrary} />
+        <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} />
         <AfterIssueRow
           icon="create-outline"
-          title={submittedContributionCount > 0 ? "Private signals are waiting" : "Add signal when it is useful"}
-          body={submittedContributionCount > 0 ? `${submittedContributionCount} contribution${submittedContributionCount === 1 ? "" : "s"} ready to place.` : "Write privately first, then choose the right Smartfeed."}
+          title={submittedContributionCount > 0 ? `${submittedContributionCount} private signal${submittedContributionCount === 1 ? "" : "s"} waiting` : "Contribution stays private first"}
+          body={submittedContributionCount > 0 ? "Place them when you know where they belong." : "Write when it is useful, then choose the right Smartfeed."}
           theme={theme}
           editorial={editorial}
-          onPress={onOpenContribute}
         />
       </View>
+      {submittedContributionCount > 0 && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open private contributions"
+          onPress={onOpenContribute}
+          style={({ pressed }) => [styles.secondaryCaughtUpButton, pressed && styles.caughtUpButtonPressed, { borderColor: editorial.secondary }]}
+        >
+          <Text style={[styles.secondaryCaughtUpButtonText, { color: editorial.accent }]}>Place private signals</Text>
+        </Pressable>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open Library"
@@ -351,28 +360,21 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
   );
 }
 
-function AfterIssueRow({ icon, title, body, theme, editorial, onPress }: {
+function AfterIssueRow({ icon, title, body, theme, editorial }: {
   icon: keyof typeof Ionicons.glyphMap;
   title: string;
   body: string;
   theme: AppTheme;
   editorial: (typeof feedEditorialMeta)[string];
-  onPress: () => void;
 }) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      onPress={onPress}
-      style={({ pressed }) => [styles.afterIssueRow, pressed && styles.caughtUpButtonPressed, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.56)" }]}
-    >
+    <View style={styles.afterIssueRow}>
       <Ionicons name={icon} color={editorial.accent} size={18} />
       <View style={styles.afterIssueCopy}>
         <Text style={[styles.afterIssueTitle, { color: theme.text }]}>{title}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{body}</Text>
       </View>
-      <Ionicons name="chevron-forward" color={theme.muted} size={16} />
-    </Pressable>
+    </View>
   );
 }
 
@@ -866,15 +868,15 @@ const styles = StyleSheet.create({
   afterIssueStack: {
     width: "100%",
     gap: spacing.sm,
-    paddingVertical: spacing.sm
+    maxWidth: 330,
+    paddingVertical: spacing.xs
   },
   afterIssueRow: {
-    minHeight: 62,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: spacing.md,
+    minHeight: 48,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: spacing.sm
   },
   afterIssueCopy: {
@@ -884,6 +886,18 @@ const styles = StyleSheet.create({
   afterIssueTitle: {
     fontSize: 14,
     lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  secondaryCaughtUpButton: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center"
+  },
+  secondaryCaughtUpButtonText: {
+    fontSize: 13,
+    lineHeight: 17,
     fontFamily: "Inter_700Bold"
   },
   caughtUpButton: {
