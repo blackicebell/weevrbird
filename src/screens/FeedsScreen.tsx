@@ -28,6 +28,7 @@ export function FeedsScreen(props: {
   const pace = getFeedPace(selectedFeed);
   const feedFit = getFeedFitSignal(selectedFeed);
   const emptyState = getFeedEmptyState(activeFilter, selectedFeed);
+  const filterContext = getFilterContext(activeFilter, selectedFeed);
   const feeds = localDataService.getFeeds();
   const fromYouItems = visibleFeedItems.filter((item) => item.authorId === "you");
   const sectionItems = visibleFeedItems.filter((item) => item.authorId !== "you");
@@ -78,6 +79,10 @@ export function FeedsScreen(props: {
 
       <View style={[styles.filterGlassBar, { borderColor: theme.line }]}>
         {filters.map((filter) => <Chip key={filter.key} label={filter.label} selected={activeFilter === filter.key} onPress={() => setActiveFilter(filter.key)} theme={theme} />)}
+      </View>
+      <View style={styles.filterContextRow}>
+        <Ionicons name={filterContext.icon} color={editorial.accent} size={16} />
+        <Text style={[styles.filterContextText, { color: theme.muted }]}>{filterContext.body}</Text>
       </View>
 
       {visibleFeedItems.length > 0 ? (
@@ -284,6 +289,37 @@ function getFeedEmptyState(filter: SmartfeedFilter, feed: Smartfeed): {
   };
 }
 
+function getFilterContext(filter: SmartfeedFilter, feed: Smartfeed): {
+  icon: keyof typeof Ionicons.glyphMap;
+  body: string;
+} {
+  if (filter === "Conversations") {
+    return {
+      icon: "chatbubble-ellipses-outline",
+      body: `Discuss shows questions and replies moving through ${feed.name}.`
+    };
+  }
+
+  if (filter === "Reading") {
+    return {
+      icon: "book-outline",
+      body: `Reading Room keeps the longer pieces from ${feed.name} in one slower pass.`
+    };
+  }
+
+  if (filter === "Saved") {
+    return {
+      icon: "bookmark-outline",
+      body: `Archive shows what you saved from ${feed.name} for later.`
+    };
+  }
+
+  return {
+    icon: "newspaper-outline",
+    body: `Today shows the freshest useful signals from ${feed.name}.`
+  };
+}
+
 function Chip({ label, selected, onPress, theme }: {
   label: string;
   selected: boolean;
@@ -486,6 +522,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     backgroundColor: "rgba(255, 255, 252, 0.48)",
     ...shadows.card
+  },
+  filterContextRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm
+  },
+  filterContextText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   editorNote: {
     borderTopWidth: 1,
