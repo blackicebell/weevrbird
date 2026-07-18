@@ -110,8 +110,8 @@ export function LibraryScreen({
           ) : (
             <EmptyState
               icon="search-outline"
-              title="Nothing saved with that phrase."
-              body="Try a feed name, source, place, or topic. Library searches across saved pieces, history, and conversations."
+              title={`No results for "${searchQuery || search}".`}
+              body="Try a feed name, source name, place, or contribution text. Library searches saved pieces, opened history, and conversations."
               actionLabel="Clear search"
               onAction={() => setSearch("")}
               theme={theme}
