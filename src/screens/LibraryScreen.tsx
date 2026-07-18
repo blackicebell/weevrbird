@@ -89,10 +89,10 @@ export function LibraryScreen({
         <Ionicons name="search-outline" color={theme.muted} size={20} />
         <TextInput
           accessibilityLabel="Search Weevrbird"
-          accessibilityHint="Search saved pieces, opened items, sources, private signals, and placed contributions."
+          accessibilityHint="Search saved pieces, opened history, sources, shelves, and your contributions."
           value={search}
           onChangeText={setSearch}
-          placeholder="Search feeds, saved pieces, private signals"
+          placeholder="Search saved pieces, history, shelves"
           placeholderTextColor={theme.muted}
           style={[styles.searchInput, { color: theme.text }]}
         />
@@ -117,7 +117,7 @@ export function LibraryScreen({
             <EmptyState
               icon="search-outline"
               title={`No results for "${searchQuery || search}".`}
-              body="Try a feed name, source name, place, private signal, or placed contribution. Library searches saved pieces, opened history, and conversations."
+              body="Try a feed name, source, place, shelf, or contribution. Library searches saved pieces, opened history, and conversations."
               actionLabel="Clear search"
               onAction={() => setSearch("")}
               theme={theme}
