@@ -88,15 +88,6 @@ export function ContributeScreen({
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
         <Text style={[styles.body, { color: theme.muted }]}>Write one useful signal, keep it private while you choose where it belongs, then place it inside a Smartfeed.</Text>
         <ContributionLoopSummary reviewCount={reviewContributions.length} placedCount={placedContributionCount} theme={theme} />
-        <View style={[styles.guidancePanel, { backgroundColor: theme.panel, borderColor: theme.line }]}>
-          <View style={[styles.guidanceIcon, { backgroundColor: contributionGuidance.color }]}>
-            <Ionicons name={contributionGuidance.icon} color={theme.text} size={18} />
-          </View>
-          <View style={styles.guidanceCopy}>
-            <Text style={[styles.guidanceTitle, { color: theme.text }]}>{contributionGuidance.title}</Text>
-            <Text style={[styles.meta, { color: theme.muted }]}>{contributionGuidance.body}</Text>
-          </View>
-        </View>
         <View style={styles.contributionList}>
           {contributionTypes.map((type) => (
             <ContributionTypeRow
@@ -109,7 +100,15 @@ export function ContributeScreen({
           ))}
         </View>
         <View style={[styles.editor, { backgroundColor: theme.panel, borderColor: theme.line }]}>
-          <Text style={[styles.editorLabel, { color: theme.accent }]}>{draftType}</Text>
+          <View style={styles.editorHeader}>
+            <View style={[styles.guidanceIcon, { backgroundColor: contributionGuidance.color }]}>
+              <Ionicons name={contributionGuidance.icon} color={theme.text} size={18} />
+            </View>
+            <View style={styles.guidanceCopy}>
+              <Text style={[styles.editorLabel, { color: theme.accent }]}>{draftType}</Text>
+              <Text style={[styles.meta, { color: theme.muted }]}>{contributionGuidance.body}</Text>
+            </View>
+          </View>
           <TextInput
             accessibilityLabel={`${draftType} contribution editor`}
             accessibilityHint={contributionGuidance.placeholder}
@@ -169,10 +168,6 @@ export function ContributeScreen({
             ))}
           </View>
         )}
-        <View style={[styles.safetyPanel, { backgroundColor: theme.panelAlt, borderColor: theme.line }]}>
-          <Ionicons name="shield-checkmark-outline" color={theme.success} size={22} />
-          <Text style={[styles.body, { color: theme.muted }]}>Specific beats viral. Useful context helps people decide whether to save, reply, or move on.</Text>
-        </View>
         <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -457,15 +452,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     fontFamily: "Inter_500Medium"
   },
-  guidancePanel: {
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: spacing.md,
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start",
-    ...shadows.card
-  },
   guidanceIcon: {
     width: 38,
     height: 38,
@@ -476,11 +462,6 @@ const styles = StyleSheet.create({
   guidanceCopy: {
     flex: 1,
     gap: 3
-  },
-  guidanceTitle: {
-    fontSize: 16,
-    lineHeight: 21,
-    fontFamily: "Inter_700Bold"
   },
   contributionList: {
     flexDirection: "row",
@@ -528,6 +509,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     textTransform: "uppercase"
+  },
+  editorHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
   },
   textInput: {
     minHeight: 230,
@@ -661,14 +647,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     fontFamily: "Inter_700Bold",
     textTransform: "uppercase"
-  },
-  safetyPanel: {
-    borderWidth: 1,
-    borderRadius: 22,
-    padding: spacing.lg,
-    flexDirection: "row",
-    gap: spacing.md,
-    alignItems: "flex-start"
   },
   loopSummary: {
     borderWidth: 1,
