@@ -434,10 +434,11 @@ function ProfileShelfDetail({ collection, theme, onBack, onOpenDetail }: {
 }
 
 function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; onBack: () => void; onResetApp: () => void }) {
+  const [acknowledgedControl, setAcknowledgedControl] = useState<string | null>(null);
   const controls = [
-    { icon: "volume-mute-outline", title: "Mute profile", body: "Hide this person's contributions without changing your public signal." },
-    { icon: "person-remove-outline", title: "Unfollow quietly", body: "Stop seeing new signal from this profile. They will not be notified." },
-    { icon: "flag-outline", title: "Report concern", body: "Send a moderation note if something feels unsafe, spammy, or out of place." }
+    { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing your public signal." },
+    { icon: "person-remove-outline", title: "Unfollow quietly", done: "Unfollowed quietly", body: "Stop seeing new signal from this profile. They will not be notified." },
+    { icon: "flag-outline", title: "Report concern", done: "Concern noted", body: "Send a moderation note if something feels unsafe, spammy, or out of place." }
   ];
 
   return (
@@ -448,22 +449,36 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Quiet controls for your attention.</Text>
         <Text style={[styles.body, { color: theme.muted }]}>These actions are private. Weevrbird should give you control without turning safety into a performance.</Text>
       </View>
-      {controls.map((control) => (
-        <Pressable
-          key={control.title}
-          accessibilityRole="button"
-          accessibilityLabel={control.title}
-          onPress={() => undefined}
-          style={({ pressed }) => [styles.safetyRow, pressed && styles.profileRowPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
-        >
-          <Ionicons name={control.icon as keyof typeof Ionicons.glyphMap} color={control.title === "Report concern" ? palette.red : theme.accent} size={21} />
-          <View style={styles.profileCollectionCopy}>
-            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{control.title}</Text>
-            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{control.body}</Text>
-          </View>
-          <Ionicons name="chevron-forward" color={theme.muted} size={17} />
-        </Pressable>
-      ))}
+      {controls.map((control) => {
+        const acknowledged = acknowledgedControl === control.title;
+        const accent = control.title === "Report concern" ? palette.red : theme.accent;
+
+        return (
+          <Pressable
+            key={control.title}
+            accessibilityRole="button"
+            accessibilityLabel={acknowledged ? control.done : control.title}
+            accessibilityState={{ selected: acknowledged }}
+            onPress={() => setAcknowledgedControl(control.title)}
+            style={({ pressed }) => [
+              styles.safetyRow,
+              acknowledged && styles.safetyRowAcknowledged,
+              pressed && styles.profileRowPressed,
+              {
+                borderColor: acknowledged ? `${accent}55` : theme.line,
+                backgroundColor: acknowledged ? `${accent}10` : theme.panel
+              }
+            ]}
+          >
+            <Ionicons name={acknowledged ? "checkmark-circle-outline" : control.icon as keyof typeof Ionicons.glyphMap} color={accent} size={21} />
+            <View style={styles.profileCollectionCopy}>
+              <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{acknowledged ? control.done : control.title}</Text>
+              <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{acknowledged ? getSafetyAcknowledgement(control.title) : control.body}</Text>
+            </View>
+            <Ionicons name={acknowledged ? "checkmark" : "chevron-forward"} color={acknowledged ? accent : theme.muted} size={17} />
+          </Pressable>
+        );
+      })}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Reset Weevrbird"
@@ -479,6 +494,12 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
       </Pressable>
     </ScrollView>
   );
+}
+
+function getSafetyAcknowledgement(title: string) {
+  if (title === "Mute profile") return "Their signal will stay out of your issue unless you choose to bring it back.";
+  if (title === "Unfollow quietly") return "You will stop seeing new signal from this profile. They will not be notified.";
+  return "A private moderation note has been prepared for review.";
 }
 
 function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
@@ -917,6 +938,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: spacing.md,
     alignItems: "flex-start"
+  },
+  safetyRowAcknowledged: {
+    shadowColor: "#0F3D2E",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 1
   },
   resetRow: {
     borderWidth: 1,
