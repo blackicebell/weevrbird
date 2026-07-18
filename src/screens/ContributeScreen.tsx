@@ -42,6 +42,7 @@ export function ContributeScreen({
   const [submittedContributionId, setSubmittedContributionId] = React.useState<string | null>(null);
   const [selectedReviewFeedId, setSelectedReviewFeedId] = React.useState<string | null>(null);
   const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
+  const [draftNotice, setDraftNotice] = React.useState<string | null>(null);
   const charLimit = draftType === "Long Read" ? 5000 : draftType === "Note" ? 280 : 900;
   const contributionGuidance = getContributionGuidance(draftType);
   const trimmedDraft = draft.trim();
@@ -83,6 +84,7 @@ export function ContributeScreen({
     setSubmittedContributionId(contributionId);
     setSelectedReviewFeedId(getDefaultFeedId(draftType));
     setValidationMessage(null);
+    setDraftNotice(null);
     onSubmitContribution({
       id: contributionId,
       type: draftType,
@@ -109,6 +111,7 @@ export function ContributeScreen({
               selected={draftType === type}
               onPress={() => {
                 setValidationMessage(null);
+                setDraftNotice(trimmedDraft && type !== draftType ? `Draft preserved. Review it as a ${type} before saving.` : null);
                 setDraftType(type);
               }}
               theme={theme}
@@ -133,6 +136,7 @@ export function ContributeScreen({
             onChangeText={(text) => {
               if (text.length > charLimit) return;
               setValidationMessage(null);
+              setDraftNotice(null);
               setDraft(text);
             }}
             placeholder={contributionGuidance.placeholder}
@@ -144,6 +148,12 @@ export function ContributeScreen({
             <Text style={[styles.meta, { color: theme.muted }]}>Draft preserved locally</Text>
           </View>
         </View>
+        {draftNotice && (
+          <View style={[styles.draftNoticePanel, { borderColor: theme.line, backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="information-circle-outline" color={theme.accent} size={19} />
+            <Text style={[styles.validationText, { color: theme.text }]}>{draftNotice}</Text>
+          </View>
+        )}
         {validationMessage && (
           <View style={[styles.validationPanel, { borderColor: "rgba(158, 61, 52, 0.24)", backgroundColor: "rgba(158, 61, 52, 0.06)" }]}>
             <Ionicons name="information-circle-outline" color={palette.red} size={19} />
@@ -621,6 +631,14 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   validationPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  draftNoticePanel: {
     borderWidth: 1,
     borderRadius: 10,
     padding: spacing.md,
