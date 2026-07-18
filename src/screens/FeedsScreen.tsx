@@ -27,6 +27,7 @@ export function FeedsScreen(props: {
   const editorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
   const pace = getFeedPace(selectedFeed);
   const feedFit = getFeedFitSignal(selectedFeed);
+  const emptyState = getFeedEmptyState(activeFilter, selectedFeed);
   const feeds = localDataService.getFeeds();
   const fromYouItems = visibleFeedItems.filter((item) => item.authorId === "you");
   const sectionItems = visibleFeedItems.filter((item) => item.authorId !== "you");
@@ -127,11 +128,11 @@ export function FeedsScreen(props: {
         </>
       ) : (
         <EmptyState
-          icon="leaf-outline"
-          title="This section is quiet right now."
-          body="Nothing new matches this view. Switch back to the latest section pieces, or add a useful signal yourself."
-          actionLabel="Show latest"
-          onAction={() => setActiveFilter("Latest")}
+          icon={emptyState.icon}
+          title={emptyState.title}
+          body={emptyState.body}
+          actionLabel={emptyState.actionLabel}
+          onAction={emptyState.actionLabel ? () => setActiveFilter("Latest") : undefined}
           theme={theme}
         />
       )}
@@ -241,6 +242,46 @@ function getFeedFitSignal(feed: Smartfeed) {
   const joinedCopy = feed.joined ? "Joined because" : "Suggested because";
 
   return `${joinedCopy} ${feed.members} keep ${role} moving here, with ${feed.newItems} new pieces waiting before this section closes.`;
+}
+
+function getFeedEmptyState(filter: SmartfeedFilter, feed: Smartfeed): {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+  actionLabel?: string;
+} {
+  if (filter === "Conversations") {
+    return {
+      icon: "chatbubble-ellipses-outline",
+      title: "No active conversations here yet.",
+      body: `${feed.name} has no open threads in this view. Switch back to Latest, or add a question when you have a useful prompt.`,
+      actionLabel: "Show latest"
+    };
+  }
+
+  if (filter === "Reading") {
+    return {
+      icon: "book-outline",
+      title: "No reading pieces queued.",
+      body: `${feed.name} does not have a slower read in this filter right now. Latest will show the full section again.`,
+      actionLabel: "Show latest"
+    };
+  }
+
+  if (filter === "Saved") {
+    return {
+      icon: "bookmark-outline",
+      title: "Nothing saved from this Smartfeed.",
+      body: `Save a piece from ${feed.name} and it will return here as your private shelf for this section.`,
+      actionLabel: "Show latest"
+    };
+  }
+
+  return {
+    icon: "leaf-outline",
+    title: "This section is quiet right now.",
+    body: `${feed.name} has no new pieces in this issue. When something meaningful changes, it will appear here.`
+  };
 }
 
 function Chip({ label, selected, onPress, theme }: {
