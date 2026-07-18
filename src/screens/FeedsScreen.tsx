@@ -5,10 +5,10 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
 import { localDataService } from "../data/localDataService";
-import { feedEditorialMeta, filters } from "../app/editorial";
+import { avatars, feedEditorialMeta, filters } from "../app/editorial";
 import { radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem, Smartfeed, SmartfeedFilter } from "../types/product";
+import { FeedItem, Person, Smartfeed, SmartfeedFilter } from "../types/product";
 
 export function FeedsScreen(props: {
   theme: AppTheme;
@@ -33,6 +33,7 @@ export function FeedsScreen(props: {
   const feeds = localDataService.getFeeds();
   const fromYouItems = visibleFeedItems.filter((item) => item.authorId === "you");
   const sectionItems = visibleFeedItems.filter((item) => item.authorId !== "you");
+  const contributingPeople = getPeopleContributingHere(sectionItems);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -85,6 +86,16 @@ export function FeedsScreen(props: {
         <Ionicons name={filterContext.icon} color={editorial.accent} size={16} />
         <Text style={[styles.filterContextText, { color: theme.muted }]}>{filterContext.body}</Text>
       </View>
+      {contributingPeople.length > 0 && (
+        <PeopleContributingHere
+          people={contributingPeople}
+          items={sectionItems}
+          feed={selectedFeed}
+          selectedInterests={selectedInterests}
+          theme={theme}
+          editorial={editorial}
+        />
+      )}
 
       {visibleFeedItems.length > 0 ? (
         <>
@@ -170,6 +181,72 @@ function FromYouFeedMarker({ theme, editorial, feed, count }: {
   );
 }
 
+function PeopleContributingHere({ people, items, feed, selectedInterests, theme, editorial }: {
+  people: Person[];
+  items: FeedItem[];
+  feed: Smartfeed;
+  selectedInterests: string[];
+  theme: AppTheme;
+  editorial: (typeof feedEditorialMeta)[string];
+}) {
+  return (
+    <View style={[styles.peopleContributingPanel, { borderColor: editorial.secondary, backgroundColor: theme.panel }]}>
+      <View style={styles.peopleContributingTop}>
+        <View>
+          <Text style={[styles.kicker, { color: editorial.accent }]}>PEOPLE CONTRIBUTING HERE</Text>
+          <Text style={[styles.peopleContributingTitle, { color: theme.text }]}>Perspectives inside {feed.name}.</Text>
+        </View>
+        <View style={[styles.peopleContributingIcon, { backgroundColor: editorial.secondary }]}>
+          <Ionicons name="people-outline" color={editorial.accent} size={19} />
+        </View>
+      </View>
+      <Text style={[styles.meta, { color: theme.muted }]}>Shown through recent public contributions, not follower counts.</Text>
+      <View style={styles.peopleContributingList}>
+        {people.slice(0, 3).map((person) => (
+          <ContributingPersonRow
+            key={`contributing-${feed.id}-${person.id}`}
+            person={person}
+            item={items.find((entry) => entry.authorId === person.id)}
+            selectedInterests={selectedInterests}
+            theme={theme}
+            accent={editorial.accent}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ContributingPersonRow({ person, item, selectedInterests, theme, accent }: {
+  person: Person;
+  item?: FeedItem;
+  selectedInterests: string[];
+  theme: AppTheme;
+  accent: string;
+}) {
+  const sharedInterests = getSharedInterests(person.interests, selectedInterests);
+  const context = item ? `${formatContributionType(item.itemType)} / ${item.publishedAt}` : "Recent public contribution";
+  const reason = sharedInterests.length > 0
+    ? `Shares ${formatList(sharedInterests)}`
+    : person.bio;
+
+  return (
+    <View style={styles.contributingPersonRow}>
+      <View style={[styles.contributingPersonAvatar, { borderColor: `${accent}44`, backgroundColor: `${accent}10` }]}>
+        <Text style={[styles.contributingPersonAvatarText, { color: accent }]}>{avatars[person.avatar] ?? person.displayName.charAt(0)}</Text>
+      </View>
+      <View style={styles.contributingPersonCopy}>
+        <View style={styles.contributingPersonTopLine}>
+          <Text style={[styles.contributingPersonName, { color: theme.text }]}>{person.displayName}</Text>
+          <Text style={[styles.contributingPersonState, { color: person.linked ? accent : theme.muted }]}>{person.linked ? "Linked" : "Not linked"}</Text>
+        </View>
+        <Text style={[styles.meta, { color: theme.muted }]}>{context}</Text>
+        <Text style={[styles.contributingPersonReason, { color: theme.muted }]} numberOfLines={2}>{reason}</Text>
+      </View>
+    </View>
+  );
+}
+
 function FeedJournalTab({ feed, selected, theme, onPress }: {
   feed: Smartfeed;
   selected: boolean;
@@ -248,6 +325,49 @@ function getFeedPace(feed: Smartfeed) {
   if (feed.id === "creative-community") return { pace: "Slow reads", bestFor: "Studio notes" };
   if (feed.id === "food-culture") return { pace: "Weekend rhythm", bestFor: "Places to try" };
   return { pace: "Quiet updates", bestFor: "Useful finds" };
+}
+
+function getPeopleContributingHere(items: FeedItem[]) {
+  const people = localDataService.getPeople();
+  const seen = new Set<string>();
+
+  return items.reduce<Person[]>((result, item) => {
+    if (!item.authorId || seen.has(item.authorId)) return result;
+
+    const person = people.find((entry) => entry.id === item.authorId);
+    if (!person) return result;
+
+    seen.add(person.id);
+    result.push(person);
+    return result;
+  }, []);
+}
+
+function formatContributionType(itemType: FeedItem["itemType"]) {
+  if (itemType === "recommendation") return "Recommendation";
+  if (itemType === "question") return "Question";
+  if (itemType === "discussion") return "Discussion";
+  if (itemType === "long_read") return "Long read";
+  if (itemType === "link") return "Link";
+  if (itemType === "note") return "Note";
+  return "Contribution";
+}
+
+function getSharedInterests(personInterests: string[], selectedInterests: string[]) {
+  const selected = selectedInterests.map(normalizeInterest);
+  return personInterests.filter((interest) => selected.includes(normalizeInterest(interest))).slice(0, 2);
+}
+
+function normalizeInterest(interest: string) {
+  const value = interest.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (value === "ux" || value === "uxdesign") return "uxdesign";
+  if (value === "localfood" || value === "food") return "food";
+  return value;
+}
+
+function formatList(items: string[]) {
+  if (items.length <= 1) return items[0] ?? "a shared interest";
+  return `${items[0]} and ${items[1]}`;
 }
 
 function getFeedFitSignal(feed: Smartfeed) {
@@ -573,6 +693,83 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     fontFamily: "Inter_700Bold"
+  },
+  peopleContributingPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    gap: spacing.sm,
+    ...shadows.card
+  },
+  peopleContributingTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  peopleContributingTitle: {
+    fontSize: 21,
+    lineHeight: 27,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  peopleContributingIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  peopleContributingList: {
+    gap: spacing.sm,
+    paddingTop: spacing.xs
+  },
+  contributingPersonRow: {
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(18, 31, 27, 0.08)"
+  },
+  contributingPersonAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  contributingPersonAvatarText: {
+    fontSize: 15,
+    lineHeight: 19,
+    fontFamily: "Inter_700Bold"
+  },
+  contributingPersonCopy: {
+    flex: 1,
+    gap: 2
+  },
+  contributingPersonTopLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  contributingPersonName: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  contributingPersonState: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold"
+  },
+  contributingPersonReason: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   editorNoteRule: {
     width: 86,
