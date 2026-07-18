@@ -27,6 +27,8 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
   const [following, setFollowing] = useState(false);
   const [activeShelf, setActiveShelf] = useState<(typeof profileCollections)[number] | null>(null);
   const [activeContribution, setActiveContribution] = useState<SubmittedContribution | null>(null);
+  const [showAttentionEditor, setShowAttentionEditor] = useState(false);
+  const [showShelfDraft, setShowShelfDraft] = useState(false);
   const [showSafety, setShowSafety] = useState(false);
   const featuredContribution = localDataService.getFeaturedContribution();
   const questionContribution = localDataService.getQuestionContribution();
@@ -60,6 +62,14 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
 
   if (showSafety) {
     return <ProfileSafetyPanel theme={theme} onBack={() => setShowSafety(false)} onResetApp={onResetApp} />;
+  }
+
+  if (showAttentionEditor) {
+    return <AttentionMapEditor theme={theme} selectedInterests={selectedInterests} onBack={() => setShowAttentionEditor(false)} />;
+  }
+
+  if (showShelfDraft) {
+    return <NewShelfPanel theme={theme} onBack={() => setShowShelfDraft(false)} />;
   }
 
   return (
@@ -97,7 +107,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
 
       <ProfileChapter theme={theme} />
 
-      <SectionHeader title="Attention Map" action="Edit" theme={theme} />
+      <SectionHeader title="Attention Map" action="Edit" onAction={() => setShowAttentionEditor(true)} theme={theme} />
       <View style={styles.interestShelf}>
         {selectedInterests.concat(["Urbanism", "Independent Publishing"]).slice(0, 5).map((interest, index) => (
           <View key={`shelf-${interest}`} style={[styles.interestShelfItem, { backgroundColor: ["#DDF0E4", "#DCE9F8", "#F7DDCE", "#F2DBB6", "#E9DDBE"][index], borderColor: theme.line }]}>
@@ -106,7 +116,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         ))}
       </View>
 
-      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Placed" : "Start"} theme={theme} />
+      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Placed" : "Start"} onAction={onOpenContribute} theme={theme} />
       {submittedContributions.length > 0 ? (
         <View style={styles.fromYouStack}>
           {submittedContributions.slice(0, 3).map((contribution) => (
@@ -122,11 +132,11 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         <FromYouEmptyState theme={theme} onOpenContribute={onOpenContribute} />
       )}
 
-      <SectionHeader title="From This Person" action="Archive" theme={theme} />
+      <SectionHeader title="From This Person" action="Archive" onAction={() => setActiveShelf(profileCollections[0])} theme={theme} />
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
       <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
-      <SectionHeader title="Shelves" action="New" theme={theme} />
+      <SectionHeader title="Shelves" action="New" onAction={() => setShowShelfDraft(true)} theme={theme} />
       {profileCollections.map((collection) => (
         <ProfileCollectionRow key={collection.title} collection={collection} theme={theme} onOpen={() => setActiveShelf(collection)} />
       ))}
@@ -172,6 +182,74 @@ function getProfileContributionTypes(submittedContributions: SubmittedContributi
 
     return { ...type, count: type.count + localCount };
   });
+}
+
+function AttentionMapEditor({ theme, selectedInterests, onBack }: {
+  theme: AppTheme;
+  selectedInterests: string[];
+  onBack: () => void;
+}) {
+  const editableInterests = selectedInterests.concat(["Urbanism", "Independent Publishing"]).slice(0, 5);
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <BackButton label="Back to profile" theme={theme} onPress={onBack} />
+      <View style={[styles.shelfHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>EDIT ATTENTION MAP</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>Tune what this profile pays attention to.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>These are the public signals people use to understand what kind of contributions belong here.</Text>
+      </View>
+      <View style={styles.attentionEditStack}>
+        {editableInterests.map((interest, index) => (
+          <View key={`edit-interest-${interest}`} style={[styles.attentionEditRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+            <View style={[styles.profileCollectionIcon, { backgroundColor: ["#DDF0E4", "#DCE9F8", "#F7DDCE", "#F2DBB6", "#E9DDBE"][index] }]} />
+            <View style={styles.profileCollectionCopy}>
+              <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{interest}</Text>
+              <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Visible on profile and used to explain overlap.</Text>
+            </View>
+            <Ionicons name="checkmark-circle-outline" color={theme.accent} size={19} />
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function NewShelfPanel({ theme, onBack }: { theme: AppTheme; onBack: () => void }) {
+  const draftRows = [
+    "Choose a shelf name",
+    "Save three useful pieces",
+    "Decide whether it is public"
+  ];
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <BackButton label="Back to profile" theme={theme} onPress={onBack} />
+      <View style={[styles.shelfHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <View style={[styles.profileCollectionIcon, { backgroundColor: "#DDF0E4" }]}>
+          <Ionicons name="albums-outline" color={palette.deepForest} size={20} />
+        </View>
+        <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>NEW SHELF</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>Start from a useful pattern.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>A shelf should feel like a return path, not a folder. Weevrbird will help group saved pieces when there is enough signal.</Text>
+      </View>
+      {draftRows.map((row, index) => (
+        <View key={row} style={[styles.attentionEditRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+          <Text style={[styles.profileTypeLabel, { color: theme.accent }]}>{index + 1}</Text>
+          <View style={styles.profileCollectionCopy}>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{row}</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{getShelfDraftBody(index)}</Text>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+function getShelfDraftBody(index: number) {
+  if (index === 0) return "Keep it specific enough that someone understands why the pieces belong together.";
+  if (index === 1) return "A shelf becomes valuable once it has more than one saved signal.";
+  return "Private-first keeps collections useful before they become performative.";
 }
 
 function ProfileAvatar({ label, index, theme }: { label: string; index: number; theme: AppTheme }) {
@@ -669,6 +747,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
     fontFamily: "Inter_700Bold"
+  },
+  attentionEditStack: {
+    gap: spacing.md
+  },
+  attentionEditRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
   },
   profileContribution: {
     borderBottomWidth: 1,
