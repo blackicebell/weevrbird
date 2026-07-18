@@ -202,8 +202,8 @@ function LibraryTabContent({
     ) : (
       <EmptyState
         icon="time-outline"
-        title="Nothing opened yet."
-        body="Read a piece from Today or a Smartfeed and it will appear here for quick return."
+        title="No private reading history yet."
+        body="Open a piece from Today or a Smartfeed and it will appear here for you only, even if you decide not to save it."
         theme={theme}
       />
     );
