@@ -659,6 +659,10 @@ function ProfileShelfDetail({ collection, theme, onBack, onOpenDetail }: {
 
 function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; onBack: () => void; onResetApp: () => void }) {
   const [acknowledgedControl, setAcknowledgedControl] = useState<string | null>(null);
+  const [discoverableThroughContributions, setDiscoverableThroughContributions] = useState(true);
+  const [showPeopleSuggestions, setShowPeopleSuggestions] = useState(true);
+  const [showMutualLinks, setShowMutualLinks] = useState(false);
+  const [connectRequestScope, setConnectRequestScope] = useState("Shared interests");
   const controls = [
     { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing what others see from you." },
     { icon: "person-remove-outline", title: "Disconnect quietly", done: "Disconnected quietly", body: "Remove the mutual link and stop seeing new contributions from this profile. They will not be notified." },
@@ -673,6 +677,63 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Quiet controls for your attention.</Text>
         <Text style={[styles.body, { color: theme.muted }]}>These actions are private. Weevrbird should give you control without turning safety into a performance.</Text>
       </View>
+      <SectionHeader title="Discovery Controls" theme={theme} />
+      <View style={[styles.discoveryControlsPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <DiscoveryToggleRow
+          icon="newspaper-outline"
+          title="Discover me through public contributions"
+          body="Your public notes, questions, and recommendations can help people understand your perspective."
+          enabled={discoverableThroughContributions}
+          onToggle={() => setDiscoverableThroughContributions((current) => !current)}
+          theme={theme}
+        />
+        <DiscoveryToggleRow
+          icon="people-outline"
+          title="Show me people through shared interests"
+          body="Weevrbird may surface people when their contributions overlap with your Attention Map."
+          enabled={showPeopleSuggestions}
+          onToggle={() => setShowPeopleSuggestions((current) => !current)}
+          theme={theme}
+        />
+        <DiscoveryToggleRow
+          icon="link-outline"
+          title="Show mutual Links"
+          body="Let profile previews mention mutual Links when that context is available."
+          enabled={showMutualLinks}
+          onToggle={() => setShowMutualLinks((current) => !current)}
+          theme={theme}
+        />
+      </View>
+
+      <SectionHeader title="Connect Requests" action={connectRequestScope} theme={theme} />
+      <View style={styles.connectRequestGrid}>
+        {["Everyone", "Shared interests", "Mutual Links", "Nobody"].map((option) => {
+          const selected = option === connectRequestScope;
+
+          return (
+            <Pressable
+              key={`connect-scope-${option}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Allow connect requests from ${option}`}
+              accessibilityState={{ selected }}
+              onPress={() => setConnectRequestScope(option)}
+              style={({ pressed }) => [
+                styles.connectRequestOption,
+                pressed && styles.profileRowPressed,
+                {
+                  borderColor: selected ? theme.accent : theme.line,
+                  backgroundColor: selected ? theme.panelAlt : theme.panel
+                }
+              ]}
+            >
+              <Ionicons name={selected ? "checkmark-circle" : "ellipse-outline"} color={selected ? theme.accent : theme.muted} size={18} />
+              <Text style={[styles.connectRequestOptionText, { color: selected ? theme.accent : theme.text }]}>{option}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <SectionHeader title="Safety" theme={theme} />
       {controls.map((control) => {
         const acknowledged = acknowledgedControl === control.title;
         const accent = control.title === "Report concern" ? palette.red : theme.accent;
@@ -717,6 +778,34 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
         <Ionicons name="chevron-forward" color={palette.red} size={17} />
       </Pressable>
     </ScrollView>
+  );
+}
+
+function DiscoveryToggleRow({ icon, title, body, enabled, onToggle, theme }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+  enabled: boolean;
+  onToggle: () => void;
+  theme: AppTheme;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="switch"
+      accessibilityLabel={title}
+      accessibilityState={{ checked: enabled }}
+      onPress={onToggle}
+      style={({ pressed }) => [styles.discoveryToggleRow, pressed && styles.profileRowPressed]}
+    >
+      <Ionicons name={icon} color={theme.accent} size={20} />
+      <View style={styles.profileCollectionCopy}>
+        <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{body}</Text>
+      </View>
+      <View style={[styles.discoveryToggleTrack, { backgroundColor: enabled ? theme.accent : theme.line }]}>
+        <View style={[styles.discoveryToggleThumb, enabled && styles.discoveryToggleThumbOn]} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -1185,6 +1274,56 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
     ...shadows.card
+  },
+  discoveryControlsPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.sm,
+    gap: spacing.xs,
+    ...shadows.card
+  },
+  discoveryToggleRow: {
+    minHeight: 76,
+    borderRadius: 8,
+    padding: spacing.sm,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  discoveryToggleTrack: {
+    width: 42,
+    height: 24,
+    borderRadius: 12,
+    padding: 3,
+    marginTop: 2
+  },
+  discoveryToggleThumb: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FFFDF8"
+  },
+  discoveryToggleThumbOn: {
+    alignSelf: "flex-end"
+  },
+  connectRequestGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  connectRequestOption: {
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  connectRequestOptionText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
   },
   safetyRow: {
     borderWidth: 1,
