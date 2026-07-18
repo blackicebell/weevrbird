@@ -26,6 +26,7 @@ export function FeedsScreen(props: {
   const { theme, selectedFeed, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
   const editorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
   const pace = getFeedPace(selectedFeed);
+  const feedFit = getFeedFitSignal(selectedFeed);
   const feeds = localDataService.getFeeds();
   const fromYouItems = visibleFeedItems.filter((item) => item.authorId === "you");
   const sectionItems = visibleFeedItems.filter((item) => item.authorId !== "you");
@@ -65,6 +66,13 @@ export function FeedsScreen(props: {
         </View>
         <View style={[styles.feedHeroRule, { backgroundColor: editorial.accent }]} />
         <Text style={[styles.meta, { color: theme.muted }]}>{editorial.issue} / {selectedFeed.members} / {selectedFeed.newItems} new pieces</Text>
+        <View style={[styles.feedFitSignal, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.6)" }]}>
+          <Ionicons name={selectedFeed.joined ? "checkmark-circle-outline" : "add-circle-outline"} color={editorial.accent} size={18} />
+          <View style={styles.feedFitCopy}>
+            <Text style={[styles.feedFitLabel, { color: editorial.accent }]}>Why this is here</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{feedFit}</Text>
+          </View>
+        </View>
       </View>
 
       <View style={[styles.filterGlassBar, { borderColor: theme.line }]}>
@@ -226,6 +234,13 @@ function getFeedPace(feed: Smartfeed) {
   if (feed.id === "creative-community") return { pace: "Slow reads", bestFor: "Studio notes" };
   if (feed.id === "food-culture") return { pace: "Weekend rhythm", bestFor: "Places to try" };
   return { pace: "Quiet updates", bestFor: "Useful finds" };
+}
+
+function getFeedFitSignal(feed: Smartfeed) {
+  const role = feed.type === "city" ? "local changes" : feed.type === "community" ? "shared questions" : "focused reading";
+  const joinedCopy = feed.joined ? "Joined because" : "Suggested because";
+
+  return `${joinedCopy} ${feed.members} keep ${role} moving here, with ${feed.newItems} new pieces waiting before this section closes.`;
 }
 
 function Chip({ label, selected, onPress, theme }: {
@@ -401,6 +416,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 17,
     fontFamily: "Inter_700Bold"
+  },
+  feedFitSignal: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    marginTop: spacing.xs
+  },
+  feedFitCopy: {
+    flex: 1,
+    gap: 2
+  },
+  feedFitLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
   },
   filterGlassBar: {
     borderWidth: 1,
