@@ -35,7 +35,9 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(issuePace), [joinedFeeds, issuePace]);
   const issuePromise = getIssuePromise(issuePace);
-  const coverIssue = `${formatCoverDate(new Date())} / ${selectedCity}`;
+  const coverDate = new Date();
+  const coverIssue = `${formatCoverDate(coverDate)} / ${selectedCity}`;
+  const greeting = getCoverGreeting(coverDate);
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
 
@@ -67,7 +69,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
             <HeaderIcon name="notifications-outline" label="Open contribution activity" theme={theme} onPress={onOpenActivity} dot={contributionActivityCount > 0} />
           </View>
         </View>
-        <Text style={[styles.mastheadTitle, { color: theme.text }]}>Good{"\n"}morning.</Text>
+        <Text style={[styles.mastheadTitle, { color: theme.text }]}>{greeting}</Text>
         <View style={[styles.coverRule, { backgroundColor: theme.text }]} />
         <Text style={[styles.coverSubtitle, { color: theme.muted }]}>{issuePromise.subtitle}</Text>
         <View style={styles.issuePromiseRow}>
@@ -213,6 +215,13 @@ function formatCoverDate(date: Date) {
     month: "long",
     day: "numeric"
   });
+}
+
+function getCoverGreeting(date: Date) {
+  const hour = date.getHours();
+  if (hour < 12) return "Good\nmorning.";
+  if (hour < 17) return "Good\nafternoon.";
+  return "Good\nevening.";
 }
 
 function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenFeed, onOpenLibrary, onOpenDetail }: {
