@@ -346,6 +346,7 @@ function AppContent() {
               <AppBackground theme={theme} />
               <SearchPanel
                 theme={theme}
+                selectedCity={userAppState.selectedCity}
                 query={todaySearch}
                 setQuery={setTodaySearch}
                 results={todaySearchResults}
@@ -465,8 +466,9 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
   );
 }
 
-function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, onOpenLibrary }: {
+function SearchPanel({ theme, selectedCity, query, setQuery, results, onBack, onOpenDetail, onOpenLibrary }: {
   theme: ReturnType<typeof useTheme>;
+  selectedCity: string;
   query: string;
   setQuery: (query: string) => void;
   results: FeedItem[];
@@ -474,7 +476,7 @@ function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, on
   onOpenDetail: (item: FeedItem) => void;
   onOpenLibrary: () => void;
 }) {
-  const suggestions = ["Atlanta", "Black Tech", "weekend", "design"];
+  const suggestions = [selectedCity, "Black Tech", "weekend", "design"];
   const normalizedQuery = query.trim();
 
   return (
@@ -491,16 +493,16 @@ function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, on
         <Text style={[styles.panelKicker, { color: theme.accent }]}>SEARCH TODAY</Text>
       </View>
 
-      <Text style={[styles.panelTitle, { color: theme.text }]}>Find a useful signal.</Text>
+      <Text style={[styles.panelTitle, { color: theme.text }]}>Search today's {selectedCity} issue.</Text>
       <View style={[styles.searchField, { backgroundColor: theme.panel, borderColor: theme.line }]}>
         <Ionicons name="search-outline" color={theme.muted} size={20} />
         <TextInput
           autoFocus
-          accessibilityLabel="Search Weevrbird"
-          accessibilityHint="Search saved pieces, feeds, sources, and contributions."
+          accessibilityLabel={`Search today's ${selectedCity} issue`}
+          accessibilityHint="Search issue items, feeds, saved context, sources, and contribution text."
           value={query}
           onChangeText={setQuery}
-          placeholder="Search saved pieces, people, topics"
+          placeholder="Search issue items, feeds, saved context"
           placeholderTextColor={theme.muted}
           style={[styles.searchInput, { color: theme.text }]}
         />
@@ -513,7 +515,7 @@ function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, on
 
       {!normalizedQuery ? (
         <View style={styles.searchSuggestions}>
-          <Text style={[styles.activityMeta, { color: theme.muted }]}>Try a topic</Text>
+          <Text style={[styles.activityMeta, { color: theme.muted }]}>Try issue context</Text>
           <View style={styles.suggestionRow}>
             {suggestions.map((suggestion) => (
               <Pressable
@@ -538,7 +540,7 @@ function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, on
             <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
               <Ionicons name="search-outline" color={theme.accent} size={24} />
               <Text style={[styles.activityTitle, { color: theme.text }]}>Nothing found yet.</Text>
-              <Text style={[styles.activityBody, { color: theme.muted }]}>Try a feed, place, source, or topic from your issue.</Text>
+              <Text style={[styles.activityBody, { color: theme.muted }]}>Try a feed, saved piece, source, contribution, or place from your issue.</Text>
             </View>
           )}
         </View>
@@ -551,7 +553,7 @@ function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, on
         style={({ pressed }) => [styles.searchLibraryButton, pressed && styles.activityCardPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
       >
         <Ionicons name="albums-outline" color={theme.accent} size={18} />
-        <Text style={[styles.searchLibraryText, { color: theme.text }]}>Search the full Library</Text>
+        <Text style={[styles.searchLibraryText, { color: theme.text }]}>Search the full Library with this query</Text>
         <Ionicons name="arrow-forward" color={theme.muted} size={16} />
       </Pressable>
     </ScrollView>
