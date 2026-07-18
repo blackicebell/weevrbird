@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -40,6 +39,7 @@ export function ContributeScreen({
 }) {
   const [submittedContributionId, setSubmittedContributionId] = React.useState<string | null>(null);
   const [selectedReviewFeedId, setSelectedReviewFeedId] = React.useState<string | null>(null);
+  const [validationMessage, setValidationMessage] = React.useState<string | null>(null);
   const charLimit = draftType === "Long Read" ? 5000 : draftType === "Note" ? 280 : 900;
   const contributionGuidance = getContributionGuidance(draftType);
   const trimmedDraft = draft.trim();
@@ -58,12 +58,12 @@ export function ContributeScreen({
 
   const submit = () => {
     if (!trimmedDraft) {
-      Alert.alert("Add a little context", "Your contribution needs text before it can be shared.");
+      setValidationMessage("Add a little context before saving this privately.");
       return;
     }
 
     if (!readyToSubmit) {
-      Alert.alert("Tighten the signal", "Add a little more context so this can help someone decide whether to save, reply, or move on.");
+      setValidationMessage("Tighten the signal so someone can decide whether to save, reply, or move on.");
       return;
     }
 
@@ -71,6 +71,7 @@ export function ContributeScreen({
     const contributionId = `local-${createdAt}`;
     setSubmittedContributionId(contributionId);
     setSelectedReviewFeedId(getDefaultFeedId(draftType));
+    setValidationMessage(null);
     onSubmitContribution({
       id: contributionId,
       type: draftType,
@@ -94,7 +95,10 @@ export function ContributeScreen({
               key={type}
               type={type}
               selected={draftType === type}
-              onPress={() => setDraftType(type)}
+              onPress={() => {
+                setValidationMessage(null);
+                setDraftType(type);
+              }}
               theme={theme}
             />
           ))}
@@ -114,7 +118,11 @@ export function ContributeScreen({
             accessibilityHint={contributionGuidance.placeholder}
             multiline
             value={draft}
-            onChangeText={(text) => text.length <= charLimit && setDraft(text)}
+            onChangeText={(text) => {
+              if (text.length > charLimit) return;
+              setValidationMessage(null);
+              setDraft(text);
+            }}
             placeholder={contributionGuidance.placeholder}
             placeholderTextColor={theme.muted}
             style={[styles.textInput, { color: theme.text }]}
@@ -124,6 +132,12 @@ export function ContributeScreen({
             <Text style={[styles.meta, { color: theme.muted }]}>Draft preserved locally</Text>
           </View>
         </View>
+        {validationMessage && (
+          <View style={[styles.validationPanel, { borderColor: "rgba(158, 61, 52, 0.24)", backgroundColor: "rgba(158, 61, 52, 0.06)" }]}>
+            <Ionicons name="information-circle-outline" color={palette.red} size={19} />
+            <Text style={[styles.validationText, { color: theme.text }]}>{validationMessage}</Text>
+          </View>
+        )}
         {!!trimmedDraft && (
           <View style={[styles.qualityPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
             <Text style={[styles.qualityTitle, { color: theme.text }]}>Before it goes anywhere</Text>
@@ -530,6 +544,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: spacing.md,
     gap: spacing.sm
+  },
+  validationPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  validationText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: "Inter_600SemiBold"
   },
   qualityTitle: {
     fontSize: 15,
