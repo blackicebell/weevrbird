@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { feedEditorialMeta } from "../app/editorial";
 import { localDataService } from "../data/localDataService";
@@ -79,7 +79,10 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
             label={markedUseful ? "Marked useful" : item.reactionLabel}
             accessibilityLabel={markedUseful ? "Remove useful mark" : `Mark useful: ${item.title}`}
             active={markedUseful}
-            onPress={onToggleUseful ?? (() => undefined)}
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleUseful?.();
+            }}
             theme={theme}
             accent={editorial.accent}
           />
@@ -87,7 +90,10 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
             icon="chatbubble-outline"
             label={item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
             accessibilityLabel={`Open conversation for ${item.title}. ${item.replies} replies.`}
-            onPress={() => undefined}
+            onPress={(event) => {
+              event.stopPropagation();
+              onOpen?.();
+            }}
             theme={theme}
             accent={editorial.accent}
           />
@@ -96,7 +102,10 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
             label={saved ? "Saved" : "Save"}
             accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
             active={saved}
-            onPress={onToggleSaved ?? (() => undefined)}
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleSaved?.();
+            }}
             theme={theme}
             accent={editorial.accent}
           />
@@ -134,7 +143,10 @@ function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
         label={saved ? "Saved" : "Save"}
         accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
         active={saved}
-        onPress={onToggleSaved}
+        onPress={(event) => {
+          event.stopPropagation();
+          onToggleSaved();
+        }}
         theme={theme}
         accent={accent}
       />
@@ -166,7 +178,7 @@ function ActionPill({ icon, label, accessibilityLabel, active, onPress, theme, a
   label: string;
   accessibilityLabel: string;
   active?: boolean;
-  onPress: () => void;
+  onPress: (event: GestureResponderEvent) => void;
   theme: AppTheme;
   accent: string;
 }) {
