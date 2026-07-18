@@ -24,14 +24,16 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
   onOpenDetail: (item: FeedItem) => void;
   onResetApp: () => void;
 }) {
-  const [following, setFollowing] = useState(false);
+  const [connected, setConnected] = useState(false);
   const [activeShelf, setActiveShelf] = useState<(typeof profileCollections)[number] | null>(null);
   const [activeContribution, setActiveContribution] = useState<SubmittedContribution | null>(null);
   const [showAttentionEditor, setShowAttentionEditor] = useState(false);
   const [showShelfDraft, setShowShelfDraft] = useState(false);
   const [showSafety, setShowSafety] = useState(false);
+  const [showContributionBrowser, setShowContributionBrowser] = useState(false);
   const featuredContribution = localDataService.getFeaturedContribution();
   const questionContribution = localDataService.getQuestionContribution();
+  const publicContributions = [featuredContribution, questionContribution];
   const contributionTypes = getProfileContributionTypes(submittedContributions);
   const reviewContributionCount = submittedContributions.filter((contribution) => contribution.status === "review").length;
 
@@ -64,6 +66,19 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
     return <ProfileSafetyPanel theme={theme} onBack={() => setShowSafety(false)} onResetApp={onResetApp} />;
   }
 
+  if (showContributionBrowser) {
+    return (
+      <ProfileContributionBrowser
+        theme={theme}
+        submittedContributions={submittedContributions}
+        publicContributions={publicContributions}
+        onBack={() => setShowContributionBrowser(false)}
+        onOpenSubmitted={setActiveContribution}
+        onOpenPublic={onOpenDetail}
+      />
+    );
+  }
+
   if (showAttentionEditor) {
     return <AttentionMapEditor theme={theme} selectedInterests={selectedInterests} onBack={() => setShowAttentionEditor(false)} />;
   }
@@ -85,12 +100,12 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={following ? "Unfollow Quiet Architect" : "Follow Quiet Architect"}
-              accessibilityState={{ selected: following }}
+              accessibilityLabel={connected ? "Quiet Architect is linked" : "Connect with Quiet Architect"}
+              accessibilityState={{ selected: connected }}
               style={({ pressed }) => [styles.profileConnectButton, pressed && styles.profileButtonPressed, { backgroundColor: palette.deepForest }]}
-              onPress={() => setFollowing((current) => !current)}
+              onPress={() => setConnected((current) => !current)}
             >
-              <Text style={styles.profileConnectText}>{following ? "Following" : "Follow"}</Text>
+              <Text style={styles.profileConnectText}>{connected ? "Linked" : "Connect"}</Text>
             </Pressable>
           </View>
         </View>
@@ -132,7 +147,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         <FromYouEmptyState theme={theme} onOpenContribute={onOpenContribute} />
       )}
 
-      <SectionHeader title="From This Person" action="Archive" onAction={() => setActiveShelf(profileCollections[0])} theme={theme} />
+      <SectionHeader title="From This Person" action="Browse Contributions" onAction={() => setShowContributionBrowser(true)} theme={theme} />
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
       <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
@@ -182,6 +197,60 @@ function getProfileContributionTypes(submittedContributions: SubmittedContributi
 
     return { ...type, count: type.count + localCount };
   });
+}
+
+function ProfileContributionBrowser({ theme, submittedContributions, publicContributions, onBack, onOpenSubmitted, onOpenPublic }: {
+  theme: AppTheme;
+  submittedContributions: SubmittedContribution[];
+  publicContributions: FeedItem[];
+  onBack: () => void;
+  onOpenSubmitted: (contribution: SubmittedContribution) => void;
+  onOpenPublic: (item: FeedItem) => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <BackButton label="Back to profile" theme={theme} onPress={onBack} />
+      <View style={[styles.shelfHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>BROWSE CONTRIBUTIONS</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>Contributions by topic and community.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>Browse what this person has added without turning their profile into a popularity feed.</Text>
+      </View>
+
+      {submittedContributions.length > 0 && (
+        <>
+          <SectionHeader title="From You" theme={theme} />
+          <View style={styles.fromYouStack}>
+            {submittedContributions.map((contribution) => (
+              <SubmittedContributionCard
+                key={`browse-submitted-${contribution.id}`}
+                contribution={contribution}
+                theme={theme}
+                onOpen={() => onOpenSubmitted(contribution)}
+              />
+            ))}
+          </View>
+        </>
+      )}
+
+      <SectionHeader title="Public Contributions" theme={theme} />
+      {publicContributions.map((item) => (
+        <ProfileContribution
+          key={`browse-public-${item.id}`}
+          item={item}
+          label={`${formatContributionType(item)} in ${localDataService.getFeed(item.feedId).name}`}
+          theme={theme}
+          onOpen={() => onOpenPublic(item)}
+        />
+      ))}
+    </ScrollView>
+  );
+}
+
+function formatContributionType(item: FeedItem) {
+  if (item.itemType === "recommendation") return "Recommendation";
+  if (item.itemType === "question" || item.itemType === "discussion") return "Question";
+  if (item.itemType === "official_update") return "Update";
+  return "Contribution";
 }
 
 function AttentionMapEditor({ theme, selectedInterests, onBack }: {
@@ -515,7 +584,7 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
   const [acknowledgedControl, setAcknowledgedControl] = useState<string | null>(null);
   const controls = [
     { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing what others see from you." },
-    { icon: "person-remove-outline", title: "Unfollow quietly", done: "Unfollowed quietly", body: "Stop seeing new contributions from this profile. They will not be notified." },
+    { icon: "person-remove-outline", title: "Disconnect quietly", done: "Disconnected quietly", body: "Remove the mutual link and stop seeing new contributions from this profile. They will not be notified." },
     { icon: "flag-outline", title: "Report concern", done: "Concern noted", body: "Send a moderation note if something feels unsafe, spammy, or out of place." }
   ];
 
@@ -576,7 +645,7 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
 
 function getSafetyAcknowledgement(title: string) {
   if (title === "Mute profile") return "Their contributions will stay out of your issue unless you choose to bring them back.";
-  if (title === "Unfollow quietly") return "You will stop seeing new contributions from this profile. They will not be notified.";
+  if (title === "Disconnect quietly") return "You will stop seeing new contributions from this profile. They will not be notified.";
   return "A private moderation note has been prepared for review.";
 }
 
