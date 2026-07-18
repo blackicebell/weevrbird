@@ -28,7 +28,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
   onOpenTune: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const editionModules = useMemo(() => localDataService.getTodayIssue(), [joinedFeeds]);
+  const editionModules = useMemo(() => localDataService.getTodayIssue(issuePace), [joinedFeeds, issuePace]);
   const issuePromise = getIssuePromise(issuePace);
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
@@ -353,7 +353,7 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
       </View>
       <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>END OF ISSUE</Text>
       <Text style={[styles.caughtUpTitle, { color: theme.text }]}>You can leave now.</Text>
-      <Text style={[styles.caughtUpBody, { color: theme.muted }]}>Six useful pieces. Three saved. One conversation waiting if you want it. Nothing urgent is hiding below.</Text>
+      <Text style={[styles.caughtUpBody, { color: theme.muted }]}>{module.body}</Text>
       <View style={styles.afterIssueStack}>
         <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} />
         <AfterIssueRow

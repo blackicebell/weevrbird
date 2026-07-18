@@ -1,5 +1,5 @@
 import { feedItems, launchFeeds } from "./mockData";
-import { ContributionActivity, EditionModule, FeedItem, FeedItemType, Smartfeed, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
+import { ContributionActivity, EditionModule, FeedItem, FeedItemType, IssuePace, Smartfeed, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
 
 export function getDefaultSavedItemIds(items: FeedItem[] = feedItems) {
   return items.filter((item) => item.saved).map((item) => item.id);
@@ -183,7 +183,7 @@ export function getShelfItems(title: string, items: FeedItem[] = feedItems) {
   return items.filter((item) => item.feedId === "creative-community" || item.feedId === "black-tech");
 }
 
-export function buildTodayEdition(joinedFeeds: Smartfeed[], items: FeedItem[] = feedItems, feeds: Smartfeed[] = launchFeeds): EditionModule[] {
+export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace = "Balanced", items: FeedItem[] = feedItems, feeds: Smartfeed[] = launchFeeds): EditionModule[] {
   const atlanta = joinedFeeds.find((feed) => feed.id === "atlanta") ?? feeds[0];
   const blackTech = joinedFeeds.find((feed) => feed.id === "black-tech") ?? feeds[1];
   const creative = joinedFeeds.find((feed) => feed.id === "creative-community") ?? feeds[2];
@@ -192,7 +192,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], items: FeedItem[] = 
   const communityItems = items.filter((item) => !item.imported);
   const creativeItems = items.filter((item) => item.feedId === creative.id);
 
-  return [
+  const modules: EditionModule[] = [
     {
       id: "lead-atlanta",
       type: "lead_story",
@@ -260,4 +260,42 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], items: FeedItem[] = 
       items: creativeItems.slice(0, 2)
     }
   ];
+
+  if (issuePace === "Brief") {
+    return [
+      modules[0],
+      modules[1],
+      {
+        ...modules[5],
+        body: "Four useful pieces. Nothing urgent waiting.",
+        reason: "Brief issue selected.",
+        items: creativeItems.slice(0, 1)
+      }
+    ];
+  }
+
+  if (issuePace === "Deep") {
+    return [
+      ...modules.slice(0, 5),
+      {
+        id: "context-thread",
+        type: "reading_list",
+        layer: "Reading",
+        feed: blackTech,
+        title: "Context to keep open",
+        body: "A few extra pieces that explain why today's conversations are connected.",
+        action: "Save the context",
+        reason: "Deep issue selected.",
+        items: readingItems.concat(creativeItems).slice(0, 3)
+      },
+      {
+        ...modules[5],
+        body: "Nine useful pieces. More context saved for later.",
+        reason: "Deep issue selected.",
+        items: creativeItems.slice(0, 3)
+      }
+    ];
+  }
+
+  return modules;
 }

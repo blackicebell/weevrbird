@@ -13,7 +13,7 @@ import {
   getVisibleFeedItems,
   searchLibraryItems
 } from "./selectors";
-import { SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
+import { IssuePace, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
 
 export const localDataService = {
   getFeeds() {
@@ -40,8 +40,8 @@ export const localDataService = {
   getQuestionContribution() {
     return feedItems.find((item) => item.itemType === "discussion") ?? feedItems[2];
   },
-  getTodayIssue() {
-    return buildTodayEdition(getJoinedFeeds(launchFeeds), feedItems, launchFeeds);
+  getTodayIssue(issuePace: IssuePace = "Balanced") {
+    return buildTodayEdition(getJoinedFeeds(launchFeeds), issuePace, feedItems, launchFeeds);
   },
   getFeedItems(feedId: string, activeFilter: SmartfeedFilter, state: UserContentState, contributions: SubmittedContribution[] = []) {
     const placedItems = getPlacedContributionFeedItems(contributions);
