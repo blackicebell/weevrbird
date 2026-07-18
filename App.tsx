@@ -476,7 +476,7 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, onBack, on
   onOpenDetail: (item: FeedItem) => void;
   onOpenLibrary: () => void;
 }) {
-  const suggestions = [selectedCity, "Black Tech", "weekend", "design"];
+  const suggestions = getSearchSuggestions(selectedCity);
   const normalizedQuery = query.trim();
 
   return (
@@ -558,6 +558,10 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, onBack, on
       </Pressable>
     </ScrollView>
   );
+}
+
+function getSearchSuggestions(selectedCity: string) {
+  return Array.from(new Map([selectedCity, "Black Tech", "weekend", "design"].map((suggestion) => [suggestion.toLowerCase(), suggestion])).values());
 }
 
 function SearchResultRow({ item, theme, onOpen }: {
