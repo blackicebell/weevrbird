@@ -56,7 +56,7 @@ export function DetailScreen({
             <Ionicons name="newspaper-outline" color={editorial.accent} size={20} />
             <View style={styles.placedPanelCopy}>
               <Text style={[styles.contextTitle, { color: theme.text }]}>This is now part of {feed.name}</Text>
-              <Text style={[styles.body, { color: theme.muted }]}>It moved from private review into the Smartfeed you chose. People can save it or use it as local context.</Text>
+              <Text style={[styles.body, { color: theme.muted }]}>Your contribution moved from private review into the Smartfeed you chose. People can save it or use it as local context.</Text>
             </View>
           </View>
         )}
@@ -184,7 +184,7 @@ function EngagementStat({ icon, label, theme, accent }: {
 }
 
 function getDetailReason(item: FeedItem, feedName: string) {
-  if (item.authorId === "you") return `You placed this in ${feedName} because it adds a specific signal someone can save, try, or use as context.`;
+  if (item.authorId === "you") return `You contributed this to ${feedName} because it gives people something specific to save, try, or use as context.`;
   if (item.imported) return `Selected from ${feedName} because it gives you useful context without sending you into an endless feed.`;
   if (item.itemType === "recommendation") return "Saved-worthy because it includes place, timing, and a low-pressure reason to try it.";
   if (item.itemType === "question" || item.itemType === "discussion") return "Included because the replies can become practical context for people with the same question.";

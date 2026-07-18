@@ -61,7 +61,7 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
       <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
       {storyType === "recommendation" && <StoryTypePanel icon="pin-outline" title="Add to weekend plans" body="A low-pressure save for later, not a public performance." theme={theme} editorial={editorial} />}
-      {storyType === "fromYou" && <StoryTypePanel icon="checkmark-circle-outline" title="You placed this here" body="It moved from private review into the Smartfeed you chose." theme={theme} editorial={editorial} />}
+      {storyType === "fromYou" && <StoryTypePanel icon="checkmark-circle-outline" title="You contributed this" body="It moved from private review into the Smartfeed you chose." theme={theme} editorial={editorial} />}
       {storyType === "official" && <StoryTypePanel icon="time-outline" title="Action items" body="Check closures, transit notes, and reopening times before you head downtown." theme={theme} editorial={editorial} muted />}
       {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>Reading time: 5 min / Read source / Discuss on Weevrbird</Text>}
       {isUserContribution ? (
