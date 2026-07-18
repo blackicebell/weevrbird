@@ -190,7 +190,10 @@ export function ContributeScreen({
             </View>
           )}
         </View>
-        <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
+        <View style={styles.saveAction}>
+          <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
+          <Text style={[styles.saveActionNote, { color: theme.muted }]}>Saved privately first. You choose the Smartfeed before anyone else can find it.</Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -510,6 +513,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontFamily: "Inter_500Medium"
+  },
+  saveAction: {
+    gap: spacing.sm
+  },
+  saveActionNote: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold",
+    textAlign: "center"
   },
   guidanceIcon: {
     width: 38,
