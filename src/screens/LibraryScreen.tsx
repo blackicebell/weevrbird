@@ -406,7 +406,7 @@ function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
 }
 
 function getSaveReason(item: FeedItem) {
-  if (item.authorId === "you") return `You placed this in ${localDataService.getFeed(item.feedId).name}. Saved for later context.`;
+  if (item.authorId === "you") return `You contributed this to ${localDataService.getFeed(item.feedId).name}. Saved for later.`;
   if (item.saved) return "Saved from your issue";
   if (item.imported) return "Opened from a Smartfeed";
   if (item.itemType === "recommendation") return "Kept for a future plan";
