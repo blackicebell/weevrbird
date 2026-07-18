@@ -207,9 +207,9 @@ function LibraryTabContent({
       </>
     ) : (
       <EmptyState
-        icon="time-outline"
+        icon="lock-closed-outline"
         title="No private reading history yet."
-        body="Open a piece from Today or a Smartfeed and it will appear here for you only, even if you decide not to save it."
+        body="Open a piece from Today or a Smartfeed and it will appear here for you only. You can return to it without making it public or saving it."
         theme={theme}
       />
     );
