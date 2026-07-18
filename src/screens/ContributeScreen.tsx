@@ -382,7 +382,7 @@ function SubmittedContributionRow({ contribution, theme }: { contribution: Submi
         </View>
       </View>
       <Text style={[styles.submittedBody, { color: theme.text }]} numberOfLines={2}>{contribution.body}</Text>
-      <Text style={[styles.meta, { color: theme.muted }]}>{placed ? `Placed in ${feed.name}${placedAt ? ` at ${placedAt}` : ""}` : `Saved privately ${savedAt}`}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{placed ? `Visible in ${feed.name}${placedAt ? ` at ${placedAt}` : ""}` : `Saved privately ${savedAt}`}</Text>
     </View>
   );
 }

@@ -431,7 +431,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
         <View style={[styles.submittedStatusPanel, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.64)" }]}>
           <Ionicons name={placed ? "checkmark-circle-outline" : "time-outline"} color={editorial.accent} size={20} />
           <View style={styles.profileCollectionCopy}>
-            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Placed in ${feed.name}` : "Private for now"}</Text>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Visible in ${feed.name}` : "Private for now"}</Text>
             <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "Only you can see this until you choose a Smartfeed."}</Text>
           </View>
         </View>
