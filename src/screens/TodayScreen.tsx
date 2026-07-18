@@ -463,8 +463,8 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
         <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} />
         <AfterIssueRow
           icon="create-outline"
-          title={submittedContributionCount > 0 ? `${submittedContributionCount} private signal${submittedContributionCount === 1 ? "" : "s"} waiting` : "Contribution stays private first"}
-          body={submittedContributionCount > 0 ? "They stay hidden until you place them in the right Smartfeed." : "Write when it is useful. Weevrbird keeps it private until you choose where it belongs."}
+          title={submittedContributionCount > 0 ? `${submittedContributionCount} private contribution${submittedContributionCount === 1 ? "" : "s"} waiting` : "Contribution stays private first"}
+          body={submittedContributionCount > 0 ? "They stay hidden until you choose the right Smartfeed." : "Write when it is useful. Weevrbird keeps it private until you choose where it belongs."}
           theme={theme}
           editorial={editorial}
         />
@@ -472,11 +472,11 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
       {submittedContributionCount > 0 && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open private contributions"
+          accessibilityLabel="Choose Smartfeeds for private contributions"
           onPress={onOpenContribute}
           style={({ pressed }) => [styles.secondaryCaughtUpButton, pressed && styles.caughtUpButtonPressed, { borderColor: editorial.secondary }]}
         >
-          <Text style={[styles.secondaryCaughtUpButtonText, { color: editorial.accent }]}>Place private signals</Text>
+          <Text style={[styles.secondaryCaughtUpButtonText, { color: editorial.accent }]}>Choose Smartfeeds</Text>
         </Pressable>
       )}
       <Pressable
