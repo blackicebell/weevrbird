@@ -11,8 +11,9 @@ import {
 } from "@expo-google-fonts/playfair-display";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -42,8 +43,9 @@ import { LibraryScreen } from "./src/screens/LibraryScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { TodayScreen } from "./src/screens/TodayScreen";
+import { palette, radii, shadows, spacing } from "./src/theme/tokens";
 import { useTheme } from "./src/theme/useTheme";
-import { FeedItem } from "./src/types/product";
+import { ContributionActivity, FeedItem } from "./src/types/product";
 
 export default function App() {
   return (
@@ -72,6 +74,7 @@ function AppContent() {
   const [buildingIssue, setBuildingIssue] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("welcome");
   const [detailItem, setDetailItem] = useState<FeedItem | null>(null);
+  const [activityOpen, setActivityOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const selectedFeed = useMemo(() => localDataService.getFeed(userAppState.selectedFeedId), [userAppState.selectedFeedId]);
@@ -84,6 +87,14 @@ function AppContent() {
   const visibleFeedItems = useMemo(
     () => localDataService.getFeedItems(selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions),
     [selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions]
+  );
+  const contributionActivity = useMemo(
+    () => localDataService.getContributionActivity(userAppState.submittedContributions),
+    [userAppState.submittedContributions]
+  );
+  const placedContributionItems = useMemo(
+    () => localDataService.getPlacedContributionItems(userAppState.submittedContributions),
+    [userAppState.submittedContributions]
   );
   const reviewContributionCount = userAppState.submittedContributions.filter((contribution) => contribution.status === "review").length;
 
@@ -104,6 +115,7 @@ function AppContent() {
   };
 
   const openDetail = (item: FeedItem) => {
+    setActivityOpen(false);
     setDetailItem(item);
   };
 
@@ -191,8 +203,10 @@ function AppContent() {
               theme={theme}
               joinedFeeds={joinedFeeds}
               submittedContributionCount={reviewContributionCount}
+              contributionActivityCount={contributionActivity.length}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
+              onOpenActivity={() => setActivityOpen(true)}
               onOpenDetail={openDetail}
             />
           )}
@@ -263,10 +277,94 @@ function AppContent() {
               />
             </View>
           )}
+          {activityOpen && (
+            <View style={[styles.detailOverlay, { backgroundColor: theme.bg }]}>
+              <AppBackground theme={theme} />
+              <ActivityPanel
+                theme={theme}
+                activity={contributionActivity}
+                onBack={() => setActivityOpen(false)}
+                onOpenContribution={(contributionId) => {
+                  const item = placedContributionItems.find((entry) => entry.id === contributionId);
+                  if (item) openDetail(item);
+                }}
+                onOpenContribute={() => {
+                  setActivityOpen(false);
+                  setActiveTab("Contribute");
+                }}
+              />
+            </View>
+          )}
         </View>
-        {!detailItem && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
+        {!detailItem && !activityOpen && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
       </SafeAreaView>
     </>
+  );
+}
+
+function ActivityPanel({ theme, activity, onBack, onOpenContribution, onOpenContribute }: {
+  theme: ReturnType<typeof useTheme>;
+  activity: ContributionActivity[];
+  onBack: () => void;
+  onOpenContribution: (contributionId: string) => void;
+  onOpenContribute: () => void;
+}) {
+  return (
+    <ScrollView contentContainerStyle={styles.activityContent}>
+      <View style={styles.panelHeader}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close contribution activity"
+          onPress={onBack}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+        >
+          <Ionicons name="chevron-back" color={theme.text} size={22} />
+        </Pressable>
+        <Text style={[styles.panelKicker, { color: theme.accent }]}>CONTRIBUTION ACTIVITY</Text>
+      </View>
+
+      <Text style={[styles.panelTitle, { color: theme.text }]}>Where your signal is landing.</Text>
+      <Text style={[styles.panelBody, { color: theme.muted }]}>Responses stay small on purpose: saved, useful, and thoughtful replies that help you understand whether a contribution is worth returning to.</Text>
+
+      {activity.length > 0 ? (
+        <View style={styles.activityStack}>
+          {activity.map((item) => (
+            <Pressable
+              key={item.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Open activity for ${item.feedName}`}
+              onPress={() => onOpenContribution(item.contributionId)}
+              style={({ pressed }) => [styles.activityCard, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
+            >
+              <View style={[styles.activityIcon, { backgroundColor: theme.panelAlt }]}>
+                <Ionicons name={item.icon} color={theme.accent} size={19} />
+              </View>
+              <View style={styles.activityCopy}>
+                <Text style={[styles.activityFeed, { color: theme.accent }]}>{item.feedName}</Text>
+                <Text style={[styles.activityTitle, { color: theme.text }]}>{item.title}</Text>
+                <Text style={[styles.activityBody, { color: theme.muted }]}>{item.body}</Text>
+                <Text style={[styles.activityMeta, { color: theme.muted }]}>{item.meta}</Text>
+              </View>
+              <Ionicons name="chevron-forward" color={theme.muted} size={18} />
+            </Pressable>
+          ))}
+        </View>
+      ) : (
+        <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+          <Ionicons name="notifications-outline" color={theme.accent} size={24} />
+          <Text style={[styles.activityTitle, { color: theme.text }]}>No contribution activity yet.</Text>
+          <Text style={[styles.activityBody, { color: theme.muted }]}>Place a private signal into a Smartfeed and Weevrbird will show the useful response here.</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open contribution composer"
+            onPress={onOpenContribute}
+            style={({ pressed }) => [styles.activityButton, pressed && styles.activityCardPressed, { backgroundColor: theme.accent }]}
+          >
+            <Text style={styles.activityButtonText}>Write a contribution</Text>
+          </Pressable>
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
@@ -380,6 +478,114 @@ const styles = StyleSheet.create({
   detailOverlay: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 3
+  },
+  activityContent: {
+    padding: 20,
+    paddingBottom: 110,
+    gap: 16
+  },
+  panelHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.card
+  },
+  backButtonPressed: {
+    opacity: 0.76,
+    transform: [{ scale: 0.96 }]
+  },
+  panelKicker: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  panelTitle: {
+    fontSize: 34,
+    lineHeight: 39,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  panelBody: {
+    fontSize: 15,
+    lineHeight: 24,
+    fontFamily: "Inter_400Regular"
+  },
+  activityStack: {
+    gap: spacing.md,
+    paddingTop: spacing.xs
+  },
+  activityCard: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  activityCardPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.99 }]
+  },
+  activityIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  activityCopy: {
+    flex: 1,
+    gap: 5
+  },
+  activityFeed: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  activityTitle: {
+    fontSize: 16,
+    lineHeight: 21,
+    fontFamily: "Inter_700Bold"
+  },
+  activityBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontFamily: "Inter_400Regular"
+  },
+  activityMeta: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_600SemiBold"
+  },
+  activityEmpty: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    alignItems: "flex-start"
+  },
+  activityButton: {
+    minHeight: 42,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.lg,
+    justifyContent: "center",
+    marginTop: spacing.xs
+  },
+  activityButtonText: {
+    color: palette.cream,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
   },
   issueBuildScreen: {
     flex: 1,

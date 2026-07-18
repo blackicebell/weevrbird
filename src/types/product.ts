@@ -59,6 +59,16 @@ export interface FeedItem {
   };
 }
 
+export interface ContributionActivity {
+  id: string;
+  contributionId: string;
+  title: string;
+  body: string;
+  feedName: string;
+  meta: string;
+  icon: "chatbubble-ellipses-outline" | "bookmark-outline" | "sparkles-outline";
+}
+
 export interface EditionModule {
   id: string;
   type: EditionModuleType;

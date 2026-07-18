@@ -15,12 +15,14 @@ import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { EditionModule, FeedItem, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, setSelectedFeed, setActiveTab, onOpenDetail }: {
+export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, setSelectedFeed, setActiveTab, onOpenActivity, onOpenDetail }: {
   theme: AppTheme;
   joinedFeeds: Smartfeed[];
   submittedContributionCount: number;
+  contributionActivityCount: number;
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
+  onOpenActivity: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(), [joinedFeeds]);
@@ -52,7 +54,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, se
           </View>
           <View style={styles.coverActions}>
             <HeaderIcon name="search-outline" label="Search Today" theme={theme} />
-            <HeaderIcon name="notifications-outline" label="Open notifications" theme={theme} dot />
+            <HeaderIcon name="notifications-outline" label="Open contribution activity" theme={theme} onPress={onOpenActivity} dot={contributionActivityCount > 0} />
           </View>
         </View>
         <Text style={[styles.mastheadTitle, { color: theme.text }]}>Good{"\n"}morning.</Text>
@@ -378,17 +380,18 @@ function AfterIssueRow({ icon, title, body, theme, editorial }: {
   );
 }
 
-function HeaderIcon({ name, label, theme, dot }: {
+function HeaderIcon({ name, label, theme, onPress, dot }: {
   name: keyof typeof Ionicons.glyphMap;
   label: string;
   theme: AppTheme;
+  onPress?: () => void;
   dot?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      onPress={() => undefined}
+      onPress={onPress}
       style={({ pressed }) => [styles.headerIcon, pressed && styles.headerIconPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
     >
       <Ionicons name={name} color={theme.text} size={21} />

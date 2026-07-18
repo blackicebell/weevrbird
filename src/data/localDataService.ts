@@ -2,6 +2,7 @@ import { feedItems, interests, launchFeeds, people } from "./mockData";
 import {
   buildTodayEdition,
   getArchiveItems as selectArchiveItems,
+  getContributionActivityItems,
   getFeedById,
   getDefaultSavedItemIds,
   getJoinedFeeds,
@@ -45,6 +46,12 @@ export const localDataService = {
   getFeedItems(feedId: string, activeFilter: SmartfeedFilter, state: UserContentState, contributions: SubmittedContribution[] = []) {
     const placedItems = getPlacedContributionFeedItems(contributions);
     return getVisibleFeedItems({ items: placedItems.concat(feedItems), selectedFeedId: feedId, activeFilter, state });
+  },
+  getPlacedContributionItems(contributions: SubmittedContribution[] = []) {
+    return getPlacedContributionFeedItems(contributions);
+  },
+  getContributionActivity(contributions: SubmittedContribution[] = []) {
+    return getContributionActivityItems(contributions, launchFeeds);
   },
   getSavedItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
     return selectSavedItems(getLibraryItems(feedItems, contributions), state);

@@ -1,5 +1,5 @@
 import { feedItems, launchFeeds } from "./mockData";
-import { EditionModule, FeedItem, FeedItemType, Smartfeed, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
+import { ContributionActivity, EditionModule, FeedItem, FeedItemType, Smartfeed, SmartfeedFilter, SubmittedContribution, UserContentState } from "../types/product";
 
 export function getDefaultSavedItemIds(items: FeedItem[] = feedItems) {
   return items.filter((item) => item.saved).map((item) => item.id);
@@ -76,6 +76,50 @@ export function getPlacedContributionFeedItems(contributions: SubmittedContribut
   return contributions
     .filter((contribution) => contribution.status === "placed")
     .map(mapPlacedContributionToFeedItem);
+}
+
+export function getContributionActivityItems(contributions: SubmittedContribution[], feeds: Smartfeed[] = launchFeeds): ContributionActivity[] {
+  return contributions
+    .filter((contribution) => contribution.status === "placed")
+    .map((contribution) => {
+      const item = mapPlacedContributionToFeedItem(contribution);
+      const feed = getFeedById(contribution.feedId, feeds);
+      const engagement = item.engagementSummary;
+
+      if (engagement?.replyPreview) {
+        return {
+          id: `${contribution.id}-reply`,
+          contributionId: contribution.id,
+          title: "A thoughtful reply came in",
+          body: engagement.replyPreview,
+          feedName: feed.name,
+          meta: `${engagement.useful} found useful / ${engagement.saves} saved`,
+          icon: "chatbubble-ellipses-outline"
+        };
+      }
+
+      if (engagement && engagement.saves > 0) {
+        return {
+          id: `${contribution.id}-saved`,
+          contributionId: contribution.id,
+          title: "Your signal is being saved",
+          body: "People are keeping it for later, even without starting a thread.",
+          feedName: feed.name,
+          meta: `${engagement.saves} saved / ${engagement.useful} useful`,
+          icon: "bookmark-outline"
+        };
+      }
+
+      return {
+        id: `${contribution.id}-placed`,
+        contributionId: contribution.id,
+        title: "Your contribution was placed",
+        body: "It is now part of the issue where it can help the right readers.",
+        feedName: feed.name,
+        meta: "Waiting for signal",
+        icon: "sparkles-outline"
+      };
+    });
 }
 
 export function getArchiveItems(items: FeedItem[], state: UserContentState) {
