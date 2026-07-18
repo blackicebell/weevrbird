@@ -378,12 +378,13 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
   onBack: () => void;
   onSelectPace: (pace: IssuePace) => void;
 }) {
-  const options: Array<{ pace: IssuePace; title: string; body: string; meta: string; icon: keyof typeof Ionicons.glyphMap }> = [
+  const options: Array<{ pace: IssuePace; title: string; body: string; meta: string; includes: string[]; icon: keyof typeof Ionicons.glyphMap }> = [
     {
       pace: "Brief",
       title: "Brief",
       body: "A short issue for checking what changed and getting out quickly.",
       meta: "4 pieces / about 7 min",
+      includes: ["Lead", "Changed", "Ending"],
       icon: "flash-outline"
     },
     {
@@ -391,6 +392,7 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
       title: "Balanced",
       body: "A normal issue with reading, saving, and one useful conversation.",
       meta: "6 pieces / about 12 min",
+      includes: ["Lead", "Question", "Reads", "Save"],
       icon: "newspaper-outline"
     },
     {
@@ -398,6 +400,7 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
       title: "Deep",
       body: "More context when you actually want to settle in and follow a thread.",
       meta: "9 pieces / about 20 min",
+      includes: ["Lead", "Question", "Reads", "Context"],
       icon: "library-outline"
     }
   ];
@@ -441,6 +444,13 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
                 </View>
                 <Text style={[styles.activityBody, { color: theme.muted }]}>{option.body}</Text>
                 <Text style={[styles.activityMeta, { color: theme.muted }]}>{option.meta}</Text>
+                <View style={styles.tuneIncludes}>
+                  {option.includes.map((item) => (
+                    <View key={`${option.pace}-${item}`} style={[styles.tuneIncludePill, { borderColor: theme.line, backgroundColor: theme.panelAlt }]}>
+                      <Text style={[styles.tuneIncludeText, { color: theme.text }]}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </Pressable>
           );
@@ -887,6 +897,24 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.md,
     ...shadows.card
+  },
+  tuneIncludes: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingTop: spacing.xs
+  },
+  tuneIncludePill: {
+    minHeight: 28,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.sm,
+    justifyContent: "center"
+  },
+  tuneIncludeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold"
   },
   activityStack: {
     gap: spacing.md,
