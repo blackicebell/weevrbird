@@ -114,8 +114,12 @@ export function LibraryScreen({
                   ))}
                 </>
               )}
-              <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved and opened"} theme={theme} />
-              {regularArchiveItems.map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+              {regularArchiveItems.length > 0 && (
+                <>
+                  <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved and opened"} theme={theme} />
+                  {regularArchiveItems.map((item) => <LibraryItem key={`library-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+                </>
+              )}
             </>
           ) : (
             <EmptyState
