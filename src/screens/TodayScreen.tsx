@@ -34,8 +34,8 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(issuePace), [joinedFeeds, issuePace]);
-  const issuePromise = getIssuePromise(issuePace);
   const coverDate = new Date();
+  const issuePromise = getIssuePromise(issuePace, coverDate);
   const coverIssue = `${formatCoverDate(coverDate)} / ${selectedCity}`;
   const greeting = getCoverGreeting(coverDate);
   const leadModule = editionModules[0];
@@ -188,25 +188,34 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
   );
 }
 
-function getIssuePromise(issuePace: IssuePace) {
+function getIssuePromise(issuePace: IssuePace, date: Date) {
+  const subtitle = getTimeAwareSubtitle(date);
+
   if (issuePace === "Brief") {
     return {
-      subtitle: "A tighter personal issue. See what changed, keep the useful parts, and leave with less open.",
+      subtitle,
       chips: ["4 pieces", "7 min", "Quiet finish"]
     };
   }
 
   if (issuePace === "Deep") {
     return {
-      subtitle: "A slower personal issue. Read with context, follow one conversation, and save what deserves a return.",
+      subtitle,
       chips: ["9 pieces", "20 min", "More context"]
     };
   }
 
   return {
-    subtitle: "One personal issue. See what changed, save what matters, join one useful conversation, then leave caught up.",
+    subtitle,
     chips: ["6 pieces", "12 min", "Clear ending"]
   };
+}
+
+function getTimeAwareSubtitle(date: Date) {
+  const hour = date.getHours();
+  if (hour < 12) return "Start with what changed, keep what matters, and leave with a finite issue you can actually finish.";
+  if (hour < 17) return "Return to the useful signals from today, save what deserves another look, and close the tabs in your head.";
+  return "Close the loop on today: save what matters, place private contributions, and leave caught up without more scrolling.";
 }
 
 function formatCoverDate(date: Date) {
