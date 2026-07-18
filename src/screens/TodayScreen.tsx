@@ -90,7 +90,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
       {submittedContributionCount > 0 && (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open private contributions"
+          accessibilityLabel="Choose Smartfeeds for private contributions"
           onPress={() => setActiveTab("Contribute")}
           style={({ pressed }) => [styles.reviewNudge, pressed && styles.reviewNudgePressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
         >
@@ -99,9 +99,9 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
           </View>
           <View style={styles.reviewNudgeCopy}>
             <Text style={[styles.reviewNudgeTitle, { color: theme.text }]}>
-              {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} ready to place
+              {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} ready for a Smartfeed
             </Text>
-            <Text style={[styles.meta, { color: theme.muted }]}>Still private. Choose the Smartfeed where each signal should become visible.</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>Still private. Choose where each contribution should become visible.</Text>
           </View>
           <Ionicons name="chevron-forward" color={theme.muted} size={18} />
         </Pressable>
@@ -166,7 +166,7 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
   const path = [
     { label: "Read", body: `${counts.Editorial + counts.Reading} finite signal${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
     { label: "Save", body: "Move what matters into Library", tone: getLayerTone("Reading") },
-    { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} prompt${counts.Community === 1 ? "" : "s"} to answer privately` : "Write privately before placement", tone: getLayerTone("Community") }
+    { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} prompt${counts.Community === 1 ? "" : "s"} to answer privately` : "Write privately before choosing a feed", tone: getLayerTone("Community") }
   ];
 
   return (
@@ -220,7 +220,7 @@ function getTimeAwareSubtitle(date: Date) {
   const hour = date.getHours();
   if (hour < 12) return "Start with what changed, keep what matters, and leave with a finite issue you can actually finish.";
   if (hour < 17) return "Return to the useful signals from today, save what deserves another look, and close the tabs in your head.";
-  return "Close the loop on today: save what matters, place private contributions, and leave caught up without more scrolling.";
+  return "Close the loop on today: save what matters, choose Smartfeeds for private contributions, and leave caught up without more scrolling.";
 }
 
 function getTimeAwareChip(date: Date) {
