@@ -385,7 +385,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
         <Text style={[styles.submittedDetailBody, { color: theme.text }]}>{contribution.body}</Text>
         {!placed && (
           <View style={styles.placementPanel}>
-            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Place in a Smartfeed</Text>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Choose a Smartfeed</Text>
             <View style={styles.placementChips}>
               {placementFeeds.map((entry) => {
                 const entryEditorial = feedEditorialMeta[entry.id] ?? feedEditorialMeta.atlanta;
@@ -395,7 +395,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
                   <Pressable
                     key={entry.id}
                     accessibilityRole="button"
-                    accessibilityLabel={`Place in ${entry.name}`}
+                    accessibilityLabel={`Choose ${entry.name} for this contribution`}
                     accessibilityState={{ selected }}
                     onPress={() => setSelectedFeedId(entry.id)}
                     style={({ pressed }) => [
@@ -419,12 +419,12 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
             </View>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Place contribution in ${selectedFeed.name}`}
+              accessibilityLabel={`Make contribution visible in ${selectedFeed.name}`}
               onPress={() => onPlace(selectedFeedId)}
               style={({ pressed }) => [styles.placeButton, pressed && styles.profileButtonPressed, { backgroundColor: selectedEditorial.accent }]}
             >
               <Ionicons name="checkmark-circle-outline" color="#FFFDF8" size={18} />
-              <Text style={styles.placeButtonText}>Place in {selectedFeed.name}</Text>
+              <Text style={styles.placeButtonText}>Make visible</Text>
             </Pressable>
           </View>
         )}
