@@ -28,6 +28,7 @@ export function DetailScreen({
   const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[item.feedId] ?? feedEditorialMeta.atlanta;
   const body = item.body ?? item.excerpt ?? "A useful signal saved into this issue.";
+  const isUserContribution = item.authorId === "you";
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -39,19 +40,29 @@ export function DetailScreen({
       <View style={[styles.readerCard, { backgroundColor: editorial.paper, borderColor: editorial.secondary }]}>
         <View style={styles.readerTop}>
           <View style={[styles.feedIcon, { backgroundColor: editorial.secondary }]}>
-            <Ionicons name={editorial.motif} color={editorial.accent} size={22} />
+            <Ionicons name={isUserContribution ? "checkmark-circle-outline" : editorial.motif} color={editorial.accent} size={22} />
           </View>
           <View style={styles.readerMetaCopy}>
-            <Text style={[styles.kicker, { color: editorial.accent }]}>{feed.name.toUpperCase()}</Text>
-            <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? editorial.masthead} / {item.publishedAt}</Text>
+            <Text style={[styles.kicker, { color: editorial.accent }]}>{isUserContribution ? "PLACED FROM YOUR REVIEW" : feed.name.toUpperCase()}</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{isUserContribution ? `Visible in ${feed.name}` : item.sourceName ?? editorial.masthead} / {item.publishedAt}</Text>
           </View>
         </View>
 
         <Text style={[styles.readerTitle, { color: theme.text }]}>{item.title}</Text>
         <Text style={[styles.readerBody, { color: theme.muted }]}>{body}</Text>
 
+        {isUserContribution && (
+          <View style={[styles.placedPanel, { borderColor: editorial.secondary, backgroundColor: `${editorial.secondary}77` }]}>
+            <Ionicons name="newspaper-outline" color={editorial.accent} size={20} />
+            <View style={styles.placedPanelCopy}>
+              <Text style={[styles.contextTitle, { color: theme.text }]}>This is now part of {feed.name}</Text>
+              <Text style={[styles.body, { color: theme.muted }]}>It moved from private review into the Smartfeed you chose. People can save it or use it as local context.</Text>
+            </View>
+          </View>
+        )}
+
         <View style={[styles.contextPanel, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.62)" }]}>
-          <Text style={[styles.contextTitle, { color: theme.text }]}>Why this is in your issue</Text>
+          <Text style={[styles.contextTitle, { color: theme.text }]}>{isUserContribution ? "Why it belongs here" : "Why this is in your issue"}</Text>
           <Text style={[styles.body, { color: theme.muted }]}>{getDetailReason(item, feed.name)}</Text>
         </View>
 
@@ -75,11 +86,28 @@ export function DetailScreen({
         </View>
       </View>
 
-      <View style={[styles.replyPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
-        <Text style={[styles.kicker, { color: theme.accent }]}>CONVERSATION</Text>
-        <Text style={[styles.replyTitle, { color: theme.text }]}>{item.replies} thoughtful repl{item.replies === 1 ? "y" : "ies"}</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>Replies stay attached to the piece so the useful context is easy to revisit later.</Text>
-      </View>
+      {isUserContribution ? (
+        <View style={[styles.replyPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+          <Text style={[styles.kicker, { color: theme.accent }]}>IN CONTEXT</Text>
+          <Text style={[styles.replyTitle, { color: theme.text }]}>Placed, not performed.</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Weevrbird treats your contribution as useful context first. Conversation can gather around it later, but it does not need fake activity to feel complete.</Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Return to ${feed.name}`}
+            onPress={onBack}
+            style={({ pressed }) => [styles.contextButton, pressed && styles.detailActionPressed, { backgroundColor: editorial.accent }]}
+          >
+            <Text style={styles.contextButtonText}>Back to {feed.name}</Text>
+            <Ionicons name="arrow-forward" color="#FFFDF8" size={15} />
+          </Pressable>
+        </View>
+      ) : (
+        <View style={[styles.replyPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+          <Text style={[styles.kicker, { color: theme.accent }]}>CONVERSATION</Text>
+          <Text style={[styles.replyTitle, { color: theme.text }]}>{item.replies} thoughtful repl{item.replies === 1 ? "y" : "ies"}</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Replies stay attached to the piece so the useful context is easy to revisit later.</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -111,6 +139,7 @@ function DetailAction({ icon, label, active, onPress, theme, accent }: {
 }
 
 function getDetailReason(item: FeedItem, feedName: string) {
+  if (item.authorId === "you") return `You placed this in ${feedName} because it adds a specific signal someone can save, try, or use as context.`;
   if (item.imported) return `Selected from ${feedName} because it gives you useful context without sending you into an endless feed.`;
   if (item.itemType === "recommendation") return "Saved-worthy because it includes place, timing, and a low-pressure reason to try it.";
   if (item.itemType === "question" || item.itemType === "discussion") return "Included because the replies can become practical context for people with the same question.";
@@ -189,6 +218,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs
   },
+  placedPanel: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.md,
+    flexDirection: "row",
+    gap: spacing.md,
+    alignItems: "flex-start"
+  },
+  placedPanelCopy: {
+    flex: 1,
+    gap: spacing.xs
+  },
   contextTitle: {
     fontSize: 15,
     lineHeight: 20,
@@ -227,5 +268,20 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 30,
     fontFamily: "PlayfairDisplay_700Bold"
+  },
+  contextButton: {
+    minHeight: 42,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  contextButtonText: {
+    color: "#FFFDF8",
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
   }
 });
