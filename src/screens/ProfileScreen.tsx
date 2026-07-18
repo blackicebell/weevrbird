@@ -231,7 +231,7 @@ function NewShelfPanel({ theme, onBack }: { theme: AppTheme; onBack: () => void 
         </View>
         <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>NEW SHELF</Text>
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Start from a useful pattern.</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>A shelf should feel like a return path, not a folder. Weevrbird will help group saved pieces when there is enough signal.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>A shelf should feel like a return path, not a folder. Weevrbird will help group saved pieces when a pattern starts to form.</Text>
       </View>
       {draftRows.map((row, index) => (
         <View key={row} style={[styles.attentionEditRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
@@ -302,7 +302,7 @@ function getContributionSignal(item: FeedItem) {
     return "Useful because it invites practical answers, not hot takes.";
   }
 
-  return "Useful because it adds a clear signal to the issue.";
+  return "Useful because it adds a clear piece to the issue.";
 }
 
 function FromYouEmptyState({ theme, onOpenContribute }: { theme: AppTheme; onOpenContribute: () => void }) {
@@ -312,8 +312,8 @@ function FromYouEmptyState({ theme, onOpenContribute }: { theme: AppTheme; onOpe
         <Ionicons name="create-outline" color={palette.deepForest} size={19} />
       </View>
       <View style={styles.profileCollectionCopy}>
-        <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Add one useful signal</Text>
-        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Save it privately first. Place it when you know which Smartfeed needs it.</Text>
+        <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Add one useful contribution</Text>
+        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Save it privately first. Make it visible when you know which Smartfeed needs it.</Text>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -514,8 +514,8 @@ function ProfileShelfDetail({ collection, theme, onBack, onOpenDetail }: {
 function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; onBack: () => void; onResetApp: () => void }) {
   const [acknowledgedControl, setAcknowledgedControl] = useState<string | null>(null);
   const controls = [
-    { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing your public signal." },
-    { icon: "person-remove-outline", title: "Unfollow quietly", done: "Unfollowed quietly", body: "Stop seeing new signal from this profile. They will not be notified." },
+    { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing what others see from you." },
+    { icon: "person-remove-outline", title: "Unfollow quietly", done: "Unfollowed quietly", body: "Stop seeing new contributions from this profile. They will not be notified." },
     { icon: "flag-outline", title: "Report concern", done: "Concern noted", body: "Send a moderation note if something feels unsafe, spammy, or out of place." }
   ];
 
@@ -575,8 +575,8 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
 }
 
 function getSafetyAcknowledgement(title: string) {
-  if (title === "Mute profile") return "Their signal will stay out of your issue unless you choose to bring it back.";
-  if (title === "Unfollow quietly") return "You will stop seeing new signal from this profile. They will not be notified.";
+  if (title === "Mute profile") return "Their contributions will stay out of your issue unless you choose to bring them back.";
+  if (title === "Unfollow quietly") return "You will stop seeing new contributions from this profile. They will not be notified.";
   return "A private moderation note has been prepared for review.";
 }
 
