@@ -79,6 +79,10 @@ export function LibraryScreen({
           </View>
         ))}
       </View>
+      <View style={styles.archivePrivacyNote}>
+        <Ionicons name="lock-closed-outline" color={theme.accent} size={15} />
+        <Text style={[styles.archivePrivacyText, { color: theme.muted }]}>Private history is only for you. Saving and opening pieces helps Weevrbird make your archive easier to return to.</Text>
+      </View>
       <View style={[styles.searchBox, { backgroundColor: theme.panel, borderColor: theme.line }]}>
         <Ionicons name="search-outline" color={theme.muted} size={20} />
         <TextInput
@@ -463,6 +467,18 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 15,
     fontFamily: "Inter_700Bold"
+  },
+  archivePrivacyNote: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm
+  },
+  archivePrivacyText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   searchBox: {
     minHeight: 52,
