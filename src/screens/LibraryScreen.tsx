@@ -42,8 +42,10 @@ export function LibraryScreen({
   const userContentState = { savedItemIds, usefulItemIds };
   const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
   const results = localDataService.searchLibrary(search, submittedContributions);
+  const allLibraryItems = localDataService.searchLibrary("", submittedContributions);
   const savedUserItems = savedItems.filter((item) => item.authorId === "you");
   const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
+  const usefulItems = allLibraryItems.filter((item) => usefulItemIds.includes(item.id) && !savedItemIds.includes(item.id));
   const openedItems = archiveItems.filter((item) => !savedItemIds.includes(item.id));
 
   if (activeShelf) {
@@ -65,6 +67,7 @@ export function LibraryScreen({
       <View style={[styles.archiveSummary, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         {[
           { label: "Saved", value: savedItems.length },
+          { label: "Useful", value: usefulItemIds.length },
           { label: "Opened", value: archiveItems.length },
           { label: "Shelves", value: 3 }
         ].map((item) => (
@@ -133,6 +136,7 @@ export function LibraryScreen({
             activeTab={activeTab}
             savedUserItems={savedUserItems}
             regularSavedItems={regularSavedItems}
+            usefulItems={usefulItems}
             openedItems={openedItems}
             theme={theme}
             onOpenDetail={onOpenDetail}
@@ -148,6 +152,7 @@ function LibraryTabContent({
   activeTab,
   savedUserItems,
   regularSavedItems,
+  usefulItems,
   openedItems,
   theme,
   onOpenDetail,
@@ -156,6 +161,7 @@ function LibraryTabContent({
   activeTab: LibraryTab;
   savedUserItems: FeedItem[];
   regularSavedItems: FeedItem[];
+  usefulItems: FeedItem[];
   openedItems: FeedItem[];
   theme: AppTheme;
   onOpenDetail: (item: FeedItem) => void;
@@ -197,7 +203,7 @@ function LibraryTabContent({
     );
   }
 
-  if (savedUserItems.length === 0 && regularSavedItems.length === 0) {
+  if (savedUserItems.length === 0 && regularSavedItems.length === 0 && usefulItems.length === 0) {
     return (
       <EmptyState
         icon="bookmark-outline"
@@ -222,6 +228,21 @@ function LibraryTabContent({
         <>
           <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved for later"} theme={theme} />
           {regularSavedItems.map((item) => <LibraryItem key={`library-saved-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+        </>
+      )}
+      {usefulItems.length > 0 && (
+        <>
+          <SectionHeader title="Marked useful" theme={theme} />
+          {usefulItems.map((item) => (
+            <LibraryItem
+              key={`library-useful-${item.id}`}
+              item={item}
+              theme={theme}
+              labelOverride="Useful signal"
+              reasonOverride="Marked useful from your issue"
+              onOpen={() => onOpenDetail(item)}
+            />
+          ))}
         </>
       )}
     </>
@@ -291,10 +312,17 @@ function ShelfRow({ collection, itemCount, theme, onOpen }: {
   );
 }
 
-function LibraryItem({ item, theme, onOpen }: { item: FeedItem; theme: AppTheme; onOpen: () => void }) {
+function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
+  item: FeedItem;
+  theme: AppTheme;
+  labelOverride?: string;
+  reasonOverride?: string;
+  onOpen: () => void;
+}) {
   const isUserContribution = item.authorId === "you";
   const icon = isUserContribution ? "checkmark-circle-outline" : item.imported ? "book-outline" : "chatbubble-ellipses-outline";
-  const reason = getSaveReason(item);
+  const reason = reasonOverride ?? getSaveReason(item);
+  const label = labelOverride ?? (isUserContribution ? "From You" : item.imported ? "Reading" : item.itemType.replace("_", " "));
   return (
     <Pressable
       accessibilityRole="button"
@@ -306,7 +334,7 @@ function LibraryItem({ item, theme, onOpen }: { item: FeedItem; theme: AppTheme;
         <Ionicons name={icon} color={theme.accent} size={18} />
       </View>
       <View style={styles.libraryCopy}>
-        <Text style={[styles.libraryMeta, { color: theme.accent }]}>{isUserContribution ? "From You" : item.imported ? "Reading" : item.itemType.replace("_", " ")}</Text>
+        <Text style={[styles.libraryMeta, { color: theme.accent }]}>{label}</Text>
         <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird"} / {item.publishedAt}</Text>
         <Text style={[styles.libraryReason, { color: theme.muted }]}>{reason}</Text>
