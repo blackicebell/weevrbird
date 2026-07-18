@@ -64,7 +64,7 @@ export function OnboardingScreen(props: {
           <Text style={[styles.body, { color: theme.muted }]}>
             Pick a city, a few interests, and a pen-name style. Weevrbird turns them into one useful daily issue, a personal archive, and a quieter way to contribute.
           </Text>
-          <View style={styles.promiseStack}>
+          <View style={[styles.promisePanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
             {productPromises.map((promise) => (
               <PromiseRow key={promise.title} promise={promise} theme={theme} />
             ))}
@@ -199,9 +199,9 @@ function PromiseRow({ promise, theme }: {
   theme: AppTheme;
 }) {
   return (
-    <View style={[styles.promiseRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+    <View style={styles.promiseRow}>
       <View style={[styles.promiseIcon, { backgroundColor: theme.panelAlt }]}>
-        <Ionicons name={promise.icon} color={theme.accent} size={17} />
+        <Ionicons name={promise.icon} color={theme.accent} size={16} />
       </View>
       <View style={styles.promiseCopy}>
         <Text style={[styles.promiseTitle, { color: theme.text }]}>{promise.title}</Text>
@@ -302,22 +302,24 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontFamily: "Inter_400Regular"
   },
-  promiseStack: {
-    gap: spacing.sm
-  },
-  promiseRow: {
-    minHeight: 64,
+  promisePanel: {
     borderWidth: 1,
     borderRadius: radii.md,
-    padding: spacing.md,
+    padding: spacing.sm,
+    gap: 2
+  },
+  promiseRow: {
+    minHeight: 48,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md
+    alignItems: "center",
+    gap: spacing.sm
   },
   promiseIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center"
   },
