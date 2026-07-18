@@ -69,8 +69,8 @@ export function LibraryScreen({
       <View style={[styles.archiveSummary, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         {[
           { label: "Saved", value: savedItems.length },
-          { label: "Useful", value: usefulItemIds.length },
-          { label: "Opened", value: archiveItems.length },
+          { label: "Marked useful", value: usefulItemIds.length },
+          { label: "Private history", value: archiveItems.length },
           { label: "Shelves", value: 3 }
         ].map((item) => (
           <View key={item.label} style={styles.archiveSummaryItem}>
