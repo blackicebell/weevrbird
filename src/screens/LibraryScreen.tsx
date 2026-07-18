@@ -281,7 +281,7 @@ function getLibraryTabContext(tab: LibraryTab): {
 
   return {
     icon: "bookmark-outline",
-    body: "Saved for later is your private shelf for pieces, questions, and placed signals worth keeping."
+    body: "Saved for later is your private shelf for pieces, questions, and recommendations worth keeping."
   };
 }
 
