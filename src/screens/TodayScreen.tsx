@@ -93,7 +93,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
             <Text style={[styles.reviewNudgeTitle, { color: theme.text }]}>
               {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} ready to place
             </Text>
-            <Text style={[styles.meta, { color: theme.muted }]}>Choose the Smartfeed where each signal will help most.</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>Still private. Choose the Smartfeed where each signal should become visible.</Text>
           </View>
           <Ionicons name="chevron-forward" color={theme.muted} size={18} />
         </Pressable>
@@ -424,7 +424,7 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
         <AfterIssueRow
           icon="create-outline"
           title={submittedContributionCount > 0 ? `${submittedContributionCount} private signal${submittedContributionCount === 1 ? "" : "s"} waiting` : "Contribution stays private first"}
-          body={submittedContributionCount > 0 ? "Place them when you know where they belong." : "Write when it is useful, then choose the right Smartfeed."}
+          body={submittedContributionCount > 0 ? "They stay hidden until you place them in the right Smartfeed." : "Write when it is useful. Weevrbird keeps it private until you choose where it belongs."}
           theme={theme}
           editorial={editorial}
         />
