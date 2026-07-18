@@ -352,6 +352,7 @@ function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
   const isUserContribution = item.authorId === "you";
   const icon = isUserContribution ? "checkmark-circle-outline" : item.imported ? "book-outline" : "chatbubble-ellipses-outline";
   const reason = reasonOverride ?? getSaveReason(item);
+  const whySaved = getWhySavedNote(item);
   const label = labelOverride ?? (isUserContribution ? "From You" : item.imported ? "Reading" : item.itemType.replace("_", " "));
   return (
     <Pressable
@@ -368,6 +369,12 @@ function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
         <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird"} / {item.publishedAt}</Text>
         <Text style={[styles.libraryReason, { color: theme.muted }]}>{reason}</Text>
+        {whySaved && (
+          <View style={[styles.whySavedRow, { backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="sparkles-outline" color={theme.accent} size={14} />
+            <Text style={[styles.whySavedText, { color: theme.accent }]}>{whySaved}</Text>
+          </View>
+        )}
       </View>
       <Ionicons name={item.saved ? "bookmark" : "bookmark-outline"} color={theme.accent} size={20} />
     </Pressable>
@@ -380,6 +387,13 @@ function getSaveReason(item: FeedItem) {
   if (item.imported) return "Opened from a Smartfeed";
   if (item.itemType === "recommendation") return "Kept for a future plan";
   return "Conversation worth revisiting";
+}
+
+function getWhySavedNote(item: FeedItem) {
+  if (item.authorId !== "you") return null;
+
+  const feed = localDataService.getFeed(item.feedId);
+  return `Kept because it became useful context inside ${feed.name}.`;
 }
 
 const styles = StyleSheet.create({
@@ -535,5 +549,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontFamily: "Inter_600SemiBold"
+  },
+  whySavedRow: {
+    alignSelf: "flex-start",
+    borderRadius: radii.round,
+    paddingVertical: 5,
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  whySavedText: {
+    flexShrink: 1,
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold"
   }
 });
