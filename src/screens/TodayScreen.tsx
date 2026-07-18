@@ -99,7 +99,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
           </View>
           <View style={styles.reviewNudgeCopy}>
             <Text style={[styles.reviewNudgeTitle, { color: theme.text }]}>
-              {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} ready for a Smartfeed
+              {submittedContributionCount} private contribution{submittedContributionCount === 1 ? "" : "s"} waiting
             </Text>
             <Text style={[styles.meta, { color: theme.muted }]}>Still private. Choose where each contribution should become visible.</Text>
           </View>
