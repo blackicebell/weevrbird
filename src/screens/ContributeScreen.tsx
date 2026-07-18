@@ -351,7 +351,7 @@ function ContributionConfirmation({ contribution, theme }: { contribution: Submi
     <View style={[styles.confirmationPanel, { borderColor: "#CFE8DA", backgroundColor: theme.dark ? "rgba(214, 241, 229, 0.08)" : "#F2FBF6" }]}>
       <Ionicons name={placed ? "checkmark-done-circle-outline" : "checkmark-circle"} color={theme.success} size={22} />
       <View style={styles.guidanceCopy}>
-        <Text style={[styles.qualityTitle, { color: theme.text }]}>{placed ? "Placed in a Smartfeed" : "Saved privately"}</Text>
+        <Text style={[styles.qualityTitle, { color: theme.text }]}>{placed ? `Visible in ${feed.name}` : "Saved privately"}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>
           {placed ? `${contribution.type} / Visible in ${feed.name}${placedTime ? ` at ${placedTime}` : ""}` : `${contribution.type} / Choose a Smartfeed below when you are ready`}
         </Text>
