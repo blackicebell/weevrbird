@@ -197,7 +197,7 @@ function AttentionMapEditor({ theme, selectedInterests, onBack }: {
       <View style={[styles.shelfHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>EDIT ATTENTION MAP</Text>
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Tune what this profile pays attention to.</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>These are the public signals people use to understand what kind of contributions belong here.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>These topics help people understand what you notice, save, and contribute.</Text>
       </View>
       <View style={styles.attentionEditStack}>
         {editableInterests.map((interest, index) => (
@@ -248,7 +248,7 @@ function NewShelfPanel({ theme, onBack }: { theme: AppTheme; onBack: () => void 
 
 function getShelfDraftBody(index: number) {
   if (index === 0) return "Keep it specific enough that someone understands why the pieces belong together.";
-  if (index === 1) return "A shelf becomes valuable once it has more than one saved signal.";
+  if (index === 1) return "A shelf becomes valuable once it holds more than one piece worth returning to.";
   return "Private-first keeps collections useful before they become performative.";
 }
 
