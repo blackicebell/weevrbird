@@ -156,9 +156,9 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
     Editorial: modules.filter((module) => module.layer === "Editorial").length
   };
   const path = [
-    { label: "Read", body: `${counts.Editorial + counts.Reading} finite item${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
-    { label: "Save", body: "Keep what may matter later", tone: getLayerTone("Reading") },
-    { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} useful prompt${counts.Community === 1 ? "" : "s"}` : "Place signal privately", tone: getLayerTone("Community") }
+    { label: "Read", body: `${counts.Editorial + counts.Reading} finite signal${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
+    { label: "Save", body: "Move what matters into Library", tone: getLayerTone("Reading") },
+    { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} prompt${counts.Community === 1 ? "" : "s"} to answer privately` : "Write privately before placement", tone: getLayerTone("Community") }
   ];
 
   return (
@@ -167,8 +167,8 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
         <Text style={[styles.kicker, { color: theme.accent }]}>MORNING FLIGHT</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>Built to finish</Text>
       </View>
-      <Text style={[styles.editionBriefTitle, { color: theme.text }]}>Read, save, contribute.</Text>
-      <Text style={[styles.body, { color: theme.muted }]}>Catch up quickly, keep the useful parts, and add signal only when you know where it belongs.</Text>
+      <Text style={[styles.editionBriefTitle, { color: theme.text }]}>A finite issue, built around you.</Text>
+      <Text style={[styles.body, { color: theme.muted }]}>Read what changed, save what deserves a return, and contribute privately until you know where it belongs.</Text>
       <View style={styles.issuePath}>
         {path.map((step, index) => (
           <View key={step.label} style={[styles.issuePathItem, { borderColor: `${step.tone}36`, backgroundColor: `${step.tone}10` }]}>
