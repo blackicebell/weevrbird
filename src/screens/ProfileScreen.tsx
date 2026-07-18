@@ -351,7 +351,7 @@ function SubmittedContributionCard({ contribution, theme, onOpen }: {
         </View>
       </View>
       <Text style={[styles.submittedContributionBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
-      <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{placed ? `Visible in ${feed.name}.` : "Private until you choose where it belongs."}</Text>
+      <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{placed ? `Visible in ${feed.name}.` : "Private until you choose a Smartfeed."}</Text>
       <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved privately ${savedAt}`}</Text>
     </Pressable>
   );
@@ -381,7 +381,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
             <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Private"}</Text>
           </View>
         </View>
-        <Text style={[styles.shelfTitle, { color: theme.text }]}>{placed ? "Your signal is placed." : "Choose where this belongs."}</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>{placed ? "Your contribution is live." : "Choose where this belongs."}</Text>
         <Text style={[styles.submittedDetailBody, { color: theme.text }]}>{contribution.body}</Text>
         {!placed && (
           <View style={styles.placementPanel}>
@@ -432,7 +432,7 @@ function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
           <Ionicons name={placed ? "checkmark-circle-outline" : "time-outline"} color={editorial.accent} size={20} />
           <View style={styles.profileCollectionCopy}>
             <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Placed in ${feed.name}` : "Private for now"}</Text>
-            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "Only you can see this until you place it."}</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "Only you can see this until you choose a Smartfeed."}</Text>
           </View>
         </View>
         <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved ${formatContributionTime(contribution.createdAt)}`}</Text>

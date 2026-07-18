@@ -87,7 +87,7 @@ export function ContributeScreen({
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={[styles.kicker, { color: theme.accent }]}>ADD USEFUL SIGNAL</Text>
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>Write one useful signal, keep it private while you choose where it belongs, then place it inside a Smartfeed.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>Write one useful contribution, keep it private while you choose where it belongs, then send it to a Smartfeed.</Text>
         <ContributionLoopSummary reviewCount={reviewContributions.length} placedCount={placedContributionCount} theme={theme} />
         <View style={styles.contributionList}>
           {contributionTypes.map((type) => (
@@ -185,7 +185,7 @@ export function ContributeScreen({
               <Ionicons name="file-tray-outline" color={theme.accent} size={19} />
               <View style={styles.guidanceCopy}>
                 <Text style={[styles.submittedBody, { color: theme.text }]}>Nothing saved yet</Text>
-                <Text style={[styles.meta, { color: theme.muted }]}>Your private drafts will appear here before you place them in a Smartfeed.</Text>
+                <Text style={[styles.meta, { color: theme.muted }]}>Your private drafts will appear here before you choose a Smartfeed.</Text>
               </View>
             </View>
           )}
@@ -207,7 +207,7 @@ function ContributionLoopSummary({ reviewCount, placedCount, theme }: {
   const steps = [
     { icon: "create-outline", label: "Write", body: "Capture the useful bit." },
     { icon: "file-tray-outline", label: "Review", body: reviewCount > 0 ? `${reviewCount} waiting` : "Choose where it fits." },
-    { icon: "checkmark-circle-outline", label: "Place", body: placedCount > 0 ? `${placedCount} placed` : "Make it visible." }
+    { icon: "checkmark-circle-outline", label: "Visible", body: placedCount > 0 ? `${placedCount} live` : "Choose a Smartfeed." }
   ] as const;
 
   return (
