@@ -15,13 +15,14 @@ import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { EditionModule, FeedItem, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, setSelectedFeed, setActiveTab, onOpenActivity, onOpenDetail }: {
+export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, contributionActivityCount, setSelectedFeed, setActiveTab, onOpenSearch, onOpenActivity, onOpenDetail }: {
   theme: AppTheme;
   joinedFeeds: Smartfeed[];
   submittedContributionCount: number;
   contributionActivityCount: number;
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
+  onOpenSearch: () => void;
   onOpenActivity: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
@@ -53,7 +54,7 @@ export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, co
             <Text style={[styles.coverIssue, { color: theme.muted }]}>Friday, July 17 / Atlanta</Text>
           </View>
           <View style={styles.coverActions}>
-            <HeaderIcon name="search-outline" label="Search Today" theme={theme} />
+            <HeaderIcon name="search-outline" label="Search Today" theme={theme} onPress={onOpenSearch} />
             <HeaderIcon name="notifications-outline" label="Open contribution activity" theme={theme} onPress={onOpenActivity} dot={contributionActivityCount > 0} />
           </View>
         </View>

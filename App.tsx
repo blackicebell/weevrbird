@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -76,6 +76,8 @@ function AppContent() {
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("welcome");
   const [detailItem, setDetailItem] = useState<FeedItem | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [todaySearch, setTodaySearch] = useState("");
   const [search, setSearch] = useState("");
 
   const selectedFeed = useMemo(() => localDataService.getFeed(userAppState.selectedFeedId), [userAppState.selectedFeedId]);
@@ -101,6 +103,10 @@ function AppContent() {
     () => localDataService.getPlacedContributionItems(userAppState.submittedContributions),
     [userAppState.submittedContributions]
   );
+  const todaySearchResults = useMemo(
+    () => localDataService.searchLibrary(todaySearch, userAppState.submittedContributions).slice(0, 6),
+    [todaySearch, userAppState.submittedContributions]
+  );
   const reviewContributionCount = userAppState.submittedContributions.filter((contribution) => contribution.status === "review").length;
 
   const updateUserAppState = (updates: Partial<UserAppState>) => {
@@ -121,10 +127,18 @@ function AppContent() {
 
   const openDetail = (item: FeedItem) => {
     setActivityOpen(false);
+    setSearchOpen(false);
     setDetailItem(item);
   };
 
+  const openSearch = () => {
+    setActivityOpen(false);
+    setSearchOpen(true);
+    setTodaySearch("");
+  };
+
   const openActivity = () => {
+    setSearchOpen(false);
     setActivityOpen(true);
     if (unseenContributionActivity.length > 0) {
       setUserAppState((current) => markContributionActivitySeen(current, unseenContributionActivity.map((item) => item.id)));
@@ -218,6 +232,7 @@ function AppContent() {
               contributionActivityCount={unseenContributionActivity.length}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
+              onOpenSearch={openSearch}
               onOpenActivity={openActivity}
               onOpenDetail={openDetail}
             />
@@ -308,10 +323,147 @@ function AppContent() {
               />
             </View>
           )}
+          {searchOpen && (
+            <View style={[styles.detailOverlay, { backgroundColor: theme.bg }]}>
+              <AppBackground theme={theme} />
+              <SearchPanel
+                theme={theme}
+                query={todaySearch}
+                setQuery={setTodaySearch}
+                results={todaySearchResults}
+                onBack={() => setSearchOpen(false)}
+                onOpenDetail={openDetail}
+                onOpenLibrary={() => {
+                  setSearchOpen(false);
+                  setSearch(todaySearch);
+                  setActiveTab("Library");
+                }}
+              />
+            </View>
+          )}
         </View>
-        {!detailItem && !activityOpen && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
+        {!detailItem && !activityOpen && !searchOpen && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
       </SafeAreaView>
     </>
+  );
+}
+
+function SearchPanel({ theme, query, setQuery, results, onBack, onOpenDetail, onOpenLibrary }: {
+  theme: ReturnType<typeof useTheme>;
+  query: string;
+  setQuery: (query: string) => void;
+  results: FeedItem[];
+  onBack: () => void;
+  onOpenDetail: (item: FeedItem) => void;
+  onOpenLibrary: () => void;
+}) {
+  const suggestions = ["Atlanta", "Black Tech", "weekend", "design"];
+  const normalizedQuery = query.trim();
+
+  return (
+    <ScrollView contentContainerStyle={styles.searchContent}>
+      <View style={styles.panelHeader}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Close search"
+          onPress={onBack}
+          style={({ pressed }) => [styles.backButton, pressed && styles.backButtonPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+        >
+          <Ionicons name="chevron-back" color={theme.text} size={22} />
+        </Pressable>
+        <Text style={[styles.panelKicker, { color: theme.accent }]}>SEARCH TODAY</Text>
+      </View>
+
+      <Text style={[styles.panelTitle, { color: theme.text }]}>Find a useful signal.</Text>
+      <View style={[styles.searchField, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+        <Ionicons name="search-outline" color={theme.muted} size={20} />
+        <TextInput
+          autoFocus
+          accessibilityLabel="Search Weevrbird"
+          accessibilityHint="Search saved pieces, feeds, sources, and contributions."
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search saved pieces, people, topics"
+          placeholderTextColor={theme.muted}
+          style={[styles.searchInput, { color: theme.text }]}
+        />
+        {query.length > 0 && (
+          <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery("")}>
+            <Ionicons name="close-circle" color={theme.muted} size={19} />
+          </Pressable>
+        )}
+      </View>
+
+      {!normalizedQuery ? (
+        <View style={styles.searchSuggestions}>
+          <Text style={[styles.activityMeta, { color: theme.muted }]}>Try a topic</Text>
+          <View style={styles.suggestionRow}>
+            {suggestions.map((suggestion) => (
+              <Pressable
+                key={suggestion}
+                accessibilityRole="button"
+                accessibilityLabel={`Search ${suggestion}`}
+                onPress={() => setQuery(suggestion)}
+                style={({ pressed }) => [styles.suggestionPill, pressed && styles.activityCardPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+              >
+                <Text style={[styles.suggestionText, { color: theme.text }]}>{suggestion}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : (
+        <View style={styles.activityStack}>
+          {results.length > 0 ? (
+            results.map((item) => (
+              <SearchResultRow key={item.id} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
+            ))
+          ) : (
+            <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+              <Ionicons name="search-outline" color={theme.accent} size={24} />
+              <Text style={[styles.activityTitle, { color: theme.text }]}>Nothing found yet.</Text>
+              <Text style={[styles.activityBody, { color: theme.muted }]}>Try a feed, place, source, or topic from your issue.</Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open Library search"
+        onPress={onOpenLibrary}
+        style={({ pressed }) => [styles.searchLibraryButton, pressed && styles.activityCardPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+      >
+        <Ionicons name="albums-outline" color={theme.accent} size={18} />
+        <Text style={[styles.searchLibraryText, { color: theme.text }]}>Search the full Library</Text>
+        <Ionicons name="arrow-forward" color={theme.muted} size={16} />
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+function SearchResultRow({ item, theme, onOpen }: {
+  item: FeedItem;
+  theme: ReturnType<typeof useTheme>;
+  onOpen: () => void;
+}) {
+  const label = item.authorId === "you" ? "From You" : item.sourceName ?? localDataService.getFeed(item.feedId).name;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${item.title}`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.searchResult, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
+    >
+      <View style={[styles.activityIcon, { backgroundColor: theme.panelAlt }]}>
+        <Ionicons name={item.imported ? "book-outline" : "chatbubble-ellipses-outline"} color={theme.accent} size={19} />
+      </View>
+      <View style={styles.activityCopy}>
+        <Text style={[styles.activityFeed, { color: theme.accent }]}>{label}</Text>
+        <Text style={[styles.activityTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.activityBody, { color: theme.muted }]} numberOfLines={2}>{item.excerpt ?? item.body}</Text>
+      </View>
+      <Ionicons name="chevron-forward" color={theme.muted} size={18} />
+    </Pressable>
   );
 }
 
@@ -518,6 +670,11 @@ const styles = StyleSheet.create({
     paddingBottom: 110,
     gap: 16
   },
+  searchContent: {
+    padding: 20,
+    paddingBottom: 110,
+    gap: 16
+  },
   panelHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -551,6 +708,68 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     fontFamily: "Inter_400Regular"
+  },
+  searchField: {
+    minHeight: 54,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    ...shadows.card
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_500Medium"
+  },
+  searchSuggestions: {
+    gap: spacing.sm,
+    paddingTop: spacing.xs
+  },
+  suggestionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  suggestionPill: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center"
+  },
+  suggestionText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  searchResult: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  searchLibraryButton: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  searchLibraryText: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
   },
   activityStack: {
     gap: spacing.md,
