@@ -93,16 +93,6 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
           <Ionicons name="link-outline" color={palette.deepForest} size={17} />
           <Text style={[styles.sharedContextText, { color: theme.muted }]}>Overlap: Atlanta, Black Tech, and UX Design.</Text>
         </View>
-        <View style={[styles.profileSignalPanel, { borderColor: "#DDF0E4" }]}>
-          <ProfileSignalRow label="Known for" value="Places, books, and slower attention" theme={theme} />
-          <ProfileSignalRow label="Rhythm" value="Weekly field notes" theme={theme} />
-          <ProfileSignalRow label="Best when" value="You want grounded local signal" theme={theme} />
-        </View>
-        <View style={styles.profileTrustRow}>
-          <Text style={[styles.profileTrustText, { color: theme.muted }]}>Local context</Text>
-          <Text style={[styles.profileTrustText, { color: theme.muted }]}>Useful questions</Text>
-          <Text style={[styles.profileTrustText, { color: theme.muted }]}>Practical saves</Text>
-        </View>
       </View>
 
       <ProfileChapter theme={theme} />
@@ -115,10 +105,6 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
           </View>
         ))}
       </View>
-
-      <SectionHeader title="Recent Signal" action="View all" theme={theme} />
-      <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
-      <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
       <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Placed" : "Start"} theme={theme} />
       {submittedContributions.length > 0 ? (
@@ -136,12 +122,16 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         <FromYouEmptyState theme={theme} onOpenContribute={onOpenContribute} />
       )}
 
-      <SectionHeader title="Shelves" action="New shelf" theme={theme} />
+      <SectionHeader title="From This Person" action="Archive" theme={theme} />
+      <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
+      <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
+
+      <SectionHeader title="Shelves" action="New" theme={theme} />
       {profileCollections.map((collection) => (
         <ProfileCollectionRow key={collection.title} collection={collection} theme={theme} onOpen={() => setActiveShelf(collection)} />
       ))}
 
-      <SectionHeader title="Contribution Rhythm" theme={theme} />
+      <SectionHeader title="Rhythm" theme={theme} />
       <View style={styles.profileTypeGrid}>
         {contributionTypes.map((type) => (
           <View key={type.label} style={[styles.profileTypeTile, { borderColor: theme.line, backgroundColor: "rgba(255, 255, 252, 0.58)" }]}>
@@ -151,7 +141,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         ))}
       </View>
 
-      <SectionHeader title="Elsewhere They Write" theme={theme} />
+      <SectionHeader title="Elsewhere" theme={theme} />
       <View style={[styles.elsewherePanel, { borderColor: theme.line }]}>
         <ExternalProfileLink icon="globe-outline" title="Personal site" domain="quietarchitect.studio" theme={theme} />
         <ExternalProfileLink icon="reader-outline" title="Newsletter" domain="fieldnotes.email" theme={theme} />
@@ -189,15 +179,6 @@ function ProfileAvatar({ label, index, theme }: { label: string; index: number; 
   return (
     <View style={[styles.avatar, { backgroundColor: colors[index % colors.length], borderColor: theme.text }]}>
       <Text style={styles.avatarText}>{label}</Text>
-    </View>
-  );
-}
-
-function ProfileSignalRow({ label, value, theme }: { label: string; value: string; theme: AppTheme }) {
-  return (
-    <View style={styles.profileSignalRow}>
-      <Text style={[styles.profileSignalLabel, { color: palette.deepForest }]}>{label}</Text>
-      <Text style={[styles.profileSignalText, { color: theme.text }]}>{value}</Text>
     </View>
   );
 }
@@ -633,47 +614,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Inter_600SemiBold"
-  },
-  profileSignalPanel: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: spacing.sm,
-    gap: 8,
-    backgroundColor: "rgba(221, 240, 228, 0.24)"
-  },
-  profileSignalRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md
-  },
-  profileSignalLabel: {
-    width: 72,
-    fontSize: 11,
-    lineHeight: 15,
-    fontFamily: "Inter_700Bold",
-    textTransform: "uppercase"
-  },
-  profileSignalText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-    fontFamily: "Inter_600SemiBold"
-  },
-  profileTrustRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm
-  },
-  profileTrustText: {
-    borderWidth: 1,
-    borderColor: "#DDF0E4",
-    borderRadius: radii.round,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    fontSize: 11,
-    lineHeight: 14,
-    fontFamily: "Inter_700Bold",
-    backgroundColor: "rgba(221, 240, 228, 0.42)"
   },
   profileChapter: {
     borderTopWidth: 1,
