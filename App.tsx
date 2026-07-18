@@ -551,8 +551,8 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
           ) : (
             <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
               <Ionicons name="search-outline" color={theme.accent} size={24} />
-              <Text style={[styles.activityTitle, { color: theme.text }]}>Nothing found yet.</Text>
-              <Text style={[styles.activityBody, { color: theme.muted }]}>Try a feed, saved piece, source, contribution, or place from your issue.</Text>
+              <Text style={[styles.activityTitle, { color: theme.text }]}>No issue results for "{normalizedQuery}".</Text>
+              <Text style={[styles.activityBody, { color: theme.muted }]}>Try a feed, saved piece, source, contribution, or place, or search the full Library with this query.</Text>
             </View>
           )}
         </View>
