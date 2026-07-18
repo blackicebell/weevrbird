@@ -350,6 +350,8 @@ function AppContent() {
                 query={todaySearch}
                 setQuery={setTodaySearch}
                 results={todaySearchResults}
+                savedItemIds={userAppState.savedItemIds}
+                usefulItemIds={userAppState.usefulItemIds}
                 onBack={() => setSearchOpen(false)}
                 onOpenDetail={openDetail}
                 onOpenLibrary={() => {
@@ -466,12 +468,14 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
   );
 }
 
-function SearchPanel({ theme, selectedCity, query, setQuery, results, onBack, onOpenDetail, onOpenLibrary }: {
+function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemIds, usefulItemIds, onBack, onOpenDetail, onOpenLibrary }: {
   theme: ReturnType<typeof useTheme>;
   selectedCity: string;
   query: string;
   setQuery: (query: string) => void;
   results: FeedItem[];
+  savedItemIds: string[];
+  usefulItemIds: string[];
   onBack: () => void;
   onOpenDetail: (item: FeedItem) => void;
   onOpenLibrary: () => void;
@@ -534,7 +538,14 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, onBack, on
         <View style={styles.activityStack}>
           {results.length > 0 ? (
             results.map((item) => (
-              <SearchResultRow key={item.id} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
+              <SearchResultRow
+                key={item.id}
+                item={item}
+                theme={theme}
+                saved={savedItemIds.includes(item.id)}
+                markedUseful={usefulItemIds.includes(item.id)}
+                onOpen={() => onOpenDetail(item)}
+              />
             ))
           ) : (
             <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
@@ -564,12 +575,15 @@ function getSearchSuggestions(selectedCity: string) {
   return Array.from(new Map([selectedCity, "Black Tech", "weekend", "design"].map((suggestion) => [suggestion.toLowerCase(), suggestion])).values());
 }
 
-function SearchResultRow({ item, theme, onOpen }: {
+function SearchResultRow({ item, theme, saved, markedUseful, onOpen }: {
   item: FeedItem;
   theme: ReturnType<typeof useTheme>;
+  saved: boolean;
+  markedUseful: boolean;
   onOpen: () => void;
 }) {
   const label = item.authorId === "you" ? "From You" : item.sourceName ?? localDataService.getFeed(item.feedId).name;
+  const memoryLabel = getSearchMemoryLabel(item, saved, markedUseful);
   return (
     <Pressable
       accessibilityRole="button"
@@ -582,12 +596,21 @@ function SearchResultRow({ item, theme, onOpen }: {
       </View>
       <View style={styles.activityCopy}>
         <Text style={[styles.activityFeed, { color: theme.accent }]}>{label}</Text>
+        <Text style={[styles.activityMeta, { color: theme.muted }]}>{memoryLabel}</Text>
         <Text style={[styles.activityTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
         <Text style={[styles.activityBody, { color: theme.muted }]} numberOfLines={2}>{item.excerpt ?? item.body}</Text>
       </View>
       <Ionicons name="chevron-forward" color={theme.muted} size={18} />
     </Pressable>
   );
+}
+
+function getSearchMemoryLabel(item: FeedItem, saved: boolean, markedUseful: boolean) {
+  if (item.authorId === "you") return `Placed in ${localDataService.getFeed(item.feedId).name}`;
+  if (saved) return "Saved in Library";
+  if (markedUseful) return "Marked useful";
+  if (item.imported) return "Opened from a Smartfeed";
+  return "Conversation from your issue";
 }
 
 function ActivityPanel({ theme, activity, seenActivityIds, onBack, onOpenContribution, onOpenContribute }: {
