@@ -193,6 +193,16 @@ export const people: Person[] = [
     interests: ["Local Food", "Travel", "Faith"],
     linked: false,
     avatar: 2
+  },
+  {
+    id: "noah",
+    displayName: "Noah Reed",
+    username: "noahnotes",
+    city: "Atlanta",
+    bio: "Collects notes on slower attention, independent publishing, and creative work that feels grounded.",
+    interests: ["UX Design", "Books", "Creative Community"],
+    linked: false,
+    avatar: 7
   }
 ];
 

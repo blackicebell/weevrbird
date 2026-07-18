@@ -2,14 +2,14 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { profileCollections } from "../app/editorial";
+import { avatars, profileCollections } from "../app/editorial";
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
 import { SectionHeader } from "../components/SectionHeader";
 import { localDataService } from "../data/localDataService";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem, SubmittedContribution } from "../types/product";
+import { FeedItem, Person, SubmittedContribution } from "../types/product";
 
 type LibraryTab = "Saved for later" | "Opened" | "Shelves";
 type LibraryCollection = (typeof profileCollections)[number];
@@ -57,6 +57,7 @@ export function LibraryScreen({
       <LibraryShelfDetail
         collection={activeShelf}
         theme={theme}
+        selectedInterests={selectedInterests}
         onBack={() => setActiveShelf(null)}
         onOpenDetail={onOpenDetail}
       />
@@ -288,14 +289,16 @@ function getLibraryTabContext(tab: LibraryTab): {
   };
 }
 
-function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
+function LibraryShelfDetail({ collection, theme, selectedInterests, onBack, onOpenDetail }: {
   collection: LibraryCollection;
   theme: AppTheme;
+  selectedInterests: string[];
   onBack: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const shelfItems = localDataService.getShelfItems(collection.title);
   const shelfPurpose = getShelfPurpose(collection);
+  const contributors = getShelfContributors(shelfItems);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -318,6 +321,14 @@ function LibraryShelfDetail({ collection, theme, onBack, onOpenDetail }: {
           </View>
         </View>
       </View>
+      {contributors.length > 0 && (
+        <ShelfContributorsPanel
+          contributors={contributors}
+          items={shelfItems}
+          selectedInterests={selectedInterests}
+          theme={theme}
+        />
+      )}
       {shelfItems.map((item) => (
         <LibraryItem key={`library-shelf-item-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
       ))}
@@ -331,6 +342,112 @@ function getShelfPurpose(collection: LibraryCollection) {
   if (collection.title.includes("artists")) return "A practical shelf for tools, resources, and references worth keeping close.";
 
   return "A focused shelf for saved pieces that belong together.";
+}
+
+function ShelfContributorsPanel({ contributors, items, selectedInterests, theme }: {
+  contributors: Person[];
+  items: FeedItem[];
+  selectedInterests: string[];
+  theme: AppTheme;
+}) {
+  return (
+    <View style={[styles.shelfContributorsPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      <View style={styles.shelfContributorsTop}>
+        <View>
+          <Text style={[styles.libraryMeta, { color: theme.accent }]}>Contributors</Text>
+          <Text style={[styles.shelfContributorsTitle, { color: theme.text }]}>People behind this shelf.</Text>
+        </View>
+        <View style={[styles.libraryIcon, { backgroundColor: theme.panelAlt }]}>
+          <Ionicons name="people-outline" color={theme.accent} size={18} />
+        </View>
+      </View>
+      <Text style={[styles.meta, { color: theme.muted }]}>Shown because their public contributions are saved here.</Text>
+      <View style={styles.shelfContributorList}>
+        {contributors.slice(0, 3).map((person) => (
+          <ShelfContributorRow
+            key={`shelf-contributor-${person.id}`}
+            person={person}
+            item={items.find((entry) => entry.authorId === person.id)}
+            selectedInterests={selectedInterests}
+            theme={theme}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function ShelfContributorRow({ person, item, selectedInterests, theme }: {
+  person: Person;
+  item?: FeedItem;
+  selectedInterests: string[];
+  theme: AppTheme;
+}) {
+  const sharedInterests = getSharedInterests(person.interests, selectedInterests);
+  const feedName = item ? localDataService.getFeed(item.feedId).name : "Weevrbird";
+  const reason = sharedInterests.length > 0
+    ? `You both pay attention to ${formatList(sharedInterests)}.`
+    : `${person.displayName} added useful context through ${feedName}.`;
+
+  return (
+    <View style={styles.shelfContributorRow}>
+      <View style={[styles.shelfContributorAvatar, { borderColor: `${theme.accent}44`, backgroundColor: `${theme.accent}12` }]}>
+        <Text style={[styles.shelfContributorAvatarText, { color: theme.accent }]}>{avatars[person.avatar] ?? person.displayName.charAt(0)}</Text>
+      </View>
+      <View style={styles.shelfContributorCopy}>
+        <View style={styles.shelfContributorTopLine}>
+          <Text style={[styles.shelfContributorName, { color: theme.text }]}>{person.displayName}</Text>
+          <Text style={[styles.shelfContributorState, { color: person.linked ? theme.accent : theme.muted }]}>{person.linked ? "Linked" : "Not linked"}</Text>
+        </View>
+        <Text style={[styles.meta, { color: theme.muted }]}>{item ? `${formatContributionType(item.itemType)} / ${feedName}` : "Public contributor"}</Text>
+        <Text style={[styles.shelfContributorReason, { color: theme.muted }]} numberOfLines={2}>{reason}</Text>
+      </View>
+    </View>
+  );
+}
+
+function getShelfContributors(items: FeedItem[]) {
+  const people = localDataService.getPeople();
+  const seen = new Set<string>();
+
+  return items.reduce<Person[]>((result, item) => {
+    if (!item.authorId || item.authorId === "you" || seen.has(item.authorId)) return result;
+
+    const person = people.find((entry) => entry.id === item.authorId);
+    if (!person) return result;
+
+    seen.add(person.id);
+    result.push(person);
+    return result;
+  }, []);
+}
+
+function getSharedInterests(personInterests: string[], selectedInterests: string[]) {
+  const selected = selectedInterests.map(normalizeInterest);
+  return personInterests.filter((interest) => selected.includes(normalizeInterest(interest))).slice(0, 3);
+}
+
+function normalizeInterest(interest: string) {
+  const value = interest.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (value === "ux" || value === "uxdesign") return "uxdesign";
+  if (value === "localfood" || value === "food") return "food";
+  return value;
+}
+
+function formatList(items: string[]) {
+  if (items.length <= 1) return items[0] ?? "a shared interest";
+  if (items.length === 2) return `${items[0]} and ${items[1]}`;
+  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+}
+
+function formatContributionType(itemType: FeedItem["itemType"]) {
+  if (itemType === "recommendation") return "Recommendation";
+  if (itemType === "question") return "Question";
+  if (itemType === "discussion") return "Discussion";
+  if (itemType === "long_read") return "Long read";
+  if (itemType === "link") return "Link";
+  if (itemType === "note") return "Note";
+  return "Contribution";
 }
 
 function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
@@ -578,6 +695,75 @@ const styles = StyleSheet.create({
     fontSize: 30,
     lineHeight: 36,
     fontFamily: "PlayfairDisplay_700Bold"
+  },
+  shelfContributorsPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  shelfContributorsTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  shelfContributorsTitle: {
+    fontSize: 21,
+    lineHeight: 27,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  shelfContributorList: {
+    gap: spacing.sm,
+    paddingTop: spacing.xs
+  },
+  shelfContributorRow: {
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(18, 31, 27, 0.08)"
+  },
+  shelfContributorAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  shelfContributorAvatarText: {
+    fontSize: 15,
+    lineHeight: 19,
+    fontFamily: "Inter_700Bold"
+  },
+  shelfContributorCopy: {
+    flex: 1,
+    gap: 2
+  },
+  shelfContributorTopLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  shelfContributorName: {
+    flex: 1,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  shelfContributorState: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold"
+  },
+  shelfContributorReason: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   libraryIcon: {
     width: 38,
