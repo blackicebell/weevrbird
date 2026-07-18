@@ -226,6 +226,10 @@ function FeedCaughtUp({ theme, editorial, feed, count }: {
       <Text style={[styles.feedCaughtUpKicker, { color: editorial.accent }]}>SECTION COMPLETE</Text>
       <Text style={[styles.feedCaughtUpTitle, { color: theme.text }]}>You finished {feed.name}.</Text>
       <Text style={[styles.body, { color: theme.muted, textAlign: "center" }]}>No infinite scroll here. This section will feel new again when something meaningful changes.</Text>
+      <View style={[styles.feedCaughtUpNext, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.62)" }]}>
+        <Ionicons name="compass-outline" color={editorial.accent} size={17} />
+        <Text style={[styles.feedCaughtUpNextText, { color: theme.muted }]}>Next: save anything worth returning to, check Archive, or add a useful signal for {feed.name}.</Text>
+      </View>
       <View style={styles.feedCaughtUpStats}>
         <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>{count} stories read</Text>
         <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>1 discussion saved</Text>
@@ -600,6 +604,20 @@ const styles = StyleSheet.create({
     lineHeight: 34,
     textAlign: "center",
     fontFamily: "PlayfairDisplay_700Bold"
+  },
+  feedCaughtUpNext: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  feedCaughtUpNextText: {
+    flex: 1,
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_600SemiBold"
   },
   feedCaughtUpStats: {
     gap: spacing.xs,
