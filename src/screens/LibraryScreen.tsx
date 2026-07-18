@@ -230,7 +230,7 @@ function LibraryTabContent({
     <>
       {savedUserItems.length > 0 && (
         <>
-          <SectionHeader title="Your placed signals" theme={theme} />
+          <SectionHeader title="Your contributions" theme={theme} />
           {savedUserItems.map((item) => (
             <LibraryItem key={`library-from-you-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />
           ))}
