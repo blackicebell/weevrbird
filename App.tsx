@@ -329,7 +329,8 @@ function IssueBuildScreen({ theme, selectedCity, selectedInterests }: {
   const buildRows = [
     `Local lens: ${selectedCity}`,
     `Sections: ${previewInterests.join(", ") || "Useful signal"}`,
-    "Shape: finite issue with a clear ending"
+    "Archive: saved signal you can return to",
+    "Contribution: private first, placed with intent"
   ];
 
   return (

@@ -31,7 +31,13 @@ export function OnboardingScreen(props: {
   const issueBuildItems = [
     { label: selectedCity, icon: "location-outline" as keyof typeof Ionicons.glyphMap },
     { label: previewInterests[0] ?? "Local culture", icon: "albums-outline" as keyof typeof Ionicons.glyphMap },
-    { label: previewInterests[1] ?? "Useful conversations", icon: "chatbubbles-outline" as keyof typeof Ionicons.glyphMap }
+    { label: previewInterests[1] ?? "Useful conversations", icon: "chatbubbles-outline" as keyof typeof Ionicons.glyphMap },
+    { label: "Personal archive", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap }
+  ];
+  const productPromises = [
+    { title: "Read finite issues", body: "Start with what changed and stop when you are caught up.", icon: "newspaper-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "Save useful signal", body: "Keep the pieces, places, and questions you may need later.", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "Contribute privately", body: "Write first, then place it only where it belongs.", icon: "create-outline" as keyof typeof Ionicons.glyphMap }
   ];
 
   const toggleInterest = (interest: string) => {
@@ -56,8 +62,13 @@ export function OnboardingScreen(props: {
           <Text style={[styles.kicker, { color: theme.accent }]}>Your first issue starts here.</Text>
           <Text style={[styles.heroTitle, { color: theme.text }]}>A calmer way to follow what is worth your attention.</Text>
           <Text style={[styles.body, { color: theme.muted }]}>
-            Pick a city, a few interests, and a pen-name style. Weevrbird turns them into one useful daily issue, not an endless feed.
+            Pick a city, a few interests, and a pen-name style. Weevrbird turns them into one useful daily issue, a personal archive, and a quieter way to contribute.
           </Text>
+          <View style={styles.promiseStack}>
+            {productPromises.map((promise) => (
+              <PromiseRow key={promise.title} promise={promise} theme={theme} />
+            ))}
+          </View>
           <PrimaryButton label="Build my first issue" icon="arrow-forward" onPress={() => setStep("city")} theme={theme} />
         </View>
       )}
@@ -108,7 +119,7 @@ export function OnboardingScreen(props: {
         <View style={styles.onboardingPanel}>
           <Text style={[styles.kicker, { color: theme.accent }]}>Choose your mark.</Text>
           <Text style={[styles.screenTitle, { color: theme.text }]}>Pick a quiet profile mark</Text>
-          <Text style={[styles.body, { color: theme.muted }]}>Profiles start with a simple letter mark so the focus stays on what people notice, save, and share.</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Profiles start with a simple letter mark so the focus stays on what people notice, save, and place into the right Smartfeed.</Text>
           <View style={styles.avatarGrid}>
             {avatars.map((letter, index) => (
               <AvatarButton key={letter} label={letter} index={index} selected={selectedAvatar === index} onPress={() => setSelectedAvatar(index)} theme={theme} />
@@ -123,7 +134,7 @@ export function OnboardingScreen(props: {
           <Text style={[styles.kicker, { color: theme.accent }]}>Your first issue is ready.</Text>
           <Text style={[styles.heroTitle, { color: theme.text }]}>Today is built around {selectedCity}, useful signal, and calmer conversation.</Text>
           <View style={[styles.issuePreview, { backgroundColor: theme.panel, borderColor: theme.line }]}>
-            <Text style={[styles.issuePreviewLabel, { color: theme.accent }]}>INSIDE YOUR ISSUE</Text>
+            <Text style={[styles.issuePreviewLabel, { color: theme.accent }]}>WHAT WEEVRBIRD WILL HELP YOU DO</Text>
             {issueBuildItems.map((item) => (
               <View key={item.label} style={styles.issueRow}>
                 <Ionicons name={item.icon} color={theme.accent} size={18} />
@@ -131,7 +142,7 @@ export function OnboardingScreen(props: {
               </View>
             ))}
             <View style={[styles.issueDivider, { backgroundColor: theme.line }]} />
-            <Text style={[styles.issuePromise, { color: theme.muted }]}>A beginning, a few useful reads, one conversation worth joining, and a clear ending.</Text>
+            <Text style={[styles.issuePromise, { color: theme.muted }]}>Read a finite issue, save what matters, and add useful signal privately before you place it.</Text>
           </View>
           <PrimaryButton label="Open Today" icon="newspaper-outline" onPress={finish} theme={theme} />
         </View>
@@ -180,6 +191,23 @@ function Chip({ label, selected, onPress, theme }: {
     >
       <Text style={[styles.chipText, { color: selected ? theme.bg : theme.text }]}>{label}</Text>
     </Pressable>
+  );
+}
+
+function PromiseRow({ promise, theme }: {
+  promise: { title: string; body: string; icon: keyof typeof Ionicons.glyphMap };
+  theme: AppTheme;
+}) {
+  return (
+    <View style={[styles.promiseRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      <View style={[styles.promiseIcon, { backgroundColor: theme.panelAlt }]}>
+        <Ionicons name={promise.icon} color={theme.accent} size={17} />
+      </View>
+      <View style={styles.promiseCopy}>
+        <Text style={[styles.promiseTitle, { color: theme.text }]}>{promise.title}</Text>
+        <Text style={[styles.promiseBody, { color: theme.muted }]}>{promise.body}</Text>
+      </View>
+    </View>
   );
 }
 
@@ -273,6 +301,39 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 24,
     fontFamily: "Inter_400Regular"
+  },
+  promiseStack: {
+    gap: spacing.sm
+  },
+  promiseRow: {
+    minHeight: 64,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  promiseIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  promiseCopy: {
+    flex: 1,
+    gap: 2
+  },
+  promiseTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  promiseBody: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontFamily: "Inter_500Medium"
   },
   chipWrap: {
     flexDirection: "row",
