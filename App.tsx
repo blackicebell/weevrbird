@@ -22,6 +22,7 @@ import {
   getUserContentState,
   hydrateUserAppState,
   placeContribution,
+  markContributionActivitySeen,
   selectFeed,
   setActiveFilter as setUserActiveFilter,
   setActiveTab as setUserActiveTab,
@@ -92,6 +93,10 @@ function AppContent() {
     () => localDataService.getContributionActivity(userAppState.submittedContributions),
     [userAppState.submittedContributions]
   );
+  const unseenContributionActivity = useMemo(
+    () => contributionActivity.filter((item) => !userAppState.seenContributionActivityIds.includes(item.id)),
+    [contributionActivity, userAppState.seenContributionActivityIds]
+  );
   const placedContributionItems = useMemo(
     () => localDataService.getPlacedContributionItems(userAppState.submittedContributions),
     [userAppState.submittedContributions]
@@ -117,6 +122,13 @@ function AppContent() {
   const openDetail = (item: FeedItem) => {
     setActivityOpen(false);
     setDetailItem(item);
+  };
+
+  const openActivity = () => {
+    setActivityOpen(true);
+    if (unseenContributionActivity.length > 0) {
+      setUserAppState((current) => markContributionActivitySeen(current, unseenContributionActivity.map((item) => item.id)));
+    }
   };
 
   const closeDetail = () => {
@@ -203,10 +215,10 @@ function AppContent() {
               theme={theme}
               joinedFeeds={joinedFeeds}
               submittedContributionCount={reviewContributionCount}
-              contributionActivityCount={contributionActivity.length}
+              contributionActivityCount={unseenContributionActivity.length}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
-              onOpenActivity={() => setActivityOpen(true)}
+              onOpenActivity={openActivity}
               onOpenDetail={openDetail}
             />
           )}
@@ -283,6 +295,7 @@ function AppContent() {
               <ActivityPanel
                 theme={theme}
                 activity={contributionActivity}
+                seenActivityIds={userAppState.seenContributionActivityIds}
                 onBack={() => setActivityOpen(false)}
                 onOpenContribution={(contributionId) => {
                   const item = placedContributionItems.find((entry) => entry.id === contributionId);
@@ -302,9 +315,10 @@ function AppContent() {
   );
 }
 
-function ActivityPanel({ theme, activity, onBack, onOpenContribution, onOpenContribute }: {
+function ActivityPanel({ theme, activity, seenActivityIds, onBack, onOpenContribution, onOpenContribute }: {
   theme: ReturnType<typeof useTheme>;
   activity: ContributionActivity[];
+  seenActivityIds: string[];
   onBack: () => void;
   onOpenContribution: (contributionId: string) => void;
   onOpenContribute: () => void;
@@ -329,24 +343,13 @@ function ActivityPanel({ theme, activity, onBack, onOpenContribution, onOpenCont
       {activity.length > 0 ? (
         <View style={styles.activityStack}>
           {activity.map((item) => (
-            <Pressable
+            <ActivityRow
               key={item.id}
-              accessibilityRole="button"
-              accessibilityLabel={`Open activity for ${item.feedName}`}
-              onPress={() => onOpenContribution(item.contributionId)}
-              style={({ pressed }) => [styles.activityCard, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
-            >
-              <View style={[styles.activityIcon, { backgroundColor: theme.panelAlt }]}>
-                <Ionicons name={item.icon} color={theme.accent} size={19} />
-              </View>
-              <View style={styles.activityCopy}>
-                <Text style={[styles.activityFeed, { color: theme.accent }]}>{item.feedName}</Text>
-                <Text style={[styles.activityTitle, { color: theme.text }]}>{item.title}</Text>
-                <Text style={[styles.activityBody, { color: theme.muted }]}>{item.body}</Text>
-                <Text style={[styles.activityMeta, { color: theme.muted }]}>{item.meta}</Text>
-              </View>
-              <Ionicons name="chevron-forward" color={theme.muted} size={18} />
-            </Pressable>
+              item={item}
+              seen={seenActivityIds.includes(item.id)}
+              theme={theme}
+              onOpen={() => onOpenContribution(item.contributionId)}
+            />
           ))}
         </View>
       ) : (
@@ -365,6 +368,37 @@ function ActivityPanel({ theme, activity, onBack, onOpenContribution, onOpenCont
         </View>
       )}
     </ScrollView>
+  );
+}
+
+function ActivityRow({ item, seen, theme, onOpen }: {
+  item: ContributionActivity;
+  seen: boolean;
+  theme: ReturnType<typeof useTheme>;
+  onOpen: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open activity for ${item.feedName}`}
+      accessibilityHint={seen ? "Already seen" : "New activity"}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.activityCard, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: seen ? theme.line : theme.accent }]}
+    >
+      <View style={[styles.activityIcon, { backgroundColor: seen ? theme.panelAlt : `${theme.accent}18` }]}>
+        <Ionicons name={item.icon} color={theme.accent} size={19} />
+      </View>
+      <View style={styles.activityCopy}>
+        <View style={styles.activityRowTop}>
+          <Text style={[styles.activityFeed, { color: theme.accent }]}>{item.feedName}</Text>
+          <Text style={[styles.activityState, { color: seen ? theme.muted : theme.accent }]}>{seen ? "Seen" : "New"}</Text>
+        </View>
+        <Text style={[styles.activityTitle, { color: theme.text }]}>{item.title}</Text>
+        <Text style={[styles.activityBody, { color: theme.muted }]}>{item.body}</Text>
+        <Text style={[styles.activityMeta, { color: theme.muted }]}>{item.meta}</Text>
+      </View>
+      <Ionicons name="chevron-forward" color={theme.muted} size={18} />
+    </Pressable>
   );
 }
 
@@ -546,7 +580,19 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 5
   },
+  activityRowTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.sm
+  },
   activityFeed: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  activityState: {
     fontSize: 11,
     lineHeight: 15,
     fontFamily: "Inter_700Bold",

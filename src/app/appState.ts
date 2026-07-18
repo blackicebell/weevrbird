@@ -13,6 +13,7 @@ export type UserAppState = {
   draft: string;
   savedItemIds: string[];
   usefulItemIds: string[];
+  seenContributionActivityIds: string[];
   submittedContributions: SubmittedContribution[];
 };
 
@@ -30,6 +31,7 @@ export const DEFAULT_USER_APP_STATE: UserAppState = {
   draft: "",
   savedItemIds: [],
   usefulItemIds: [],
+  seenContributionActivityIds: [],
   submittedContributions: []
 };
 
@@ -50,6 +52,7 @@ export function hydrateUserAppState(
     selectedInterests: persistedState.selectedInterests ?? DEFAULT_USER_APP_STATE.selectedInterests,
     savedItemIds: persistedState.savedItemIds ?? defaultSavedItemIds,
     usefulItemIds: persistedState.usefulItemIds ?? [],
+    seenContributionActivityIds: persistedState.seenContributionActivityIds ?? [],
     submittedContributions: persistedState.submittedContributions ?? []
   };
 }
@@ -83,6 +86,13 @@ export function toggleSavedItem(state: UserAppState, itemId: string): UserAppSta
 
 export function toggleUsefulItem(state: UserAppState, itemId: string): UserAppState {
   return { ...state, usefulItemIds: toggleItemId(state.usefulItemIds, itemId) };
+}
+
+export function markContributionActivitySeen(state: UserAppState, activityIds: string[]): UserAppState {
+  return {
+    ...state,
+    seenContributionActivityIds: Array.from(new Set(state.seenContributionActivityIds.concat(activityIds)))
+  };
 }
 
 export function updateDraft(state: UserAppState, draft: string): UserAppState {
