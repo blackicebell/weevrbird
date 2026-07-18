@@ -7,23 +7,23 @@ import { EmptyState } from "../components/EmptyState";
 import { SectionHeader } from "../components/SectionHeader";
 import {
   AppTab,
-  buildTodayEdition,
-  EditionModule,
   feedEditorialMeta,
   getLayerTone
 } from "../app/editorial";
+import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem, Smartfeed } from "../types/product";
+import { EditionModule, FeedItem, Smartfeed } from "../types/product";
 
-export function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab, onOpenDetail }: {
+export function TodayScreen({ theme, joinedFeeds, submittedContributionCount, setSelectedFeed, setActiveTab, onOpenDetail }: {
   theme: AppTheme;
   joinedFeeds: Smartfeed[];
+  submittedContributionCount: number;
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const editionModules = useMemo(() => buildTodayEdition(joinedFeeds), [joinedFeeds]);
+  const editionModules = useMemo(() => localDataService.getTodayIssue(), [joinedFeeds]);
   const leadModule = editionModules[0];
   const remainingModules = editionModules.slice(1);
 
@@ -68,6 +68,26 @@ export function TodayScreen({ theme, joinedFeeds, setSelectedFeed, setActiveTab,
       </LinearGradient>
 
       <EditionBrief theme={theme} modules={editionModules} />
+
+      {submittedContributionCount > 0 && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open contribution review queue"
+          onPress={() => setActiveTab("Contribute")}
+          style={({ pressed }) => [styles.reviewNudge, pressed && styles.reviewNudgePressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+        >
+          <View style={[styles.reviewNudgeIcon, { backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="time-outline" color={theme.accent} size={19} />
+          </View>
+          <View style={styles.reviewNudgeCopy}>
+            <Text style={[styles.reviewNudgeTitle, { color: theme.text }]}>
+              {submittedContributionCount} contribution{submittedContributionCount === 1 ? "" : "s"} waiting in review
+            </Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>Your signal is saved locally before it joins an issue.</Text>
+          </View>
+          <Ionicons name="chevron-forward" color={theme.muted} size={18} />
+        </Pressable>
+      )}
 
       <SectionHeader title="Today, In Order" action="Tune" theme={theme} />
       {leadModule && (
@@ -515,6 +535,35 @@ const styles = StyleSheet.create({
   issuePathLabel: {
     fontSize: 14,
     lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  reviewNudge: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  reviewNudgePressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.99 }]
+  },
+  reviewNudgeIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  reviewNudgeCopy: {
+    flex: 1,
+    gap: 2
+  },
+  reviewNudgeTitle: {
+    fontSize: 15,
+    lineHeight: 20,
     fontFamily: "Inter_700Bold"
   },
   editionModule: {

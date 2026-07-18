@@ -15,10 +15,26 @@ import React, { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
+import {
+  completeOnboarding,
+  createDefaultUserAppState,
+  getUserContentState,
+  hydrateUserAppState,
+  placeContribution,
+  selectFeed,
+  setActiveFilter as setUserActiveFilter,
+  setActiveTab as setUserActiveTab,
+  submitContribution,
+  toggleSavedItem as toggleUserSavedItem,
+  toggleUsefulItem as toggleUserUsefulItem,
+  updateDraft,
+  updateDraftType,
+  UserAppState
+} from "./src/app/appState";
 import { AppTab, OnboardingStep } from "./src/app/editorial";
 import { clearPersistedAppState, loadPersistedAppState, savePersistedAppState } from "./src/app/persistence";
 import { TabBar } from "./src/components/TabBar";
-import { feedItems, launchFeeds } from "./src/data/mockData";
+import { localDataService } from "./src/data/localDataService";
 import { ContributeScreen } from "./src/screens/ContributeScreen";
 import { DetailScreen } from "./src/screens/DetailScreen";
 import { FeedsScreen } from "./src/screens/FeedsScreen";
@@ -27,7 +43,7 @@ import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { TodayScreen } from "./src/screens/TodayScreen";
 import { useTheme } from "./src/theme/useTheme";
-import { FeedItem, SmartfeedFilter } from "./src/types/product";
+import { FeedItem } from "./src/types/product";
 
 export default function App() {
   return (
@@ -49,43 +65,39 @@ function AppContent() {
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold
   });
-  const persistedState = useMemo(() => loadPersistedAppState(), []);
-  const defaultSavedItemIds = useMemo(() => feedItems.filter((item) => item.saved).map((item) => item.id), []);
-  const [onboarded, setOnboarded] = useState(persistedState.onboarded ?? false);
+  const qaMode = isContributionQaMode();
+  const persistedState = useMemo(() => loadInitialAppState(), []);
+  const defaultSavedItemIds = useMemo(() => localDataService.getDefaultSavedItemIds(), []);
+  const [userAppState, setUserAppState] = useState(() => hydrateUserAppState(persistedState, defaultSavedItemIds));
   const [buildingIssue, setBuildingIssue] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("welcome");
-  const [selectedCity, setSelectedCity] = useState(persistedState.selectedCity ?? "Atlanta");
-  const [selectedInterests, setSelectedInterests] = useState(persistedState.selectedInterests ?? ["Atlanta", "Black Tech", "UX Design"]);
-  const [selectedAvatar, setSelectedAvatar] = useState(persistedState.selectedAvatar ?? 0);
-  const [activeTab, setActiveTab] = useState<AppTab>(persistedState.activeTab ?? "Today");
-  const [selectedFeed, setSelectedFeed] = useState(launchFeeds.find((feed) => feed.id === persistedState.selectedFeedId) ?? launchFeeds[0]);
-  const [activeFilter, setActiveFilter] = useState<SmartfeedFilter>(persistedState.activeFilter ?? "Latest");
-  const [draftType, setDraftType] = useState(persistedState.draftType ?? "Note");
-  const [draft, setDraft] = useState(persistedState.draft ?? "");
-  const [savedItemIds, setSavedItemIds] = useState(persistedState.savedItemIds ?? defaultSavedItemIds);
-  const [usefulItemIds, setUsefulItemIds] = useState(persistedState.usefulItemIds ?? []);
   const [detailItem, setDetailItem] = useState<FeedItem | null>(null);
   const [search, setSearch] = useState("");
 
-  const joinedFeeds = useMemo(() => launchFeeds.filter((feed) => feed.joined), []);
-  const feedItemsWithState = useMemo(() => (
-    feedItems.map((item) => ({ ...item, saved: savedItemIds.includes(item.id) }))
-  ), [savedItemIds]);
-  const savedItems = useMemo(() => feedItemsWithState.filter((item) => savedItemIds.includes(item.id)), [feedItemsWithState, savedItemIds]);
-  const visibleFeedItems = useMemo(() => {
-    const current = feedItemsWithState.filter((item) => item.feedId === selectedFeed.id);
-    if (activeFilter === "Conversations") return current.filter((item) => !item.imported);
-    if (activeFilter === "Reading") return current.filter((item) => item.imported);
-    if (activeFilter === "Saved") return current.filter((item) => savedItemIds.includes(item.id));
-    return current;
-  }, [activeFilter, feedItemsWithState, savedItemIds, selectedFeed.id]);
+  const selectedFeed = useMemo(() => localDataService.getFeed(userAppState.selectedFeedId), [userAppState.selectedFeedId]);
+  const userContentState = useMemo(() => getUserContentState(userAppState), [userAppState.savedItemIds, userAppState.usefulItemIds]);
+  const joinedFeeds = useMemo(() => localDataService.getJoinedFeeds(), []);
+  const savedItems = useMemo(() => localDataService.getSavedItems(userContentState), [userContentState]);
+  const visibleFeedItems = useMemo(
+    () => localDataService.getFeedItems(selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions),
+    [selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions]
+  );
+  const reviewContributionCount = userAppState.submittedContributions.filter((contribution) => contribution.status === "review").length;
+
+  const updateUserAppState = (updates: Partial<UserAppState>) => {
+    setUserAppState((current) => ({ ...current, ...updates }));
+  };
+
+  const setActiveTab = (activeTab: AppTab) => {
+    setUserAppState((current) => setUserActiveTab(current, activeTab));
+  };
 
   const toggleSavedItem = (itemId: string) => {
-    setSavedItemIds((current) => current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]);
+    setUserAppState((current) => toggleUserSavedItem(current, itemId));
   };
 
   const toggleUsefulItem = (itemId: string) => {
-    setUsefulItemIds((current) => current.includes(itemId) ? current.filter((id) => id !== itemId) : [...current, itemId]);
+    setUserAppState((current) => toggleUserUsefulItem(current, itemId));
   };
 
   const openDetail = (item: FeedItem) => {
@@ -98,19 +110,9 @@ function AppContent() {
 
   const resetApp = () => {
     clearPersistedAppState();
-    setOnboarded(false);
+    setUserAppState(createDefaultUserAppState(defaultSavedItemIds));
     setBuildingIssue(false);
     setOnboardingStep("welcome");
-    setSelectedCity("Atlanta");
-    setSelectedInterests(["Atlanta", "Black Tech", "UX Design"]);
-    setSelectedAvatar(0);
-    setActiveTab("Today");
-    setSelectedFeed(launchFeeds[0]);
-    setActiveFilter("Latest");
-    setDraftType("Note");
-    setDraft("");
-    setSavedItemIds(defaultSavedItemIds);
-    setUsefulItemIds([]);
     setDetailItem(null);
     setSearch("");
   };
@@ -120,33 +122,21 @@ function AppContent() {
 
     const timer = window.setTimeout(() => {
       setBuildingIssue(false);
-      setOnboarded(true);
-      setActiveTab("Today");
+      setUserAppState((current) => completeOnboarding(current));
     }, 900);
 
     return () => window.clearTimeout(timer);
   }, [buildingIssue]);
 
   useEffect(() => {
-    if (!onboarded) {
+    if (qaMode) return;
+    if (!userAppState.onboarded) {
       clearPersistedAppState();
       return;
     }
 
-    savePersistedAppState({
-      onboarded,
-      selectedCity,
-      selectedInterests,
-      selectedAvatar,
-      activeTab,
-      selectedFeedId: selectedFeed.id,
-      activeFilter,
-      draftType,
-      draft,
-      savedItemIds,
-      usefulItemIds
-    });
-  }, [activeFilter, activeTab, draft, draftType, onboarded, savedItemIds, selectedAvatar, selectedCity, selectedFeed.id, selectedInterests, usefulItemIds]);
+    savePersistedAppState(userAppState);
+  }, [userAppState]);
 
   if (!fontsLoaded) {
     return null;
@@ -158,13 +148,13 @@ function AppContent() {
         <StatusBar style="dark" />
         <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
           <AppBackground theme={theme} />
-          <IssueBuildScreen theme={theme} selectedCity={selectedCity} selectedInterests={selectedInterests} />
+          <IssueBuildScreen theme={theme} selectedCity={userAppState.selectedCity} selectedInterests={userAppState.selectedInterests} />
         </SafeAreaView>
       </>
     );
   }
 
-  if (!onboarded) {
+  if (!userAppState.onboarded) {
     return (
       <>
         <StatusBar style="dark" />
@@ -173,12 +163,12 @@ function AppContent() {
           <OnboardingScreen
             step={onboardingStep}
             setStep={setOnboardingStep}
-            selectedCity={selectedCity}
-            setSelectedCity={setSelectedCity}
-            selectedInterests={selectedInterests}
-            setSelectedInterests={setSelectedInterests}
-            selectedAvatar={selectedAvatar}
-            setSelectedAvatar={setSelectedAvatar}
+            selectedCity={userAppState.selectedCity}
+            setSelectedCity={(selectedCity) => updateUserAppState({ selectedCity })}
+            selectedInterests={userAppState.selectedInterests}
+            setSelectedInterests={(selectedInterests) => updateUserAppState({ selectedInterests })}
+            selectedAvatar={userAppState.selectedAvatar}
+            setSelectedAvatar={(selectedAvatar) => updateUserAppState({ selectedAvatar })}
             finish={() => setBuildingIssue(true)}
             theme={theme}
           />
@@ -193,55 +183,76 @@ function AppContent() {
       <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
         <AppBackground theme={theme} />
         <View style={[styles.appShell, { marginBottom: dockClearance }]}>
-          {activeTab === "Today" && (
-            <TodayScreen theme={theme} joinedFeeds={joinedFeeds} setSelectedFeed={setSelectedFeed} setActiveTab={setActiveTab} onOpenDetail={openDetail} />
+          {userAppState.activeTab === "Today" && (
+            <TodayScreen
+              theme={theme}
+              joinedFeeds={joinedFeeds}
+              submittedContributionCount={reviewContributionCount}
+              setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
+              setActiveTab={setActiveTab}
+              onOpenDetail={openDetail}
+            />
           )}
-          {activeTab === "Feeds" && (
+          {userAppState.activeTab === "Feeds" && (
             <FeedsScreen
               theme={theme}
               selectedFeed={selectedFeed}
-              setSelectedFeed={setSelectedFeed}
-              activeFilter={activeFilter}
-              setActiveFilter={setActiveFilter}
+              setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
+              activeFilter={userAppState.activeFilter}
+              setActiveFilter={(activeFilter) => setUserAppState((current) => setUserActiveFilter(current, activeFilter))}
               visibleFeedItems={visibleFeedItems}
-              savedItemIds={savedItemIds}
-              usefulItemIds={usefulItemIds}
+              savedItemIds={userAppState.savedItemIds}
+              usefulItemIds={userAppState.usefulItemIds}
               toggleSavedItem={toggleSavedItem}
               toggleUsefulItem={toggleUsefulItem}
               onOpenDetail={openDetail}
             />
           )}
-          {activeTab === "Contribute" && (
+          {userAppState.activeTab === "Contribute" && (
             <ContributeScreen
               theme={theme}
-              draftType={draftType}
-              setDraftType={setDraftType}
-              draft={draft}
-              setDraft={setDraft}
+              draftType={userAppState.draftType}
+              setDraftType={(draftType) => setUserAppState((current) => updateDraftType(current, draftType))}
+              draft={userAppState.draft}
+              setDraft={(draft) => setUserAppState((current) => updateDraft(current, draft))}
+              submittedContributions={userAppState.submittedContributions}
+              onSubmitContribution={(contribution) => setUserAppState((current) => submitContribution(current, contribution))}
+              onPlaceContribution={(contributionId, feedId) => setUserAppState((current) => placeContribution(current, contributionId, feedId))}
             />
           )}
-          {activeTab === "Library" && (
+          {userAppState.activeTab === "Library" && (
             <LibraryScreen
               theme={theme}
               savedItems={savedItems}
               search={search}
               setSearch={setSearch}
-              savedItemIds={savedItemIds}
-              usefulItemIds={usefulItemIds}
+              savedItemIds={userAppState.savedItemIds}
+              usefulItemIds={userAppState.usefulItemIds}
               toggleSavedItem={toggleSavedItem}
               toggleUsefulItem={toggleUsefulItem}
               onOpenDetail={openDetail}
             />
           )}
-          {activeTab === "You" && <ProfileScreen theme={theme} selectedAvatar={selectedAvatar} selectedInterests={selectedInterests} onOpenDetail={openDetail} onResetApp={resetApp} />}
+          {userAppState.activeTab === "You" && (
+            <ProfileScreen
+              theme={theme}
+              selectedAvatar={userAppState.selectedAvatar}
+              selectedInterests={userAppState.selectedInterests}
+              submittedContributions={userAppState.submittedContributions}
+              onPlaceContribution={(contributionId, feedId) => setUserAppState((current) => placeContribution(current, contributionId, feedId))}
+              onOpenContribute={() => setActiveTab("Contribute")}
+              onOpenDetail={openDetail}
+              onResetApp={resetApp}
+            />
+          )}
           {detailItem && (
             <View style={[styles.detailOverlay, { backgroundColor: theme.bg }]}>
               <AppBackground theme={theme} />
               <DetailScreen
                 item={detailItem}
                 theme={theme}
-                saved={savedItemIds.includes(detailItem.id)}
-                markedUseful={usefulItemIds.includes(detailItem.id)}
+                saved={userAppState.savedItemIds.includes(detailItem.id)}
+                markedUseful={userAppState.usefulItemIds.includes(detailItem.id)}
                 onBack={closeDetail}
                 onToggleSaved={() => toggleSavedItem(detailItem.id)}
                 onToggleUseful={() => toggleUsefulItem(detailItem.id)}
@@ -249,10 +260,60 @@ function AppContent() {
             </View>
           )}
         </View>
-        {!detailItem && <TabBar activeTab={activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
+        {!detailItem && <TabBar activeTab={userAppState.activeTab} setActiveTab={setActiveTab} theme={theme} bottomInset={insets.bottom} />}
       </SafeAreaView>
     </>
   );
+}
+
+function loadInitialAppState(): Partial<UserAppState> {
+  const persistedState = loadPersistedAppState();
+  if (!isContributionQaMode()) return persistedState;
+
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get("tab") as AppTab | null;
+  const feedId = params.get("feed") ?? "atlanta";
+
+  return {
+    onboarded: true,
+    selectedCity: "Atlanta",
+    selectedInterests: ["Atlanta", "Black Tech", "UX Design"],
+    selectedAvatar: 0,
+    activeTab: tab ?? "Contribute",
+    selectedFeedId: feedId,
+    activeFilter: "Latest",
+    draftType: "Recommendation",
+    draft: "",
+    savedItemIds: ["item-1", "item-3"],
+    usefulItemIds: [],
+    submittedContributions: [
+      {
+        id: "local-qa-placed",
+        type: "Recommendation",
+        body: "Try the small Saturday print fair near the BeltLine before lunch. The vendors are easier to talk to early, and the zine table has the strongest local work.",
+        feedId: "atlanta",
+        status: "placed",
+        createdAt: "2026-07-17T14:00:00.000Z",
+        placedAt: "2026-07-17T14:03:00.000Z"
+      },
+      {
+        id: "local-qa-review",
+        type: "Question",
+        body: "What makes a neighborhood event feel genuinely welcoming instead of just well promoted?",
+        feedId: "black-tech",
+        status: "review",
+        createdAt: "2026-07-17T13:48:00.000Z"
+      }
+    ]
+  };
+}
+
+function isContributionQaMode() {
+  if (typeof window === "undefined") return false;
+  if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") return false;
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("__qa") === "contribution";
 }
 
 function IssueBuildScreen({ theme, selectedCity, selectedInterests }: {

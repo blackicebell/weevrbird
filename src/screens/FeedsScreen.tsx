@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
-import { launchFeeds } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { feedEditorialMeta, filters } from "../app/editorial";
 import { radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
@@ -26,6 +26,9 @@ export function FeedsScreen(props: {
   const { theme, selectedFeed, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
   const editorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
   const pace = getFeedPace(selectedFeed);
+  const feeds = localDataService.getFeeds();
+  const fromYouItems = visibleFeedItems.filter((item) => item.authorId === "you");
+  const sectionItems = visibleFeedItems.filter((item) => item.authorId !== "you");
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -33,7 +36,7 @@ export function FeedsScreen(props: {
       <Text style={[styles.screenTitle, { color: theme.text }]}>Smartfeeds</Text>
       <Text style={[styles.body, { color: theme.muted }]}>Each Smartfeed behaves like a section of your personal magazine, not another endless timeline.</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.feedRail}>
-        {launchFeeds.map((feed) => <FeedJournalTab key={feed.id} feed={feed} selected={selectedFeed.id === feed.id} theme={theme} onPress={() => setSelectedFeed(feed)} />)}
+        {feeds.map((feed) => <FeedJournalTab key={feed.id} feed={feed} selected={selectedFeed.id === feed.id} theme={theme} onPress={() => setSelectedFeed(feed)} />)}
       </ScrollView>
 
       <View style={[styles.feedHero, { backgroundColor: editorial.paper, borderColor: editorial.secondary }]}>
@@ -70,7 +73,24 @@ export function FeedsScreen(props: {
 
       {visibleFeedItems.length > 0 ? (
         <>
-          {visibleFeedItems.slice(0, 1).map((item) => (
+          {fromYouItems.length > 0 && (
+            <>
+              <FromYouFeedMarker theme={theme} editorial={editorial} feed={selectedFeed} count={fromYouItems.length} />
+              {fromYouItems.map((item) => (
+                <FeedCard
+                  key={item.id}
+                  item={item}
+                  theme={theme}
+                  saved={savedItemIds.includes(item.id)}
+                  markedUseful={usefulItemIds.includes(item.id)}
+                  onToggleSaved={() => toggleSavedItem(item.id)}
+                  onToggleUseful={() => toggleUsefulItem(item.id)}
+                  onOpen={() => onOpenDetail(item)}
+                />
+              ))}
+            </>
+          )}
+          {sectionItems.slice(0, 1).map((item) => (
             <FeedCard
               key={item.id}
               item={item}
@@ -83,7 +103,7 @@ export function FeedsScreen(props: {
             />
           ))}
           <EditorNote theme={theme} editorial={editorial} feed={selectedFeed} />
-          {visibleFeedItems.slice(1).map((item) => (
+          {sectionItems.slice(1).map((item) => (
             <FeedCard
               key={item.id}
               item={item}
@@ -108,6 +128,27 @@ export function FeedsScreen(props: {
         />
       )}
     </ScrollView>
+  );
+}
+
+function FromYouFeedMarker({ theme, editorial, feed, count }: {
+  theme: AppTheme;
+  editorial: (typeof feedEditorialMeta)[string];
+  feed: Smartfeed;
+  count: number;
+}) {
+  return (
+    <View style={[styles.fromYouMarker, { borderColor: editorial.secondary, backgroundColor: theme.panel }]}>
+      <View style={[styles.fromYouMarkerIcon, { backgroundColor: editorial.secondary }]}>
+        <Ionicons name="checkmark-circle-outline" color={editorial.accent} size={19} />
+      </View>
+      <View style={styles.fromYouMarkerCopy}>
+        <Text style={[styles.fromYouMarkerTitle, { color: theme.text }]}>From You</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>
+          {count} placed signal{count === 1 ? "" : "s"} now living in {feed.name}.
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -376,6 +417,31 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     paddingVertical: spacing.xl,
     gap: spacing.sm
+  },
+  fromYouMarker: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  fromYouMarkerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  fromYouMarkerCopy: {
+    flex: 1,
+    gap: 2
+  },
+  fromYouMarkerTitle: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_700Bold"
   },
   editorNoteRule: {
     width: 86,

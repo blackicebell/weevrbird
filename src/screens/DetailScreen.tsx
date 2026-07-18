@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { feedEditorialMeta } from "../app/editorial";
-import { launchFeeds } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem } from "../types/product";
@@ -25,7 +25,7 @@ export function DetailScreen({
   onToggleSaved: () => void;
   onToggleUseful: () => void;
 }) {
-  const feed = launchFeeds.find((entry) => entry.id === item.feedId) ?? launchFeeds[0];
+  const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[item.feedId] ?? feedEditorialMeta.atlanta;
   const body = item.body ?? item.excerpt ?? "A useful signal saved into this issue.";
 

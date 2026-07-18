@@ -1,36 +1,21 @@
-import { AppTab } from "./editorial";
-import { SmartfeedFilter } from "../types/product";
+import { PartialUserAppState, UserAppState } from "./appState";
 
 const STORAGE_KEY = "weevrbird:first-run-state:v1";
 
-export type PersistedAppState = {
-  onboarded?: boolean;
-  selectedCity?: string;
-  selectedInterests?: string[];
-  selectedAvatar?: number;
-  activeTab?: AppTab;
-  selectedFeedId?: string;
-  activeFilter?: SmartfeedFilter;
-  draftType?: string;
-  draft?: string;
-  savedItemIds?: string[];
-  usefulItemIds?: string[];
-};
-
-export function loadPersistedAppState(): PersistedAppState {
+export function loadPersistedAppState(): PartialUserAppState {
   try {
     if (typeof window === "undefined" || !window.localStorage) return {};
 
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
 
-    return JSON.parse(raw) as PersistedAppState;
+    return JSON.parse(raw) as PartialUserAppState;
   } catch {
     return {};
   }
 }
 
-export function savePersistedAppState(state: PersistedAppState) {
+export function savePersistedAppState(state: UserAppState) {
   try {
     if (typeof window === "undefined" || !window.localStorage) return;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));

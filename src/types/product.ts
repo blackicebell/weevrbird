@@ -13,6 +13,16 @@ export type FeedItemType =
 
 export type SmartfeedFilter = "Latest" | "Conversations" | "Reading" | "Saved";
 
+export type ContentLayer = "Editorial" | "Reading" | "Community";
+
+export type EditionModuleType =
+  | "lead_story"
+  | "what_changed"
+  | "community_question"
+  | "reading_list"
+  | "recommendation"
+  | "caught_up";
+
 export interface Smartfeed {
   id: string;
   name: string;
@@ -35,12 +45,41 @@ export interface FeedItem {
   excerpt?: string;
   url?: string;
   sourceName?: string;
+  localStatus?: "review" | "placed";
   publishedAt: string;
   createdAt: string;
   imported: boolean;
   saved?: boolean;
   replies: number;
   reactionLabel: string;
+}
+
+export interface EditionModule {
+  id: string;
+  type: EditionModuleType;
+  layer: ContentLayer;
+  feed: Smartfeed;
+  item?: FeedItem;
+  title: string;
+  body: string;
+  action: string;
+  reason: string;
+  items?: FeedItem[];
+}
+
+export interface UserContentState {
+  savedItemIds: string[];
+  usefulItemIds: string[];
+}
+
+export interface SubmittedContribution {
+  id: string;
+  type: string;
+  body: string;
+  feedId: string;
+  status: "draft" | "review" | "placed";
+  createdAt: string;
+  placedAt?: string;
 }
 
 export interface Person {

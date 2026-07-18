@@ -3,7 +3,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { feedEditorialMeta } from "../app/editorial";
-import { launchFeeds } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem } from "../types/product";
@@ -18,17 +18,20 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
   onOpen?: () => void;
 }) {
   const isExternal = item.imported;
-  const feed = launchFeeds.find((entry) => entry.id === item.feedId) ?? launchFeeds[0];
+  const isUserContribution = item.authorId === "you";
+  const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[item.feedId] ?? feedEditorialMeta.atlanta;
-  const storyType = item.itemType === "recommendation" ? "recommendation" : item.itemType === "official_update" ? "official" : isExternal ? "reading" : "community";
-  const storyIcon: keyof typeof Ionicons.glyphMap = storyType === "recommendation" ? "location-outline" : storyType === "official" ? "shield-checkmark-outline" : storyType === "reading" ? "book-outline" : "chatbubbles-outline";
+  const storyType = isUserContribution ? "fromYou" : item.itemType === "recommendation" ? "recommendation" : item.itemType === "official_update" ? "official" : isExternal ? "reading" : "community";
+  const storyIcon: keyof typeof Ionicons.glyphMap = storyType === "recommendation" ? "location-outline" : storyType === "official" ? "shield-checkmark-outline" : storyType === "reading" ? "book-outline" : storyType === "fromYou" ? "checkmark-circle-outline" : "chatbubbles-outline";
   const signalLabel = storyType === "reading"
     ? "Worth five minutes"
     : storyType === "recommendation"
       ? "Place to try"
       : storyType === "official"
         ? "Local notice"
-        : "Community thread";
+        : storyType === "fromYou"
+          ? "Placed by you"
+          : "Community thread";
 
   return (
     <Pressable
@@ -49,7 +52,7 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
             <Ionicons name={storyIcon} color={storyType === "official" ? "#49626B" : editorial.accent} size={14} />
           </View>
           <Text style={[styles.typeText, { color: editorial.accent }]}>
-            {feed.name} / {isExternal ? item.sourceName : item.itemType.replace("_", " ")}
+            {feed.name} / {isUserContribution ? "From You" : isExternal ? item.sourceName : item.itemType.replace("_", " ")}
           </Text>
         </View>
         <Text style={[styles.meta, { color: theme.muted }]}>{item.publishedAt}</Text>
@@ -58,6 +61,7 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
       <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
       {storyType === "recommendation" && <StoryTypePanel icon="pin-outline" title="Add to weekend plans" body="A low-pressure save for later, not a public performance." theme={theme} editorial={editorial} />}
+      {storyType === "fromYou" && <StoryTypePanel icon="checkmark-circle-outline" title="Placed in this issue" body="This local signal now lives inside the Smartfeed you chose." theme={theme} editorial={editorial} />}
       {storyType === "official" && <StoryTypePanel icon="time-outline" title="Action items" body="Check closures, transit notes, and reopening times before you head downtown." theme={theme} editorial={editorial} muted />}
       {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>Reading time: 5 min / Read source / Discuss on Weevrbird</Text>}
       <View style={styles.actionRow}>
@@ -72,8 +76,8 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
         />
         <ActionPill
           icon="chatbubble-outline"
-          label={item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
-          accessibilityLabel={`Open conversation for ${item.title}. ${item.replies} replies.`}
+          label={isUserContribution ? "In issue" : item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
+          accessibilityLabel={isUserContribution ? `${item.title} is placed in this issue.` : `Open conversation for ${item.title}. ${item.replies} replies.`}
           onPress={() => undefined}
           theme={theme}
           accent={editorial.accent}

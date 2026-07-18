@@ -5,7 +5,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
 import { SectionHeader } from "../components/SectionHeader";
-import { feedItems } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem } from "../types/product";
@@ -31,11 +31,9 @@ export function LibraryScreen({
   toggleUsefulItem: (itemId: string) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const archiveItems = savedItems.concat(feedItems.slice(3, 5)).slice(0, 4);
-  const results = feedItems.filter((item) => {
-    const haystack = `${item.title ?? ""} ${item.body ?? ""} ${item.excerpt ?? ""} ${item.sourceName ?? ""}`.toLowerCase();
-    return !search || haystack.includes(search.toLowerCase());
-  });
+  const userContentState = { savedItemIds, usefulItemIds };
+  const archiveItems = localDataService.getArchiveItems(userContentState);
+  const results = localDataService.searchLibrary(search);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>

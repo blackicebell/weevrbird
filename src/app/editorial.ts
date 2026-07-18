@@ -1,8 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { feedItems, launchFeeds } from "../data/mockData";
 import { palette } from "../theme/tokens";
-import { FeedItem, Smartfeed, SmartfeedFilter } from "../types/product";
+import { ContentLayer, SmartfeedFilter } from "../types/product";
 
 export type AppTab = "Today" | "Feeds" | "Contribute" | "Library" | "You";
 export type OnboardingStep = "welcome" | "city" | "interests" | "avatar" | "ready";
@@ -143,107 +142,6 @@ export const feedEditorialMeta: Record<string, {
     secondary: "#D5ECF8"
   }
 };
-
-export type ContentLayer = "Editorial" | "Reading" | "Community";
-export type EditionModuleType =
-  | "lead_story"
-  | "what_changed"
-  | "community_question"
-  | "reading_list"
-  | "recommendation"
-  | "caught_up";
-
-export type EditionModule = {
-  id: string;
-  type: EditionModuleType;
-  layer: ContentLayer;
-  feed: Smartfeed;
-  item?: FeedItem;
-  title: string;
-  body: string;
-  action: string;
-  reason: string;
-  items?: FeedItem[];
-};
-
-export function buildTodayEdition(joinedFeeds: Smartfeed[]): EditionModule[] {
-  const atlanta = joinedFeeds.find((feed) => feed.id === "atlanta") ?? launchFeeds[0];
-  const blackTech = joinedFeeds.find((feed) => feed.id === "black-tech") ?? launchFeeds[1];
-  const creative = joinedFeeds.find((feed) => feed.id === "creative-community") ?? launchFeeds[2];
-  const atlantaItems = feedItems.filter((item) => item.feedId === atlanta.id);
-  const readingItems = feedItems.filter((item) => item.imported);
-  const communityItems = feedItems.filter((item) => !item.imported);
-  const creativeItems = feedItems.filter((item) => item.feedId === creative.id);
-
-  return [
-    {
-      id: "lead-atlanta",
-      type: "lead_story",
-      layer: "Reading",
-      feed: atlanta,
-      item: atlantaItems[0],
-      title: atlantaItems[0]?.title ?? "A useful local guide for today",
-      body: atlantaItems[0]?.excerpt ?? "A compact local read chosen because it matches your city and saved interests.",
-      action: "Read the guide",
-      reason: "Based on your Atlanta interests."
-    },
-    {
-      id: "changed-today",
-      type: "what_changed",
-      layer: "Editorial",
-      feed: atlanta,
-      title: "What changed since your last visit",
-      body: "A weekend guide was updated, one city notice came in, and a Grant Park recommendation is gathering useful replies.",
-      action: "Review updates",
-      reason: "Updated since this morning.",
-      items: atlantaItems.slice(0, 3)
-    },
-    {
-      id: "open-question",
-      type: "community_question",
-      layer: "Community",
-      feed: blackTech,
-      item: communityItems.find((item) => item.feedId === blackTech.id),
-      title: "What makes a career community actually useful?",
-      body: "A practical prompt for builders, designers, and operators.",
-      action: "Join the conversation",
-      reason: "A practical Black Tech thread is active today."
-    },
-    {
-      id: "worth-your-time",
-      type: "reading_list",
-      layer: "Reading",
-      feed: creative,
-      title: "Worth your time",
-      body: "Three selected reads from your joined interests.",
-      action: "Add to reading list",
-      reason: "Selected from Atlanta, Black Tech, and Creative Community.",
-      items: readingItems.slice(0, 3)
-    },
-    {
-      id: "recommendation",
-      type: "recommendation",
-      layer: "Community",
-      feed: launchFeeds.find((feed) => feed.id === "food-culture") ?? atlanta,
-      item: communityItems.find((item) => item.itemType === "recommendation"),
-      title: communityItems.find((item) => item.itemType === "recommendation")?.title ?? "A recommendation worth saving",
-      body: communityItems.find((item) => item.itemType === "recommendation")?.body ?? "A useful weekend save from your local network.",
-      action: "Add to weekend",
-      reason: "Saved by local readers planning the weekend."
-    },
-    {
-      id: "caught-up",
-      type: "caught_up",
-      layer: "Editorial",
-      feed: creative,
-      title: "You're caught up",
-      body: "Six useful pieces. Nothing urgent waiting.",
-      action: "Open Library",
-      reason: "Return later for meaningful updates.",
-      items: creativeItems.slice(0, 2)
-    }
-  ];
-}
 
 export function getLayerTone(layer: ContentLayer) {
   if (layer === "Community") return palette.clay;

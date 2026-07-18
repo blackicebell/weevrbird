@@ -4,7 +4,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { avatars, OnboardingStep } from "../app/editorial";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { interests } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { palette, radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 
@@ -27,6 +27,7 @@ export function OnboardingScreen(props: {
   const progressSteps: OnboardingStep[] = ["welcome", "city", "interests", "avatar", "ready"];
   const currentStepIndex = progressSteps.indexOf(step);
   const previewInterests = selectedInterests.filter((interest) => interest !== selectedCity);
+  const interests = localDataService.getInterests();
   const issueBuildItems = [
     { label: selectedCity, icon: "location-outline" as keyof typeof Ionicons.glyphMap },
     { label: previewInterests[0] ?? "Local culture", icon: "albums-outline" as keyof typeof Ionicons.glyphMap },

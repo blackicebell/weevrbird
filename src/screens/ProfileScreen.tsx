@@ -9,23 +9,29 @@ import {
   profileCollections,
   profileContributionTypes
 } from "../app/editorial";
-import { feedItems, launchFeeds } from "../data/mockData";
+import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
-import { FeedItem } from "../types/product";
+import { FeedItem, SubmittedContribution } from "../types/product";
 
-export function ProfileScreen({ theme, selectedAvatar, selectedInterests, onOpenDetail, onResetApp }: {
+export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submittedContributions, onPlaceContribution, onOpenContribute, onOpenDetail, onResetApp }: {
   theme: AppTheme;
   selectedAvatar: number;
   selectedInterests: string[];
+  submittedContributions: SubmittedContribution[];
+  onPlaceContribution: (contributionId: string, feedId: string) => void;
+  onOpenContribute: () => void;
   onOpenDetail: (item: FeedItem) => void;
   onResetApp: () => void;
 }) {
   const [following, setFollowing] = useState(false);
   const [activeShelf, setActiveShelf] = useState<(typeof profileCollections)[number] | null>(null);
+  const [activeContribution, setActiveContribution] = useState<SubmittedContribution | null>(null);
   const [showSafety, setShowSafety] = useState(false);
-  const featuredContribution = feedItems.find((item) => item.itemType === "recommendation") ?? feedItems[0];
-  const questionContribution = feedItems.find((item) => item.itemType === "discussion") ?? feedItems[2];
+  const featuredContribution = localDataService.getFeaturedContribution();
+  const questionContribution = localDataService.getQuestionContribution();
+  const contributionTypes = getProfileContributionTypes(submittedContributions);
+  const reviewContributionCount = submittedContributions.filter((contribution) => contribution.status === "review").length;
 
   if (activeShelf) {
     return (
@@ -34,6 +40,20 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, onOpen
         theme={theme}
         onBack={() => setActiveShelf(null)}
         onOpenDetail={onOpenDetail}
+      />
+    );
+  }
+
+  if (activeContribution) {
+    return (
+      <SubmittedContributionDetail
+        contribution={activeContribution}
+        theme={theme}
+        onBack={() => setActiveContribution(null)}
+        onPlace={(feedId) => {
+          onPlaceContribution(activeContribution.id, feedId);
+          setActiveContribution({ ...activeContribution, feedId, status: "placed", placedAt: new Date().toISOString() });
+        }}
       />
     );
   }
@@ -100,6 +120,22 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, onOpen
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
       <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
+      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} in review` : "Placed" : "Start"} theme={theme} />
+      {submittedContributions.length > 0 ? (
+        <View style={styles.fromYouStack}>
+          {submittedContributions.slice(0, 3).map((contribution) => (
+            <SubmittedContributionCard
+              key={contribution.id}
+              contribution={contribution}
+              theme={theme}
+              onOpen={() => setActiveContribution(contribution)}
+            />
+          ))}
+        </View>
+      ) : (
+        <FromYouEmptyState theme={theme} onOpenContribute={onOpenContribute} />
+      )}
+
       <SectionHeader title="Shelves" action="New shelf" theme={theme} />
       {profileCollections.map((collection) => (
         <ProfileCollectionRow key={collection.title} collection={collection} theme={theme} onOpen={() => setActiveShelf(collection)} />
@@ -107,7 +143,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, onOpen
 
       <SectionHeader title="Contribution Rhythm" theme={theme} />
       <View style={styles.profileTypeGrid}>
-        {profileContributionTypes.map((type) => (
+        {contributionTypes.map((type) => (
           <View key={type.label} style={[styles.profileTypeTile, { borderColor: theme.line, backgroundColor: "rgba(255, 255, 252, 0.58)" }]}>
             <Text style={[styles.profileTypeLabel, { color: theme.text }]}>{type.label}</Text>
             <Text style={[styles.profileTypeCount, { color: theme.muted }]}>{type.count} contributions</Text>
@@ -132,6 +168,20 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, onOpen
       </Pressable>
     </ScrollView>
   );
+}
+
+function getProfileContributionTypes(submittedContributions: SubmittedContribution[]) {
+  return profileContributionTypes.map((type) => {
+    const localCount = submittedContributions.filter((contribution) => {
+      if (type.label === "Notes") return contribution.type === "Note";
+      if (type.label === "Questions") return contribution.type === "Question";
+      if (type.label === "Recommendations") return contribution.type === "Recommendation";
+      if (type.label === "Reading Lists") return contribution.type === "Link" || contribution.type === "Long Read";
+      return false;
+    }).length;
+
+    return { ...type, count: type.count + localCount };
+  });
 }
 
 function ProfileAvatar({ label, index, theme }: { label: string; index: number; theme: AppTheme }) {
@@ -166,7 +216,7 @@ function ProfileChapter({ theme }: { theme: AppTheme }) {
 }
 
 function ProfileContribution({ item, label, theme, onOpen }: { item: FeedItem; label: string; theme: AppTheme; onOpen: () => void }) {
-  const feed = launchFeeds.find((entry) => entry.id === item.feedId) ?? launchFeeds[0];
+  const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[feed.id] ?? feedEditorialMeta.atlanta;
   return (
     <Pressable
@@ -194,6 +244,151 @@ function getContributionSignal(item: FeedItem) {
   }
 
   return "Useful because it adds a clear signal to the issue.";
+}
+
+function FromYouEmptyState({ theme, onOpenContribute }: { theme: AppTheme; onOpenContribute: () => void }) {
+  return (
+    <View style={[styles.fromYouEmpty, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      <View style={[styles.profileCollectionIcon, { backgroundColor: "#DDF0E4" }]}>
+        <Ionicons name="create-outline" color={palette.deepForest} size={19} />
+      </View>
+      <View style={styles.profileCollectionCopy}>
+        <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Add one useful signal</Text>
+        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Write something specific, save it to review, then place it inside a Smartfeed.</Text>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open Contribute"
+        onPress={onOpenContribute}
+        style={({ pressed }) => [styles.fromYouEmptyButton, pressed && styles.profileButtonPressed, { backgroundColor: theme.accent }]}
+      >
+        <Text style={styles.fromYouEmptyButtonText}>Contribute</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function SubmittedContributionCard({ contribution, theme, onOpen }: {
+  contribution: SubmittedContribution;
+  theme: AppTheme;
+  onOpen: () => void;
+}) {
+  const feed = localDataService.getFeed(contribution.feedId);
+  const editorial = feedEditorialMeta[feed.id] ?? feedEditorialMeta.atlanta;
+  const savedAt = formatContributionTime(contribution.createdAt);
+  const placed = contribution.status === "placed";
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Open your ${contribution.type} contribution`}
+      onPress={onOpen}
+      style={({ pressed }) => [styles.submittedContributionCard, pressed && styles.profileRowPressed, { borderColor: editorial.secondary, backgroundColor: theme.panel }]}
+    >
+      <View style={styles.submittedContributionTop}>
+        <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>{contribution.type} in {feed.name}</Text>
+        <View style={[styles.reviewBadge, { borderColor: editorial.secondary, backgroundColor: `${editorial.secondary}88` }]}>
+          <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Review"}</Text>
+        </View>
+      </View>
+      <Text style={[styles.submittedContributionBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
+      <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{placed ? `Placed in ${feed.name}.` : "Waiting to be placed in a future issue."}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved ${savedAt}`}</Text>
+    </Pressable>
+  );
+}
+
+function SubmittedContributionDetail({ contribution, theme, onBack, onPlace }: {
+  contribution: SubmittedContribution;
+  theme: AppTheme;
+  onBack: () => void;
+  onPlace: (feedId: string) => void;
+}) {
+  const [selectedFeedId, setSelectedFeedId] = useState(contribution.feedId);
+  const feed = localDataService.getFeed(contribution.feedId);
+  const selectedFeed = localDataService.getFeed(selectedFeedId);
+  const editorial = feedEditorialMeta[feed.id] ?? feedEditorialMeta.atlanta;
+  const selectedEditorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
+  const placementFeeds = localDataService.getFeeds().filter((entry) => entry.joined).slice(0, 4);
+  const placed = contribution.status === "placed";
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <BackButton label="Back to profile" theme={theme} onPress={onBack} />
+      <View style={[styles.submittedDetail, { borderColor: editorial.secondary, backgroundColor: editorial.paper }]}>
+        <View style={styles.submittedContributionTop}>
+          <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>{contribution.type} / {feed.name}</Text>
+          <View style={[styles.reviewBadge, { borderColor: editorial.secondary, backgroundColor: `${editorial.secondary}88` }]}>
+            <Text style={[styles.reviewBadgeText, { color: editorial.accent }]}>{placed ? "Placed" : "Review"}</Text>
+          </View>
+        </View>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>{placed ? "Your signal is placed." : "Review where this belongs."}</Text>
+        <Text style={[styles.submittedDetailBody, { color: theme.text }]}>{contribution.body}</Text>
+        {!placed && (
+          <View style={styles.placementPanel}>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Place in a Smartfeed</Text>
+            <View style={styles.placementChips}>
+              {placementFeeds.map((entry) => {
+                const entryEditorial = feedEditorialMeta[entry.id] ?? feedEditorialMeta.atlanta;
+                const selected = selectedFeedId === entry.id;
+
+                return (
+                  <Pressable
+                    key={entry.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Place in ${entry.name}`}
+                    accessibilityState={{ selected }}
+                    onPress={() => setSelectedFeedId(entry.id)}
+                    style={({ pressed }) => [
+                      styles.placementChip,
+                      pressed && styles.profileRowPressed,
+                      {
+                        borderColor: selected ? entryEditorial.accent : theme.line,
+                        backgroundColor: selected ? `${entryEditorial.secondary}AA` : "rgba(255, 255, 252, 0.62)"
+                      }
+                    ]}
+                  >
+                    <Text style={[styles.placementChipText, { color: selected ? entryEditorial.accent : theme.text }]}>{entry.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={[styles.placementPreview, { borderColor: selectedEditorial.secondary, backgroundColor: selectedEditorial.paper }]}>
+              <Text style={[styles.moduleEyebrow, { color: selectedEditorial.accent }]}>{selectedFeed.name} preview</Text>
+              <Text style={[styles.submittedContributionBody, { color: theme.text }]} numberOfLines={3}>{contribution.body}</Text>
+              <Text style={[styles.profileContributionSignal, { color: selectedEditorial.accent }]}>This will move from review into a future {selectedFeed.name} issue.</Text>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Place contribution in ${selectedFeed.name}`}
+              onPress={() => onPlace(selectedFeedId)}
+              style={({ pressed }) => [styles.placeButton, pressed && styles.profileButtonPressed, { backgroundColor: selectedEditorial.accent }]}
+            >
+              <Ionicons name="checkmark-circle-outline" color="#FFFDF8" size={18} />
+              <Text style={styles.placeButtonText}>Place in {selectedFeed.name}</Text>
+            </Pressable>
+          </View>
+        )}
+        <View style={[styles.submittedStatusPanel, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.06)" : "rgba(255, 255, 252, 0.64)" }]}>
+          <Ionicons name={placed ? "checkmark-circle-outline" : "time-outline"} color={editorial.accent} size={20} />
+          <View style={styles.profileCollectionCopy}>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{placed ? `Placed in ${feed.name}` : "Not public yet"}</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{placed ? `You can now find it in the ${feed.name} Smartfeed.` : "This is in your local review queue until you choose where it belongs."}</Text>
+          </View>
+        </View>
+        <Text style={[styles.meta, { color: theme.muted }]}>{placed && contribution.placedAt ? `Placed ${formatContributionTime(contribution.placedAt)}` : `Saved ${formatContributionTime(contribution.createdAt)}`}</Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+function formatContributionTime(createdAt: string) {
+  return new Date(createdAt).toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
 }
 
 function ProfileCollectionRow({ collection, theme, onOpen }: {
@@ -227,7 +422,7 @@ function ProfileShelfDetail({ collection, theme, onBack, onOpenDetail }: {
   onBack: () => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const shelfItems = getShelfItems(collection.title);
+  const shelfItems = localDataService.getShelfItems(collection.title);
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <BackButton label="Back to profile" theme={theme} onPress={onBack} />
@@ -312,16 +507,6 @@ function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme;
       <Text style={[styles.profileBackText, { color: theme.text }]}>{label}</Text>
     </Pressable>
   );
-}
-
-function getShelfItems(title: string) {
-  if (title.includes("Atlanta")) {
-    return feedItems.filter((item) => item.feedId === "atlanta");
-  }
-  if (title.includes("slower attention")) {
-    return feedItems.filter((item) => item.feedId === "creative-community" || item.title?.includes("attention"));
-  }
-  return feedItems.filter((item) => item.feedId === "creative-community" || item.feedId === "black-tech");
 }
 
 function ExternalProfileLink({ icon, title, domain, theme }: {
@@ -536,6 +721,121 @@ const styles = StyleSheet.create({
   },
   profileContributionSignal: {
     fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  fromYouStack: {
+    gap: spacing.md
+  },
+  fromYouEmpty: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  fromYouEmptyButton: {
+    minHeight: 36,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center"
+  },
+  fromYouEmptyButtonText: {
+    color: "#FFFDF8",
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold"
+  },
+  submittedContributionCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    gap: spacing.sm,
+    ...shadows.card
+  },
+  submittedContributionTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  submittedContributionBody: {
+    fontSize: 18,
+    lineHeight: 25,
+    fontFamily: "Inter_600SemiBold"
+  },
+  reviewBadge: {
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4
+  },
+  reviewBadgeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  submittedDetail: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...shadows.card
+  },
+  submittedDetailBody: {
+    fontSize: 19,
+    lineHeight: 29,
+    fontFamily: "Inter_500Medium"
+  },
+  submittedStatusPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    gap: spacing.md,
+    alignItems: "flex-start"
+  },
+  placementPanel: {
+    gap: spacing.md
+  },
+  placementChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm
+  },
+  placementChip: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center"
+  },
+  placementChipText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  placementPreview: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    gap: spacing.sm
+  },
+  placeButton: {
+    minHeight: 44,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm
+  },
+  placeButtonText: {
+    color: "#FFFDF8",
+    fontSize: 14,
     lineHeight: 18,
     fontFamily: "Inter_700Bold"
   },
