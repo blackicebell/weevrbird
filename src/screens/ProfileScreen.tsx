@@ -595,15 +595,23 @@ function ExternalProfileLink({ icon, title, domain, theme }: {
   domain: string;
   theme: AppTheme;
 }) {
+  const [opened, setOpened] = useState(false);
+
   return (
-    <View style={styles.externalProfileLink}>
-      <Ionicons name={icon} color={theme.muted} size={17} />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={opened ? `${title} link ready` : `Open ${title}`}
+      accessibilityState={{ selected: opened }}
+      onPress={() => setOpened(true)}
+      style={({ pressed }) => [styles.externalProfileLink, opened && styles.externalProfileLinkOpened, pressed && styles.profileRowPressed, { borderColor: opened ? `${theme.accent}44` : "transparent" }]}
+    >
+      <Ionicons name={opened ? "checkmark-circle-outline" : icon} color={opened ? theme.accent : theme.muted} size={17} />
       <View style={styles.externalProfileCopy}>
-        <Text style={[styles.externalProfileTitle, { color: theme.text }]}>{title}</Text>
-        <Text style={[styles.meta, { color: theme.muted }]}>{domain}</Text>
+        <Text style={[styles.externalProfileTitle, { color: theme.text }]}>{opened ? `${title} ready` : title}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{opened ? `External link: ${domain}` : domain}</Text>
       </View>
-      <Ionicons name="open-outline" color={theme.muted} size={16} />
-    </View>
+      <Ionicons name={opened ? "checkmark" : "open-outline"} color={opened ? theme.accent : theme.muted} size={16} />
+    </Pressable>
   );
 }
 
@@ -954,9 +962,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 252, 0.48)"
   },
   externalProfileLink: {
+    minHeight: 38,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: spacing.xs,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm
+  },
+  externalProfileLinkOpened: {
+    backgroundColor: "rgba(15, 61, 46, 0.04)"
   },
   externalProfileCopy: {
     flex: 1
