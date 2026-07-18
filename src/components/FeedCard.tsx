@@ -64,35 +64,71 @@ export function FeedCard({ item, theme, saved = !!item.saved, markedUseful = fal
       {storyType === "fromYou" && <StoryTypePanel icon="checkmark-circle-outline" title="You placed this here" body="It moved from private review into the Smartfeed you chose." theme={theme} editorial={editorial} />}
       {storyType === "official" && <StoryTypePanel icon="time-outline" title="Action items" body="Check closures, transit notes, and reopening times before you head downtown." theme={theme} editorial={editorial} muted />}
       {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>Reading time: 5 min / Read source / Discuss on Weevrbird</Text>}
-      <View style={styles.actionRow}>
-        <ActionPill
-          icon={markedUseful ? "sparkles" : "sparkles-outline"}
-          label={markedUseful ? "Marked useful" : item.reactionLabel}
-          accessibilityLabel={markedUseful ? "Remove useful mark" : `Mark useful: ${item.title}`}
-          active={markedUseful}
-          onPress={onToggleUseful ?? (() => undefined)}
+      {isUserContribution ? (
+        <UserContributionFooter
+          item={item}
+          saved={saved}
+          onToggleSaved={onToggleSaved ?? (() => undefined)}
           theme={theme}
           accent={editorial.accent}
         />
-        <ActionPill
-          icon="chatbubble-outline"
-          label={isUserContribution ? "In issue" : item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
-          accessibilityLabel={isUserContribution ? `${item.title} is placed in this issue.` : `Open conversation for ${item.title}. ${item.replies} replies.`}
-          onPress={() => undefined}
-          theme={theme}
-          accent={editorial.accent}
-        />
-        <ActionPill
-          icon={saved ? "bookmark" : "bookmark-outline"}
-          label={saved ? "Saved" : "Save"}
-          accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
-          active={saved}
-          onPress={onToggleSaved ?? (() => undefined)}
-          theme={theme}
-          accent={editorial.accent}
-        />
-      </View>
+      ) : (
+        <View style={styles.actionRow}>
+          <ActionPill
+            icon={markedUseful ? "sparkles" : "sparkles-outline"}
+            label={markedUseful ? "Marked useful" : item.reactionLabel}
+            accessibilityLabel={markedUseful ? "Remove useful mark" : `Mark useful: ${item.title}`}
+            active={markedUseful}
+            onPress={onToggleUseful ?? (() => undefined)}
+            theme={theme}
+            accent={editorial.accent}
+          />
+          <ActionPill
+            icon="chatbubble-outline"
+            label={item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
+            accessibilityLabel={`Open conversation for ${item.title}. ${item.replies} replies.`}
+            onPress={() => undefined}
+            theme={theme}
+            accent={editorial.accent}
+          />
+          <ActionPill
+            icon={saved ? "bookmark" : "bookmark-outline"}
+            label={saved ? "Saved" : "Save"}
+            accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
+            active={saved}
+            onPress={onToggleSaved ?? (() => undefined)}
+            theme={theme}
+            accent={editorial.accent}
+          />
+        </View>
+      )}
     </Pressable>
+  );
+}
+
+function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
+  item: FeedItem;
+  saved: boolean;
+  onToggleSaved: () => void;
+  theme: AppTheme;
+  accent: string;
+}) {
+  return (
+    <View style={styles.userContributionFooter}>
+      <View style={styles.userContributionStatus}>
+        <Ionicons name="checkmark-circle-outline" color={accent} size={17} />
+        <Text style={[styles.meta, { color: theme.muted }]}>Placed in this issue</Text>
+      </View>
+      <ActionPill
+        icon={saved ? "bookmark" : "bookmark-outline"}
+        label={saved ? "Saved" : "Save"}
+        accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
+        active={saved}
+        onPress={onToggleSaved}
+        theme={theme}
+        accent={accent}
+      />
+    </View>
   );
 }
 
@@ -247,6 +283,21 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
     paddingTop: spacing.sm
+  },
+  userContributionFooter: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(18, 31, 27, 0.1)",
+    paddingTop: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  userContributionStatus: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs
   },
   actionPill: {
     minHeight: 34,
