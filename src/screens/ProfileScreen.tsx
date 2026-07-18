@@ -116,7 +116,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
         ))}
       </View>
 
-      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Placed" : "Start"} onAction={onOpenContribute} theme={theme} />
+      <SectionHeader title="From You" action={submittedContributions.length > 0 ? reviewContributionCount > 0 ? `${reviewContributionCount} private` : "Visible" : "Start"} onAction={onOpenContribute} theme={theme} />
       {submittedContributions.length > 0 ? (
         <View style={styles.fromYouStack}>
           {submittedContributions.slice(0, 3).map((contribution) => (
