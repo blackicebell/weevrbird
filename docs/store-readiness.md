@@ -83,7 +83,8 @@ Do not claim cross-device sync, production account deletion, live email authenti
    - `npm run build:android:production`
    - `npm run build:ios:production`
 5. Test the installed build on a real phone using `docs/internal-testing-qa.md`.
-6. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
+6. Invite testers with `docs/internal-testing-invite.md`.
+7. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
 
 ## Current Internal Testing Handoff
 
