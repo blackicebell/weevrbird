@@ -8,6 +8,10 @@ export function getExampleGeneratedSmartfeedEdition() {
 export function runContentSourceSelfCheck() {
   const result = runLocalContentIngestion();
   const selectedItems = result.editions.flatMap((edition) => edition.items);
+  const inactiveSourceCandidateIds = result.scores
+    .filter((score) => score.reasons.includes("Source is not active"))
+    .map((score) => score.candidateId);
+  const selectedSourceIds = Array.from(new Set(selectedItems.map((item) => item.sourceId).filter((sourceId): sourceId is string => !!sourceId)));
 
   return {
     importedCandidates: result.candidates.length,
@@ -15,6 +19,8 @@ export function runContentSourceSelfCheck() {
     scoredCandidates: result.scores.length,
     generatedEditions: result.editions.length,
     selectedItems: selectedItems.length,
+    selectedSourceIds,
+    inactiveSourceCandidateIds,
     firstSelectedTitle: selectedItems[0]?.title ?? null
   };
 }

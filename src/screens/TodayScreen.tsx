@@ -14,8 +14,9 @@ import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { EditionModule, FeedItem, IssuePace, Smartfeed } from "../types/product";
+import { LibraryTab } from "./LibraryScreen";
 
-export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, savedItemIds, usefulItemIds, setSelectedFeed, setActiveTab, toggleSavedItem, toggleUsefulItem, onOpenSearch, onOpenActivity, onOpenTune, onOpenDetail }: {
+export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContributionCount, contributionActivityCount, issuePace, savedItemIds, usefulItemIds, recentlyOpenedItems, recentlyOpenedCount, setSelectedFeed, setActiveTab, toggleSavedItem, toggleUsefulItem, onOpenSearch, onOpenActivity, onOpenTune, onOpenLibrary, onOpenDetail }: {
   theme: AppTheme;
   selectedCity: string;
   joinedFeeds: Smartfeed[];
@@ -24,6 +25,8 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
   issuePace: IssuePace;
   savedItemIds: string[];
   usefulItemIds: string[];
+  recentlyOpenedItems: FeedItem[];
+  recentlyOpenedCount: number;
   setSelectedFeed: (feed: Smartfeed) => void;
   setActiveTab: (tab: AppTab) => void;
   toggleSavedItem: (itemId: string) => void;
@@ -31,6 +34,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
   onOpenSearch: () => void;
   onOpenActivity: () => void;
   onOpenTune: () => void;
+  onOpenLibrary: (tab?: LibraryTab) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
   const editionModules = useMemo(() => localDataService.getTodayIssue(issuePace), [joinedFeeds, issuePace]);
@@ -87,6 +91,17 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
 
       <EditionBrief theme={theme} modules={editionModules} />
 
+      {recentlyOpenedItems.length > 0 && (
+        <ContinueReadingNudge
+          item={recentlyOpenedItems[0]}
+          moreCount={Math.max(0, recentlyOpenedCount - 1)}
+          theme={theme}
+          saved={savedItemIds.includes(recentlyOpenedItems[0].id)}
+          onOpen={() => onOpenDetail(recentlyOpenedItems[0])}
+          onOpenLibrary={() => onOpenLibrary("Opened")}
+        />
+      )}
+
       {submittedContributionCount > 0 && (
         <Pressable
           accessibilityRole="button"
@@ -121,7 +136,7 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
             setSelectedFeed(feed);
             setActiveTab("Feeds");
           }}
-          onOpenLibrary={() => setActiveTab("Library")}
+          onOpenLibrary={() => onOpenLibrary()}
           onOpenDetail={onOpenDetail}
         />
       )}
@@ -132,8 +147,9 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
             module={module}
             theme={theme}
             submittedContributionCount={submittedContributionCount}
-            onOpenLibrary={() => setActiveTab("Library")}
+            onOpenLibrary={() => onOpenLibrary()}
             onOpenContribute={() => setActiveTab("Contribute")}
+            onOpenTune={onOpenTune}
           />
         ) : (
           <EditionModuleCard
@@ -148,12 +164,56 @@ export function TodayScreen({ theme, selectedCity, joinedFeeds, submittedContrib
               setSelectedFeed(feed);
               setActiveTab("Feeds");
             }}
-            onOpenLibrary={() => setActiveTab("Library")}
+            onOpenLibrary={() => onOpenLibrary()}
             onOpenDetail={onOpenDetail}
           />
         )
       ))}
     </ScrollView>
+  );
+}
+
+function ContinueReadingNudge({ item, moreCount, theme, saved, onOpen, onOpenLibrary }: {
+  item: FeedItem;
+  moreCount: number;
+  theme: AppTheme;
+  saved: boolean;
+  onOpen: () => void;
+  onOpenLibrary: () => void;
+}) {
+  const itemTitle = getFeedItemTitle(item);
+
+  return (
+    <View style={[styles.continueNudge, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Continue reading ${itemTitle}`}
+        onPress={onOpen}
+        style={({ pressed }) => [styles.continueMain, pressed && styles.continuePressed]}
+      >
+        <View style={[styles.continueIcon, { backgroundColor: theme.panelAlt }]}>
+          <Ionicons name={saved ? "bookmark" : "time-outline"} color={theme.accent} size={18} />
+        </View>
+        <View style={styles.continueCopy}>
+          <Text style={[styles.kicker, { color: theme.accent }]}>PICK UP WHERE YOU LEFT OFF</Text>
+          <Text style={[styles.continueTitle, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
+          <Text style={[styles.meta, { color: theme.muted }]}>{saved ? "Saved in Library" : "Opened privately"} / {item.sourceName ?? "Weevrbird pick"}</Text>
+        </View>
+        <Ionicons name="arrow-forward" color={theme.accent} size={17} />
+      </Pressable>
+      {moreCount > 0 && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open private reading history"
+          onPress={onOpenLibrary}
+          style={({ pressed }) => [styles.continueLibraryLink, pressed && styles.continuePressed]}
+        >
+          <Text style={[styles.continueLibraryText, { color: theme.accent }]}>
+            {moreCount} more opened in Library
+          </Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -164,7 +224,7 @@ function EditionBrief({ theme, modules }: { theme: AppTheme; modules: EditionMod
     Editorial: modules.filter((module) => module.layer === "Editorial").length
   };
   const path = [
-    { label: "Read", body: `${counts.Editorial + counts.Reading} finite signal${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
+    { label: "Read", body: `${counts.Editorial + counts.Reading} selected piece${counts.Editorial + counts.Reading === 1 ? "" : "s"}`, tone: getLayerTone("Editorial") },
     { label: "Save", body: "Move what matters into Library", tone: getLayerTone("Reading") },
     { label: "Contribute", body: counts.Community > 0 ? `${counts.Community} prompt${counts.Community === 1 ? "" : "s"} to answer privately` : "Write privately before choosing a feed", tone: getLayerTone("Community") }
   ];
@@ -219,7 +279,7 @@ function getIssuePromise(issuePace: IssuePace, date: Date) {
 function getTimeAwareSubtitle(date: Date) {
   const hour = date.getHours();
   if (hour < 12) return "Start with what changed, keep what matters, and leave with a finite issue you can actually finish.";
-  if (hour < 17) return "Return to the useful signals from today, save what deserves another look, and close the tabs in your head.";
+  if (hour < 17) return "Return to the useful pieces from today, save what deserves another look, and close the tabs in your head.";
   return "Close the loop on today: save what matters, choose Smartfeeds for private contributions, and leave caught up without more scrolling.";
 }
 
@@ -259,6 +319,7 @@ function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemId
 }) {
   const editorial = feedEditorialMeta[module.feed.id] ?? feedEditorialMeta.atlanta;
   const moduleTone = getModuleTone(module);
+  const moduleTitle = module.title ?? "Today module";
   const open = () => {
     if (module.item) {
       onOpenDetail(module.item);
@@ -270,7 +331,7 @@ function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemId
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${module.action}: ${module.title}`}
+      accessibilityLabel={`${module.action}: ${moduleTitle}`}
       accessibilityHint={module.reason || getModuleSignal(module)}
       onPress={open}
       style={({ pressed }) => [
@@ -302,7 +363,7 @@ function EditionModuleCard({ module, theme, featured, savedItemIds, usefulItemId
 
       {module.type !== "reading_list" && (
         <>
-          <Text style={[styles.feedHeadline, module.type === "community_question" && styles.feedHeadlineTextOnly, { color: theme.text }]}>{module.title}</Text>
+          <Text style={[styles.feedHeadline, module.type === "community_question" && styles.feedHeadlineTextOnly, { color: theme.text }]}>{moduleTitle}</Text>
           <Text style={[styles.body, { color: theme.muted }]}>{module.body}</Text>
         </>
       )}
@@ -331,8 +392,8 @@ function getModuleSignal(module: EditionModule) {
   if (module.type === "what_changed") return "New since this morning";
   if (module.type === "reading_list") return "3 selected reads";
   if (module.type === "recommendation") return "Worth revisiting this weekend";
-  if (module.type === "community_question") return `${module.item?.replies ?? 18} replies from builders`;
-  return `${module.item?.replies ?? 0} locals discussing`;
+  if (module.type === "community_question") return `${getReplyCount(module.item, 18)} replies from builders`;
+  return `${getReplyCount(module.item)} locals discussing`;
 }
 
 function getModuleLabel(module: EditionModule) {
@@ -354,20 +415,26 @@ function WhatChangedSummary({ module, theme, editorial }: { module: EditionModul
   return (
     <View style={[styles.changedSummary, { borderColor: editorial.secondary }]}>
       <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>Since your last visit</Text>
-      {(module.items ?? []).slice(0, 3).map((item) => (
-        <View key={`changed-${item.id}`} style={styles.changedRow}>
-          <View style={[styles.changedDot, { backgroundColor: editorial.accent }]} />
-          <Text style={[styles.changedText, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
-        </View>
-      ))}
+      {(module.items ?? []).slice(0, 3).map((item) => {
+        const itemTitle = getFeedItemTitle(item);
+
+        return (
+          <View key={`changed-${item.id}`} style={styles.changedRow}>
+            <View style={[styles.changedDot, { backgroundColor: editorial.accent }]} />
+            <Text style={[styles.changedText, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 function ReadingListModule({ module, theme, editorial }: { module: EditionModule; theme: AppTheme; editorial: (typeof feedEditorialMeta)[string] }) {
+  const moduleTitle = module.title ?? "Reading list";
+
   return (
     <View style={styles.readingListModule}>
-      <Text style={[styles.feedHeadline, { color: theme.text }]}>{module.title}</Text>
+      <Text style={[styles.feedHeadline, { color: theme.text }]}>{moduleTitle}</Text>
       <Text style={[styles.body, { color: theme.muted }]}>{module.body}</Text>
       <CompactHeadlineList items={module.items ?? []} theme={theme} editorial={editorial} />
     </View>
@@ -384,10 +451,11 @@ function QuietActionRow({ module, theme, editorial, savedItemIds, usefulItemIds,
   toggleUsefulItem: (itemId: string) => void;
 }) {
   const targetItem = module.item ?? module.items?.[0];
+  const targetTitle = targetItem ? getFeedItemTitle(targetItem) : module.title ?? "this piece";
   const actions = module.type === "recommendation"
     ? ["Want to try", "Save"]
     : module.type === "community_question"
-      ? ["Follow", "Save"]
+      ? ["Track", "Save"]
       : ["Useful", "Save"];
 
   return (
@@ -401,7 +469,7 @@ function QuietActionRow({ module, theme, editorial, savedItemIds, usefulItemIds,
           <Pressable
             key={`${module.id}-${action}`}
             accessibilityRole="button"
-            accessibilityLabel={`${label} ${module.title}`}
+            accessibilityLabel={`${label} ${targetTitle}`}
             accessibilityState={{ selected }}
             disabled={!targetItem}
             onPress={(event) => {
@@ -431,24 +499,25 @@ function QuietActionRow({ module, theme, editorial, savedItemIds, usefulItemIds,
 function getQuietActionLabel(action: string, selected: boolean) {
   if (!selected) return action;
   if (action === "Save") return "Saved";
-  if (action === "Follow") return "Following";
+  if (action === "Track") return "Tracking";
   if (action === "Want to try") return "Want to try";
   return "Useful";
 }
 
 function getQuietActionIcon(action: string): keyof typeof Ionicons.glyphMap {
   if (action === "Save") return "bookmark-outline";
-  if (action === "Follow") return "notifications-outline";
-  if (action === "Want to try") return "sparkles-outline";
+  if (action === "Track") return "notifications-outline";
+  if (action === "Want to try") return "location-outline";
   return "checkmark-circle-outline";
 }
 
-function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibrary, onOpenContribute }: {
+function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibrary, onOpenContribute, onOpenTune }: {
   module: EditionModule;
   theme: AppTheme;
   submittedContributionCount: number;
   onOpenLibrary: () => void;
   onOpenContribute: () => void;
+  onOpenTune: () => void;
 }) {
   const editorial = feedEditorialMeta[module.feed.id] ?? feedEditorialMeta.atlanta;
   return (
@@ -457,7 +526,7 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
         <Ionicons name="checkmark" color={editorial.accent} size={22} />
       </View>
       <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>END OF ISSUE</Text>
-      <Text style={[styles.caughtUpTitle, { color: theme.text }]}>You can leave now.</Text>
+      <Text style={[styles.caughtUpTitle, { color: theme.text }]}>You're caught up.</Text>
       <Text style={[styles.caughtUpBody, { color: theme.muted }]}>{module.body}</Text>
       <View style={styles.afterIssueStack}>
         <AfterIssueRow icon="bookmark-outline" title="Saved pieces live in Library" body="Return later without rebuilding the whole issue." theme={theme} editorial={editorial} />
@@ -468,7 +537,16 @@ function CaughtUpEnding({ module, theme, submittedContributionCount, onOpenLibra
           theme={theme}
           editorial={editorial}
         />
+        <AfterIssueRow icon="options-outline" title="Tune tomorrow's issue" body="Adjust pace or sections if today's issue felt too light, too full, or slightly off." theme={theme} editorial={editorial} />
       </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Tune tomorrow's issue"
+        onPress={onOpenTune}
+        style={({ pressed }) => [styles.secondaryCaughtUpButton, pressed && styles.caughtUpButtonPressed, { borderColor: editorial.secondary }]}
+      >
+        <Text style={[styles.secondaryCaughtUpButtonText, { color: editorial.accent }]}>Tune tomorrow</Text>
+      </Pressable>
       {submittedContributionCount > 0 && (
         <Pressable
           accessibilityRole="button"
@@ -549,14 +627,32 @@ function MapFragment({ theme, editorial }: { theme: AppTheme; editorial: (typeof
 function CompactHeadlineList({ items, theme, editorial }: { items: FeedItem[]; theme: AppTheme; editorial: (typeof feedEditorialMeta)[string] }) {
   return (
     <View style={styles.compactList}>
-      {items.slice(0, 3).map((entry) => (
-        <View key={`compact-${entry.id}`} style={[styles.compactListRow, { borderTopColor: editorial.secondary }]}>
-          <Text style={[styles.compactListTitle, { color: theme.text }]} numberOfLines={2}>{entry.title}</Text>
-          <Text style={[styles.meta, { color: theme.muted }]}>{entry.replies} replies</Text>
-        </View>
-      ))}
+      {items.slice(0, 3).map((entry) => {
+        const entryTitle = getFeedItemTitle(entry);
+        const replyLabel = formatReplyCount(getReplyCount(entry));
+
+        return (
+          <View key={`compact-${entry.id}`} style={[styles.compactListRow, { borderTopColor: editorial.secondary }]}>
+            <Text style={[styles.compactListTitle, { color: theme.text }]} numberOfLines={2}>{entryTitle}</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{replyLabel}</Text>
+          </View>
+        );
+      })}
     </View>
   );
+}
+
+function getFeedItemTitle(item: FeedItem) {
+  return item.title ?? "this piece";
+}
+
+function getReplyCount(item?: FeedItem, fallback = 0) {
+  if (!item) return fallback;
+  return Number.isFinite(item.replies) ? item.replies : fallback;
+}
+
+function formatReplyCount(count: number) {
+  return count === 1 ? "1 reply" : `${count} replies`;
 }
 
 function EngagementLine({ label, theme }: { label: string; theme: AppTheme }) {
@@ -715,6 +811,50 @@ const styles = StyleSheet.create({
   issuePathLabel: {
     fontSize: 14,
     lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  continueNudge: {
+    borderWidth: 1,
+    borderRadius: 10,
+    overflow: "hidden",
+    ...shadows.card
+  },
+  continueMain: {
+    minHeight: 88,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  continuePressed: {
+    opacity: 0.78
+  },
+  continueIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  continueCopy: {
+    flex: 1,
+    gap: 4
+  },
+  continueTitle: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontFamily: "Inter_700Bold"
+  },
+  continueLibraryLink: {
+    minHeight: 38,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(15, 61, 46, 0.14)"
+  },
+  continueLibraryText: {
+    fontSize: 13,
+    lineHeight: 17,
     fontFamily: "Inter_700Bold"
   },
   reviewNudge: {

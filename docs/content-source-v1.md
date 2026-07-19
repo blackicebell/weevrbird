@@ -4,20 +4,20 @@ Weevrbird ingests external sources as raw material. A source does not publish di
 
 Operating principle: ingest broadly, classify precisely, deliver selectively.
 
-## Local Prototype Flow
+## Local Flow
 
 1. `ContentSource` describes a trusted supplier such as RSS, Atom, podcast, public notice, or manual link.
 2. `SourceCandidate` stores the imported item with attribution, canonical URL, source metadata, and lifecycle state.
 3. Deduplication removes repeated candidates by source GUID, normalized URL, and normalized headline.
 4. Classification maps candidates to interests, locations, and matched keywords using deterministic source defaults and text matching.
-5. Relevance scoring applies hard exclusions first, then scores the remaining candidates with a small set of transparent signals.
+5. Relevance scoring applies hard exclusions first, then scores the remaining candidates with a small set of transparent factors.
 6. Edition composition selects a finite set of visible `FeedItem`s for each Smartfeed.
 
 ## Topics Versus Smartfeeds
 
 Topics describe what a candidate is about. Smartfeeds are editorial and community containers.
 
-For example, `black-tech` can remain a Smartfeed destination while broad topics such as `technology`, `business`, `work`, `society`, and `education` explain why a candidate belongs there. This keeps cultural or community Smartfeeds useful without turning every community identity into a hardcoded content taxonomy label.
+For example, an internal Smartfeed id such as `black-tech` can keep existing routing stable while the user-facing topic label is simply `Tech`. Broad topics such as `technology`, `business`, `work`, `society`, and `education` explain why a candidate belongs there without turning every community identity into a hardcoded content taxonomy label.
 
 ## Source Lifecycle
 
@@ -74,7 +74,7 @@ These rules define eligibility, not publication. The composer still enforces fin
 - No raw RSS dump into Smartfeeds.
 - No follower, popularity, reaction, or virality ranking.
 - No backend scheduler yet.
-- No authentication or admin tooling yet.
+- No admin tooling yet.
 - No arbitrary user-submitted source URLs.
 - No full-article storage.
 - No publication unread counts.
@@ -90,3 +90,13 @@ These rules define eligibility, not publication. The composer still enforces fin
 - Rate limiting and cache invalidation.
 - Real RSS/Atom network fetch retries.
 - User-specific source muting persistence.
+
+## Local Verification
+
+Run the source-pipeline check before builds:
+
+```bash
+npm run check:content
+```
+
+The check reports selected source ids and candidates excluded because their source is inactive. Paused or disabled sources should never appear in `selectedSourceIds`.

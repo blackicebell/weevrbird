@@ -51,6 +51,7 @@ export function composeSmartfeedEdition({
     }))
     .filter((entry) => entry.classification && entry.score && entry.rule)
     .filter((entry) => ruleAllowsCandidate(entry.candidate, entry.classification!, entry.rule!))
+    .filter((entry) => entry.score!.score > 0)
     .filter((entry) => entry.score!.score >= entry.rule!.minimumRelevanceScore)
     .sort((a, b) => {
       const priorityDelta = b.rule!.sourcePriority - a.rule!.sourcePriority;

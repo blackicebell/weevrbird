@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import React from "react";
 import {
   KeyboardAvoidingView,
@@ -12,11 +13,14 @@ import {
 } from "react-native";
 
 import { contributionMeta, contributionTypes } from "../app/editorial";
+import { AuthStatus } from "../app/appState";
+import { EmailLinkGate } from "../components/EmailLinkGate";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { localDataService } from "../data/localDataService";
 import { palette, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { SubmittedContribution } from "../types/product";
+import { getPastedContentKind, getPasteNotice } from "../utils/pastedContent";
 
 export function ContributeScreen({
   theme,
@@ -24,6 +28,11 @@ export function ContributeScreen({
   setDraftType,
   draft,
   setDraft,
+  authStatus,
+  accountEmail,
+  profileName,
+  onRequestEmailLink,
+  onCompleteEmailSignIn,
   submittedContributions,
   onSubmitContribution,
   onPlaceContribution
@@ -33,6 +42,11 @@ export function ContributeScreen({
   setDraftType: (type: string) => void;
   draft: string;
   setDraft: (text: string) => void;
+  authStatus: AuthStatus;
+  accountEmail: string;
+  profileName: string;
+  onRequestEmailLink: (email: string, penName?: string) => void;
+  onCompleteEmailSignIn: () => void;
   submittedContributions: SubmittedContribution[];
   onSubmitContribution: (contribution: SubmittedContribution) => void;
   onPlaceContribution: (contributionId: string, feedId: string) => void;
@@ -80,11 +94,12 @@ export function ContributeScreen({
     const nextDraft = draft.trim()
       ? `${draft.trim()}\n${clipboardText}`
       : clipboardText;
+    const pasteKind = getPastedContentKind(clipboardText);
 
     setDraftType("Link");
     setDraft(nextDraft.slice(0, getContributionCharLimit("Link")));
     setValidationMessage(null);
-    setDraftNotice("Pasted from clipboard. Add why it is worth sharing before saving.");
+    setDraftNotice(getPasteNotice(pasteKind));
   };
 
   const submit = () => {
@@ -94,7 +109,7 @@ export function ContributeScreen({
     }
 
     if (!readyToSubmit) {
-      setValidationMessage("Tighten the signal so someone can decide whether to save, reply, or move on.");
+      setValidationMessage("Tighten the context so someone can decide whether to save, reply, or move on.");
       return;
     }
 
@@ -118,9 +133,36 @@ export function ContributeScreen({
   return (
     <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={styles.flex}>
       <ScrollView ref={scrollViewRef} contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.kicker, { color: theme.accent }]}>ADD USEFUL SIGNAL</Text>
+        <Text style={[styles.kicker, { color: theme.accent }]}>ADD SOMETHING USEFUL</Text>
         <Text style={[styles.screenTitle, { color: theme.text }]}>Contribute</Text>
         <Text style={[styles.body, { color: theme.muted }]}>Write one useful contribution, keep it private while you choose where it belongs, then send it to a Smartfeed.</Text>
+        {authStatus !== "signed_in" && (
+          <>
+            <View style={[styles.identityNote, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+              <Ionicons name="lock-closed-outline" color={theme.accent} size={19} />
+              <View style={styles.guidanceCopy}>
+                <Text style={[styles.qualityTitle, { color: theme.text }]}>Sign in before contributing</Text>
+                <Text style={[styles.meta, { color: theme.muted }]}>Reading stays open. An email link protects your contributions, replies, and profile without adding a password.</Text>
+              </View>
+            </View>
+            <EmailLinkGate
+              theme={theme}
+              authStatus={authStatus}
+              accountEmail={accountEmail}
+              profileName={profileName}
+              onRequestLink={onRequestEmailLink}
+              onCompleteSignIn={onCompleteEmailSignIn}
+            />
+          </>
+        )}
+        {authStatus === "signed_in" && (
+          <View style={[styles.signedInNote, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+            <Ionicons name="checkmark-circle-outline" color={theme.accent} size={19} />
+            <Text style={[styles.meta, { color: theme.muted }]}>Posting as {profileName}. Account: {accountEmail}</Text>
+          </View>
+        )}
+        {authStatus === "signed_in" && (
+          <>
         <ContributionLoopSummary reviewCount={reviewContributions.length} placedCount={placedContributionCount} theme={theme} />
         <View style={styles.contributionList}>
           {contributionTypes.map((type) => (
@@ -247,6 +289,8 @@ export function ContributeScreen({
           <PrimaryButton label="Save privately" icon="send-outline" onPress={submit} theme={theme} />
           <Text style={[styles.saveActionNote, { color: theme.muted }]}>Saved privately first. You choose the Smartfeed before anyone else can find it.</Text>
         </View>
+          </>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -358,11 +402,11 @@ function getPlacementReason(feed: ReturnType<typeof localDataService.getFeed>, c
     Recommendation: "Recommendations are strongest when readers can act on them soon.",
     Link: "Links are easier to trust when they sit beside related reading.",
     "Long Read": "Long reads need a slower audience that saves and returns.",
-    Note: "Notes become useful when they land near the people watching that signal."
+    Note: "Notes become useful when they land near the people following that topic."
   };
   const feedRole = feed.type === "city" ? "local context" : feed.type === "community" ? "shared practice" : "focused discovery";
 
-  return `${typeReason[contributionType] ?? typeReason.Note} ${feed.name} brings ${feedRole}, ${feed.members}, and the right surrounding signals.`;
+  return `${typeReason[contributionType] ?? typeReason.Note} ${feed.name} brings ${feedRole}, ${feed.members}, and the right surrounding context.`;
 }
 
 function getContributionCharLimit(type: string) {
@@ -372,12 +416,8 @@ function getContributionCharLimit(type: string) {
 }
 
 async function readClipboardText() {
-  if (Platform.OS !== "web" || typeof navigator === "undefined" || !navigator.clipboard?.readText) {
-    return "";
-  }
-
   try {
-    return (await navigator.clipboard.readText()).trim();
+    return (await Clipboard.getStringAsync()).trim();
   } catch {
     return "";
   }
@@ -469,7 +509,7 @@ function getContributionGuidance(type: string) {
     Note: {
       icon: "create-outline",
       color: palette.seafoam,
-      title: "A quick signal",
+      title: "A quick note",
       body: "Best for a short observation, update, or useful detail others can act on.",
       placeholder: "Share the detail that would help someone understand what changed..."
     },
@@ -596,6 +636,22 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     fontFamily: "Inter_600SemiBold",
     textAlign: "center"
+  },
+  identityNote: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  signedInNote: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
   },
   guidanceIcon: {
     width: 38,

@@ -3,7 +3,19 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { AppTheme } from "../theme/useTheme";
 
-export function SectionHeader({ title, action, onAction, theme }: { title: string; action?: string; onAction?: () => void; theme: AppTheme }) {
+export function SectionHeader({
+  title,
+  action,
+  actionAccessibilityLabel,
+  onAction,
+  theme
+}: {
+  title: string;
+  action?: string;
+  actionAccessibilityLabel?: string;
+  onAction?: () => void;
+  theme: AppTheme;
+}) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={[styles.sectionTitle, { color: theme.text }]}>{title}</Text>
@@ -11,7 +23,7 @@ export function SectionHeader({ title, action, onAction, theme }: { title: strin
         onAction ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={action}
+            accessibilityLabel={actionAccessibilityLabel ?? action}
             onPress={onAction}
             style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
           >

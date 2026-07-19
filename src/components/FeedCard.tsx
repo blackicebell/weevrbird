@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { GestureResponderEvent, Pressable, StyleSheet, Text, View } from "react-native";
 
-import { avatars, feedEditorialMeta } from "../app/editorial";
+import { feedEditorialMeta } from "../app/editorial";
+import { ProfileMark } from "./ProfileMark";
 import { localDataService } from "../data/localDataService";
 import { shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, Person } from "../types/product";
+import { formatFeedItemType } from "../utils/feedItemLabels";
 
 export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.saved, markedUseful = false, onToggleSaved, onToggleUseful, onOpen }: {
   item: FeedItem;
@@ -27,6 +29,14 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
     : null;
   const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[item.feedId] ?? feedEditorialMeta.atlanta;
+  const itemTitle = item.title ?? "this piece";
+  const itemSource = item.sourceName ?? "Curated source";
+  const itemTypeLabel = formatFeedItemType(item.itemType);
+  const publishedLabel = item.publishedAt || "Recent";
+  const sourceDomain = getSourceDomain(item.url);
+  const replyCount = getReplyCount(item);
+  const replyLabel = formatReplyCount(replyCount);
+  const reactionLabel = item.reactionLabel || "Mark useful";
   const storyType = isUserContribution ? "fromYou" : item.itemType === "recommendation" ? "recommendation" : item.itemType === "official_update" ? "official" : isExternal ? "reading" : "community";
   const storyIcon: keyof typeof Ionicons.glyphMap = storyType === "recommendation" ? "location-outline" : storyType === "official" ? "shield-checkmark-outline" : storyType === "reading" ? "book-outline" : storyType === "fromYou" ? "checkmark-circle-outline" : "chatbubbles-outline";
   const signalLabel = storyType === "reading"
@@ -42,7 +52,7 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title}`}
+      accessibilityLabel={`Open ${itemTitle}`}
       onPress={onOpen}
       style={({ pressed }) => [
         styles.card,
@@ -58,10 +68,10 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
             <Ionicons name={storyIcon} color={storyType === "official" ? "#49626B" : editorial.accent} size={14} />
           </View>
           <Text style={[styles.typeText, { color: editorial.accent }]}>
-            {feed.name} / {isUserContribution ? "From You" : isExternal ? item.sourceName : item.itemType.replace("_", " ")}
+            {feed.name} / {isUserContribution ? "From You" : isExternal ? itemSource : itemTypeLabel}
           </Text>
         </View>
-        <Text style={[styles.meta, { color: theme.muted }]}>{item.publishedAt}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{publishedLabel}</Text>
       </View>
       {author && (
         <AuthorContextRow
@@ -93,12 +103,20 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
         />
       )}
       <Text style={[styles.storySignal, { color: storyType === "official" ? "#49626B" : editorial.accent }]}>{signalLabel}</Text>
-      <Text style={[styles.cardTitle, { color: theme.text }]}>{item.title}</Text>
+      <Text style={[styles.cardTitle, { color: theme.text }]}>{itemTitle}</Text>
       {!!(item.body ?? item.excerpt) && <Text style={[styles.body, { color: theme.muted }]}>{item.body ?? item.excerpt}</Text>}
       {storyType === "recommendation" && <StoryTypePanel icon="pin-outline" title="Add to weekend plans" body="A low-pressure save for later, not a public performance." theme={theme} editorial={editorial} />}
       {storyType === "fromYou" && <StoryTypePanel icon="checkmark-circle-outline" title="You contributed this" body="It moved from private review into the Smartfeed you chose." theme={theme} editorial={editorial} />}
       {storyType === "official" && <StoryTypePanel icon="time-outline" title="Action items" body="Check closures, transit notes, and reopening times before you head downtown." theme={theme} editorial={editorial} muted />}
-      {isExternal && <Text style={[styles.externalNotice, { color: theme.muted }]}>Reading time: 5 min / Read source / Discuss on Weevrbird</Text>}
+      {isExternal && (
+        <SourceStrip
+          sourceName={itemSource}
+          sourceDomain={sourceDomain}
+          itemTypeLabel={itemTypeLabel}
+          theme={theme}
+          accent={editorial.accent}
+        />
+      )}
       {isUserContribution ? (
         <UserContributionFooter
           item={item}
@@ -110,9 +128,9 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
       ) : (
         <View style={styles.actionRow}>
           <ActionPill
-            icon={markedUseful ? "sparkles" : "sparkles-outline"}
-            label={markedUseful ? "Marked useful" : item.reactionLabel}
-            accessibilityLabel={markedUseful ? "Remove useful mark" : `Mark useful: ${item.title}`}
+            icon={markedUseful ? "checkmark-circle" : "checkmark-circle-outline"}
+            label={markedUseful ? "Marked useful" : reactionLabel}
+            accessibilityLabel={markedUseful ? `Remove useful mark from ${itemTitle}` : `Mark useful: ${itemTitle}`}
             active={markedUseful}
             onPress={(event) => {
               event.stopPropagation();
@@ -123,8 +141,8 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
           />
           <ActionPill
             icon="chatbubble-outline"
-            label={item.replies > 10 ? `Join ${item.replies}` : `${item.replies} replies`}
-            accessibilityLabel={`Open conversation for ${item.title}. ${item.replies} replies.`}
+            label={replyCount > 10 ? `Join ${replyCount}` : replyLabel}
+            accessibilityLabel={`Open conversation for ${itemTitle}. ${replyLabel}.`}
             onPress={(event) => {
               event.stopPropagation();
               onOpen?.();
@@ -135,7 +153,7 @@ export function FeedCard({ item, theme, viewerInterests = [], saved = !!item.sav
           <ActionPill
             icon={saved ? "bookmark" : "bookmark-outline"}
             label={saved ? "Saved" : "Save"}
-            accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
+            accessibilityLabel={saved ? `Remove ${itemTitle} from saved items` : `Save ${itemTitle}`}
             active={saved}
             onPress={(event) => {
               event.stopPropagation();
@@ -166,9 +184,7 @@ function AuthorContextRow({ author, item, feedName, theme, accent, expanded, onO
       onPress={onOpen}
       style={({ pressed }) => [styles.authorContextRow, pressed && styles.authorContextRowPressed, { borderColor: `${accent}24`, backgroundColor: `${accent}0F` }]}
     >
-      <View style={[styles.authorAvatar, { borderColor: `${accent}44` }]}>
-        <Text style={[styles.authorAvatarText, { color: accent }]}>{avatars[author.avatar] ?? author.displayName.charAt(0)}</Text>
-      </View>
+      <ProfileMark index={author.avatar} size={34} />
       <View style={styles.authorContextCopy}>
         <Text style={[styles.authorContextName, { color: theme.text }]}>{author.displayName}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{formatAuthorContributionContext(item)} in {feedName} / @{author.username}</Text>
@@ -189,6 +205,7 @@ function AuthorPreviewPanel({ author, item, feedName, theme, accent, viewerInter
   onConnect: (event: GestureResponderEvent) => void;
 }) {
   const sharedInterests = getSharedInterests(author.interests, viewerInterests);
+  const itemTitle = item.title ?? "this piece";
   const connectionLabel = author.linked ? "Linked" : connectRequested ? "Request sent" : "Connect";
   const reason = sharedInterests.length > 0
     ? `You both pay attention to ${formatList(sharedInterests)}.`
@@ -197,9 +214,7 @@ function AuthorPreviewPanel({ author, item, feedName, theme, accent, viewerInter
   return (
     <View style={[styles.authorPreviewPanel, { borderColor: `${accent}33`, backgroundColor: `${accent}0D` }]}>
       <View style={styles.authorPreviewTop}>
-        <View style={[styles.authorPreviewAvatar, { backgroundColor: `${accent}18`, borderColor: `${accent}44` }]}>
-          <Text style={[styles.authorPreviewAvatarText, { color: accent }]}>{avatars[author.avatar] ?? author.displayName.charAt(0)}</Text>
-        </View>
+        <ProfileMark index={author.avatar} size={48} />
         <View style={styles.authorPreviewIdentity}>
           <Text style={[styles.authorPreviewKicker, { color: accent }]}>PROFILE PREVIEW</Text>
           <Text style={[styles.authorPreviewName, { color: theme.text }]}>{author.displayName}</Text>
@@ -225,7 +240,7 @@ function AuthorPreviewPanel({ author, item, feedName, theme, accent, viewerInter
       )}
       <View style={[styles.authorFeaturedContribution, { borderTopColor: `${accent}22` }]}>
         <Text style={[styles.authorPreviewLabel, { color: accent }]}>Featured contribution</Text>
-        <Text style={[styles.authorFeaturedTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.authorFeaturedTitle, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{formatAuthorContributionContext(item)} in {feedName}</Text>
       </View>
       <View style={styles.authorPreviewActions}>
@@ -250,12 +265,45 @@ function AuthorPreviewPanel({ author, item, feedName, theme, accent, viewerInter
 }
 
 function formatAuthorContributionContext(item: FeedItem) {
-  if (item.itemType === "recommendation") return "Recommendation";
-  if (item.itemType === "question") return "Question";
-  if (item.itemType === "discussion") return "Discussion";
-  if (item.itemType === "long_read") return "Long read";
-  if (item.itemType === "link") return "Link";
-  return "Contribution";
+  return formatFeedItemType(item.itemType);
+}
+
+function SourceStrip({ sourceName, sourceDomain, itemTypeLabel, theme, accent }: {
+  sourceName: string;
+  sourceDomain: string | null;
+  itemTypeLabel: string;
+  theme: AppTheme;
+  accent: string;
+}) {
+  const sourceLabel = sourceDomain ? `${sourceName} / ${sourceDomain}` : sourceName;
+
+  return (
+    <View style={[styles.sourceStrip, { borderColor: `${accent}24`, backgroundColor: `${accent}0D` }]}>
+      <Ionicons name="newspaper-outline" color={accent} size={16} />
+      <View style={styles.sourceStripCopy}>
+        <Text style={[styles.sourceStripTitle, { color: theme.text }]}>{itemTypeLabel} from {sourceLabel}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>Open the original source or discuss the piece on Weevrbird.</Text>
+      </View>
+    </View>
+  );
+}
+
+function getSourceDomain(url?: string) {
+  if (!url) return null;
+
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function getReplyCount(item: FeedItem) {
+  return Number.isFinite(item.replies) ? item.replies : 0;
+}
+
+function formatReplyCount(count: number) {
+  return count === 1 ? "1 reply" : `${count} replies`;
 }
 
 function getSharedInterests(authorInterests: string[], viewerInterests: string[]) {
@@ -284,6 +332,7 @@ function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
   theme: AppTheme;
   accent: string;
 }) {
+  const itemTitle = item.title ?? "this piece";
   const engagement = item.engagementSummary;
   const signal = engagement?.replyPreview
     ? "1 thoughtful reply"
@@ -303,7 +352,7 @@ function UserContributionFooter({ item, saved, onToggleSaved, theme, accent }: {
       <ActionPill
         icon={saved ? "bookmark" : "bookmark-outline"}
         label={saved ? "Saved" : "Save"}
-        accessibilityLabel={saved ? `Remove ${item.title} from saved items` : `Save ${item.title}`}
+        accessibilityLabel={saved ? `Remove ${itemTitle} from saved items` : `Save ${itemTitle}`}
         active={saved}
         onPress={(event) => {
           event.stopPropagation();
@@ -440,10 +489,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: "PlayfairDisplay_700Bold"
   },
-  externalNotice: {
+  sourceStrip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: spacing.sm,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  sourceStripCopy: {
+    flex: 1,
+    gap: 2
+  },
+  sourceStripTitle: {
     fontSize: 13,
-    lineHeight: 18,
-    fontFamily: "Inter_600SemiBold"
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
   },
   authorContextRow: {
     borderWidth: 1,

@@ -2,17 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { avatars, profileCollections } from "../app/editorial";
+import { profileCollections } from "../app/editorial";
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
+import { ProfileMark } from "../components/ProfileMark";
 import { SectionHeader } from "../components/SectionHeader";
 import { localDataService } from "../data/localDataService";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, Person, SubmittedContribution } from "../types/product";
+import { formatFeedItemType } from "../utils/feedItemLabels";
 
-type LibraryTab = "Saved for later" | "Opened" | "Shelves";
+export type LibraryTab = "Saved for later" | "Opened" | "Shelves";
 type LibraryCollection = (typeof profileCollections)[number];
+type QuickSearch = { label: string; query: string; count?: number };
 
 export function LibraryScreen({
   theme,
@@ -23,6 +26,13 @@ export function LibraryScreen({
   setSearch,
   savedItemIds,
   usefulItemIds,
+  openedItemIds,
+  activeLibraryTab,
+  setActiveLibraryTab,
+  onClearOpenedHistory,
+  onRemoveOpenedItem,
+  onRestoreOpenedHistory,
+  onRestoreOpenedItem,
   toggleSavedItem,
   toggleUsefulItem,
   onOpenDetail
@@ -35,22 +45,72 @@ export function LibraryScreen({
   setSearch: (value: string) => void;
   savedItemIds: string[];
   usefulItemIds: string[];
+  openedItemIds: string[];
+  activeLibraryTab: LibraryTab;
+  setActiveLibraryTab: (tab: LibraryTab) => void;
+  onClearOpenedHistory: () => void;
+  onRemoveOpenedItem: (itemId: string) => void;
+  onRestoreOpenedHistory: (itemIds: string[]) => void;
+  onRestoreOpenedItem: (itemId: string) => void;
   toggleSavedItem: (itemId: string) => void;
   toggleUsefulItem: (itemId: string) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const [activeTab, setActiveTab] = useState<LibraryTab>("Saved for later");
   const [activeShelf, setActiveShelf] = useState<LibraryCollection | null>(null);
-  const userContentState = { savedItemIds, usefulItemIds };
-  const archiveItems = localDataService.getArchiveItems(userContentState, submittedContributions);
-  const results = localDataService.searchLibrary(search, submittedContributions);
+  const [clearHistoryArmed, setClearHistoryArmed] = useState(false);
+  const [lastRemovedOpenedItem, setLastRemovedOpenedItem] = useState<Pick<FeedItem, "id" | "title"> | null>(null);
+  const [lastClearedOpenedHistory, setLastClearedOpenedHistory] = useState<{ itemIds: string[]; count: number } | null>(null);
+  const userContentState = { savedItemIds, usefulItemIds, openedItemIds };
+  const returnItems = localDataService.getReturnItems(userContentState, submittedContributions);
   const allLibraryItems = localDataService.searchLibrary("", submittedContributions);
   const searchQuery = search.trim();
+  const results = rankLibrarySearchResults(
+    getLibrarySearchResults(searchQuery, allLibraryItems, submittedContributions, savedItemIds, usefulItemIds, openedItemIds),
+    savedItemIds,
+    usefulItemIds,
+    openedItemIds
+  );
+  const shelfResults = searchQuery ? getLibraryShelfSearchResults(searchQuery) : [];
+  const totalSearchResults = shelfResults.length + results.length;
+  const emptySearchCopy = getLibraryEmptySearchCopy(searchQuery || search);
   const savedUserItems = savedItems.filter((item) => item.authorId === "you");
   const regularSavedItems = savedItems.filter((item) => item.authorId !== "you");
   const usefulItems = allLibraryItems.filter((item) => usefulItemIds.includes(item.id) && !savedItemIds.includes(item.id));
-  const openedItems = archiveItems.filter((item) => !savedItemIds.includes(item.id));
-  const tabContext = getLibraryTabContext(activeTab);
+  const usefulDisplayCount = allLibraryItems.filter((item) => usefulItemIds.includes(item.id)).length;
+  const openedItems = openedItemIds
+    .map((itemId) => returnItems.find((item) => item.id === itemId))
+    .filter((item): item is (typeof returnItems)[number] => !!item);
+  const openedItemIdSet = new Set(openedItems.map((item) => item.id));
+  const personalResultCount = results.filter((item) => getLibrarySearchRank(item, savedItemIds, usefulItemIds, openedItemIds) > 0).length;
+  const quickSearches = getLibraryQuickSearches(selectedInterests, allLibraryItems, savedItemIds, usefulItemIds, openedItemIds);
+  const tabContext = getLibraryTabContext(activeLibraryTab);
+  const clearOpenedHistory = () => {
+    if (!clearHistoryArmed) {
+      setClearHistoryArmed(true);
+      return;
+    }
+
+    onClearOpenedHistory();
+    setClearHistoryArmed(false);
+    setLastRemovedOpenedItem(null);
+    setLastClearedOpenedHistory({ itemIds: openedItemIds, count: openedItems.length });
+  };
+  const removeOpenedItem = (item: FeedItem) => {
+    setClearHistoryArmed(false);
+    setLastRemovedOpenedItem({ id: item.id, title: item.title ?? "this piece" });
+    setLastClearedOpenedHistory(null);
+    onRemoveOpenedItem(item.id);
+  };
+  const undoOpenedItemRemoval = () => {
+    if (!lastRemovedOpenedItem) return;
+    onRestoreOpenedItem(lastRemovedOpenedItem.id);
+    setLastRemovedOpenedItem(null);
+  };
+  const undoOpenedHistoryClear = () => {
+    if (!lastClearedOpenedHistory) return;
+    onRestoreOpenedHistory(lastClearedOpenedHistory.itemIds);
+    setLastClearedOpenedHistory(null);
+  };
 
   if (activeShelf) {
     return (
@@ -66,14 +126,14 @@ export function LibraryScreen({
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <Text style={[styles.kicker, { color: theme.accent }]}>PERSONAL ARCHIVE</Text>
+      <Text style={[styles.kicker, { color: theme.accent }]}>PRIVATE LIBRARY</Text>
       <Text style={[styles.screenTitle, { color: theme.text }]}>Library</Text>
       <Text style={[styles.body, { color: theme.muted }]}>The useful pieces you saved, opened, or may want to return to after the issue is done.</Text>
       <View style={[styles.archiveSummary, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         {[
           { label: "Saved", value: savedItems.length },
-          { label: "Marked useful", value: usefulItemIds.length },
-          { label: "Private history", value: archiveItems.length },
+          { label: "Marked useful", value: usefulDisplayCount },
+          { label: "Opened", value: openedItems.length },
           { label: "Shelves", value: 3 }
         ].map((item) => (
           <View key={item.label} style={styles.archiveSummaryItem}>
@@ -82,10 +142,10 @@ export function LibraryScreen({
           </View>
         ))}
       </View>
-      {archiveItems.length > 0 && (
+      {(savedItems.length > 0 || openedItems.length > 0) && (
         <View style={styles.archivePrivacyNote}>
           <Ionicons name="lock-closed-outline" color={theme.accent} size={15} />
-          <Text style={[styles.archivePrivacyText, { color: theme.muted }]}>Private history is only for you. Saving and opening pieces helps Weevrbird make your archive easier to return to.</Text>
+          <Text style={[styles.archivePrivacyText, { color: theme.muted }]}>Private history is only for you. Saving and opening pieces helps Weevrbird make your Library easier to return to.</Text>
         </View>
       )}
       <View style={[styles.searchBox, { backgroundColor: theme.panel, borderColor: theme.line }]}>
@@ -99,29 +159,106 @@ export function LibraryScreen({
           placeholderTextColor={theme.muted}
           style={[styles.searchInput, { color: theme.text }]}
         />
+        {search.length > 0 && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Clear Library search"
+            onPress={() => setSearch("")}
+            style={({ pressed }) => [styles.searchClearButton, pressed && styles.searchClearButtonPressed, { backgroundColor: theme.panelAlt }]}
+          >
+            <Ionicons name="close" color={theme.muted} size={17} />
+          </Pressable>
+        )}
+      </View>
+      <View style={styles.quickSearchRow}>
+        {quickSearches.map((quickSearch) => {
+          const selected = normalizeLibrarySearchText(search) === normalizeLibrarySearchText(quickSearch.query);
+          const countLabel =
+            typeof quickSearch.count === "number" ? `, ${quickSearch.count} ${quickSearch.count === 1 ? "piece" : "pieces"}` : "";
+
+          return (
+            <Pressable
+              key={`library-quick-search-${quickSearch.query}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Search Library for ${quickSearch.label}${countLabel}`}
+              accessibilityState={{ selected }}
+              onPress={() => setSearch(selected ? "" : quickSearch.query)}
+              style={({ pressed }) => [
+                styles.quickSearchChip,
+                pressed && styles.quickSearchChipPressed,
+                {
+                  borderColor: selected ? theme.accent : theme.line,
+                  backgroundColor: selected ? theme.panelAlt : theme.panel
+                }
+              ]}
+            >
+              <Ionicons name={getLibraryQuickSearchIcon(quickSearch.query)} color={selected ? theme.accent : theme.muted} size={13} />
+              <Text style={[styles.quickSearchText, { color: selected ? theme.accent : theme.muted }]}>{quickSearch.label}</Text>
+              {typeof quickSearch.count === "number" && (
+                <Text style={[styles.quickSearchCount, { color: selected ? theme.accent : theme.muted }]}>{quickSearch.count}</Text>
+              )}
+            </Pressable>
+          );
+        })}
       </View>
       {search ? (
         <>
-          <SectionHeader title={`Results for "${searchQuery || search}"`} action={`${results.length} found`} theme={theme} />
-          {results.length > 0 ? (
-            results.map((item) => (
-              <FeedCard
-                key={item.id}
-                item={{ ...item, saved: savedItemIds.includes(item.id) }}
-                theme={theme}
-                viewerInterests={selectedInterests}
-                saved={savedItemIds.includes(item.id)}
-                markedUseful={usefulItemIds.includes(item.id)}
-                onToggleSaved={() => toggleSavedItem(item.id)}
-                onToggleUseful={() => toggleUsefulItem(item.id)}
-                onOpen={() => onOpenDetail(item)}
-              />
-            ))
+          <SectionHeader
+            title={`Results for "${searchQuery || search}"`}
+            action={personalResultCount > 0 ? `${personalResultCount} personal / ${totalSearchResults} total` : `${totalSearchResults} found`}
+            theme={theme}
+          />
+          {totalSearchResults > 0 ? (
+            <>
+              {shelfResults.length > 0 && (
+                <>
+                  <SectionHeader title="Shelves" action={`${shelfResults.length} found`} theme={theme} />
+                  {shelfResults.map((collection) => (
+                    <ShelfRow
+                      key={`search-shelf-${collection.title}`}
+                      collection={collection}
+                      itemCount={localDataService.getShelfItems(collection.title).length}
+                      theme={theme}
+                      onOpen={() => setActiveShelf(collection)}
+                    />
+                  ))}
+                </>
+              )}
+              {results.length > 0 && shelfResults.length > 0 && <SectionHeader title="Pieces" action={`${results.length} found`} theme={theme} />}
+              {results.map((item) => {
+                const statusCues = getLibrarySearchStatusCues(item, savedItemIds, usefulItemIds, openedItemIds);
+
+                return (
+                  <View key={item.id} style={styles.searchResultStack}>
+                    {statusCues.length > 0 && (
+                      <View style={styles.searchStatusRow}>
+                        {statusCues.map((cue) => (
+                          <View key={`${item.id}-${cue.label}`} style={[styles.searchStatusPill, { backgroundColor: theme.panelAlt }]}>
+                            <Ionicons name={cue.icon} color={theme.accent} size={13} />
+                            <Text style={[styles.searchStatusText, { color: theme.accent }]}>{cue.label}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    <FeedCard
+                      item={{ ...item, saved: savedItemIds.includes(item.id) }}
+                      theme={theme}
+                      viewerInterests={selectedInterests}
+                      saved={savedItemIds.includes(item.id)}
+                      markedUseful={usefulItemIds.includes(item.id)}
+                      onToggleSaved={() => toggleSavedItem(item.id)}
+                      onToggleUseful={() => toggleUsefulItem(item.id)}
+                      onOpen={() => onOpenDetail(item)}
+                    />
+                  </View>
+                );
+              })}
+            </>
           ) : (
             <EmptyState
               icon="search-outline"
-              title={`No results for "${searchQuery || search}".`}
-              body="Try a feed name, source, place, shelf, or contribution. Library searches saved pieces, opened history, and conversations."
+              title={emptySearchCopy.title}
+              body={emptySearchCopy.body}
               actionLabel="Clear search"
               onAction={() => setSearch("")}
               theme={theme}
@@ -136,11 +273,16 @@ export function LibraryScreen({
                 key={tab}
                 accessibilityRole="tab"
                 accessibilityLabel={tab}
-                accessibilityState={{ selected: activeTab === tab }}
-                onPress={() => setActiveTab(tab)}
-                style={({ pressed }) => [styles.libraryTab, pressed && styles.libraryTabPressed, activeTab === tab && { borderBottomColor: theme.accent }]}
+                accessibilityState={{ selected: activeLibraryTab === tab }}
+                onPress={() => {
+                  setClearHistoryArmed(false);
+                  setLastRemovedOpenedItem(null);
+                  setLastClearedOpenedHistory(null);
+                  setActiveLibraryTab(tab);
+                }}
+                style={({ pressed }) => [styles.libraryTab, pressed && styles.libraryTabPressed, activeLibraryTab === tab && { borderBottomColor: theme.accent }]}
               >
-                <Text style={[styles.libraryTabText, { color: activeTab === tab ? theme.accent : theme.muted }]}>{tab}</Text>
+                <Text style={[styles.libraryTabText, { color: activeLibraryTab === tab ? theme.accent : theme.muted }]}>{tab}</Text>
               </Pressable>
             ))}
           </View>
@@ -149,11 +291,19 @@ export function LibraryScreen({
             <Text style={[styles.libraryTabContextText, { color: theme.muted }]}>{tabContext.body}</Text>
           </View>
           <LibraryTabContent
-            activeTab={activeTab}
+            activeTab={activeLibraryTab}
             savedUserItems={savedUserItems}
             regularSavedItems={regularSavedItems}
             usefulItems={usefulItems}
             openedItems={openedItems}
+            openedItemIds={openedItemIdSet}
+            clearHistoryArmed={clearHistoryArmed}
+            lastClearedOpenedHistory={lastClearedOpenedHistory}
+            lastRemovedOpenedItem={lastRemovedOpenedItem}
+            onClearOpenedHistory={clearOpenedHistory}
+            onRemoveOpenedItem={removeOpenedItem}
+            onUndoOpenedHistoryClear={undoOpenedHistoryClear}
+            onUndoOpenedItemRemoval={undoOpenedItemRemoval}
             theme={theme}
             onOpenDetail={onOpenDetail}
             onOpenShelf={setActiveShelf}
@@ -164,12 +314,155 @@ export function LibraryScreen({
   );
 }
 
+function getLibrarySearchStatusCues(item: FeedItem, savedItemIds: string[], usefulItemIds: string[], openedItemIds: string[]) {
+  const cues: Array<{ label: string; icon: keyof typeof Ionicons.glyphMap }> = [];
+
+  if (savedItemIds.includes(item.id)) cues.push({ label: "Saved", icon: "bookmark" });
+  if (openedItemIds.includes(item.id)) cues.push({ label: "Opened", icon: "time-outline" });
+  if (usefulItemIds.includes(item.id)) cues.push({ label: "Marked useful", icon: "checkmark-circle-outline" });
+  if (item.authorId === "you") cues.push({ label: "From you", icon: "create-outline" });
+
+  return cues;
+}
+
+function getLibraryEmptySearchCopy(query: string) {
+  const normalizedQuery = normalizeLibrarySearchText(query);
+  if (normalizedQuery === "saved") {
+    return {
+      title: "No saved pieces yet.",
+      body: "Save a guide, question, recommendation, or source when you want Weevrbird to keep it close."
+    };
+  }
+  if (normalizedQuery === "opened") {
+    return {
+      title: "No opened history yet.",
+      body: "Open a piece from Today or a Smartfeed and it will appear here privately."
+    };
+  }
+  if (normalizedQuery === "useful" || normalizedQuery === "marked useful") {
+    return {
+      title: "Nothing marked useful yet.",
+      body: "Mark pieces useful when they helped you decide, understand, or return later."
+    };
+  }
+  if (normalizedQuery === "from you" || normalizedQuery === "contributions") {
+    return {
+      title: "No contributions from you yet.",
+      body: "Write privately first, then choose the Smartfeed where it belongs."
+    };
+  }
+
+  return {
+    title: `No results for "${query}".`,
+    body: "Try a feed name, source, place, shelf, or contribution. Library searches saved pieces, opened history, and conversations."
+  };
+}
+
+function getLibrarySearchResults(
+  query: string,
+  allItems: FeedItem[],
+  contributions: SubmittedContribution[],
+  savedItemIds: string[],
+  usefulItemIds: string[],
+  openedItemIds: string[]
+) {
+  const normalizedQuery = normalizeLibrarySearchText(query);
+  if (normalizedQuery === "saved") return allItems.filter((item) => savedItemIds.includes(item.id));
+  if (normalizedQuery === "opened") return openedItemIds.map((itemId) => allItems.find((item) => item.id === itemId)).filter((item): item is FeedItem => !!item);
+  if (normalizedQuery === "useful" || normalizedQuery === "marked useful") return allItems.filter((item) => usefulItemIds.includes(item.id));
+  if (normalizedQuery === "from you" || normalizedQuery === "contributions") return allItems.filter((item) => item.authorId === "you");
+
+  return localDataService.searchLibrary(query, contributions);
+}
+
+function getLibraryShelfSearchResults(query: string) {
+  const normalizedQuery = normalizeLibrarySearchText(query);
+  if (!normalizedQuery) return [];
+
+  return profileCollections.filter((collection) => {
+    const haystack = normalizeLibrarySearchText(`${collection.title} ${collection.description} ${collection.meta}`);
+    return haystack.includes(normalizedQuery);
+  });
+}
+
+function getLibraryQuickSearches(
+  selectedInterests: string[],
+  allItems: FeedItem[],
+  savedItemIds: string[],
+  usefulItemIds: string[],
+  openedItemIds: string[]
+) {
+  const availableItemIds = new Set(allItems.map((item) => item.id));
+  const savedCount = savedItemIds.filter((itemId) => availableItemIds.has(itemId)).length;
+  const openedCount = openedItemIds.filter((itemId) => availableItemIds.has(itemId)).length;
+  const usefulCount = usefulItemIds.filter((itemId) => availableItemIds.has(itemId)).length;
+  const fromYouCount = allItems.filter((item) => item.authorId === "you").length;
+  const statusFilters: QuickSearch[] = [];
+
+  if (savedCount > 0) statusFilters.push({ label: "Saved", query: "Saved", count: savedCount });
+  if (openedCount > 0) statusFilters.push({ label: "Opened", query: "Opened", count: openedCount });
+  if (usefulCount > 0) statusFilters.push({ label: "Useful", query: "Useful", count: usefulCount });
+  if (fromYouCount > 0) statusFilters.push({ label: "From you", query: "From you", count: fromYouCount });
+
+  const defaults: QuickSearch[] = statusFilters.concat(
+    ["Atlanta", "attention", "artists"].map((query) => ({ label: query, query }))
+  );
+  const suggestions: QuickSearch[] = defaults.concat(selectedInterests.slice(0, 3).map((query) => ({ label: query, query })));
+
+  return Array.from(new Map(suggestions.map((item) => [normalizeLibrarySearchText(item.query), item])).values()).slice(0, 9);
+}
+
+function getLibraryQuickSearchIcon(query: string): keyof typeof Ionicons.glyphMap {
+  const normalizedQuery = normalizeLibrarySearchText(query);
+  if (normalizedQuery === "saved") return "bookmark-outline";
+  if (normalizedQuery === "opened") return "time-outline";
+  if (normalizedQuery === "useful") return "checkmark-circle-outline";
+  if (normalizedQuery === "from you") return "create-outline";
+  if (normalizedQuery.includes("atlanta")) return "map-outline";
+  if (normalizedQuery.includes("artist")) return "construct-outline";
+  if (normalizedQuery.includes("attention")) return "book-outline";
+  return "search-outline";
+}
+
+function normalizeLibrarySearchText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function rankLibrarySearchResults(items: FeedItem[], savedItemIds: string[], usefulItemIds: string[], openedItemIds: string[]) {
+  return items.slice().sort((a, b) => {
+    const scoreDifference = getLibrarySearchRank(b, savedItemIds, usefulItemIds, openedItemIds) - getLibrarySearchRank(a, savedItemIds, usefulItemIds, openedItemIds);
+    if (scoreDifference !== 0) return scoreDifference;
+
+    const openedDifference = openedItemIds.indexOf(a.id) - openedItemIds.indexOf(b.id);
+    if (openedItemIds.includes(a.id) && openedItemIds.includes(b.id) && openedDifference !== 0) return openedDifference;
+
+    return 0;
+  });
+}
+
+function getLibrarySearchRank(item: FeedItem, savedItemIds: string[], usefulItemIds: string[], openedItemIds: string[]) {
+  let score = 0;
+  if (savedItemIds.includes(item.id)) score += 8;
+  if (openedItemIds.includes(item.id)) score += 5;
+  if (usefulItemIds.includes(item.id)) score += 3;
+  if (item.authorId === "you") score += 6;
+  return score;
+}
+
 function LibraryTabContent({
   activeTab,
   savedUserItems,
   regularSavedItems,
   usefulItems,
   openedItems,
+  openedItemIds,
+  clearHistoryArmed,
+  lastClearedOpenedHistory,
+  lastRemovedOpenedItem,
+  onClearOpenedHistory,
+  onRemoveOpenedItem,
+  onUndoOpenedHistoryClear,
+  onUndoOpenedItemRemoval,
   theme,
   onOpenDetail,
   onOpenShelf
@@ -179,6 +472,14 @@ function LibraryTabContent({
   regularSavedItems: FeedItem[];
   usefulItems: FeedItem[];
   openedItems: FeedItem[];
+  openedItemIds: Set<string>;
+  clearHistoryArmed: boolean;
+  lastClearedOpenedHistory: { itemIds: string[]; count: number } | null;
+  lastRemovedOpenedItem: Pick<FeedItem, "id" | "title"> | null;
+  onClearOpenedHistory: () => void;
+  onRemoveOpenedItem: (item: FeedItem) => void;
+  onUndoOpenedHistoryClear: () => void;
+  onUndoOpenedItemRemoval: () => void;
   theme: AppTheme;
   onOpenDetail: (item: FeedItem) => void;
   onOpenShelf: (collection: LibraryCollection) => void;
@@ -206,16 +507,69 @@ function LibraryTabContent({
   if (activeTab === "Opened") {
     return openedItems.length > 0 ? (
       <>
-        <SectionHeader title="Private reading history" theme={theme} />
-        {openedItems.map((item) => <LibraryItem key={`library-opened-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+        <SectionHeader
+          title="Private reading history"
+          action={clearHistoryArmed ? "Tap again to clear" : "Clear history"}
+          actionAccessibilityLabel={clearHistoryArmed ? "Confirm clear private reading history" : "Clear private reading history"}
+          onAction={onClearOpenedHistory}
+          theme={theme}
+        />
+        {lastRemovedOpenedItem && (
+          <UndoNotice
+            title="Removed from opened history"
+            itemTitle={lastRemovedOpenedItem.title}
+            theme={theme}
+            onUndo={onUndoOpenedItemRemoval}
+          />
+        )}
+        {lastClearedOpenedHistory && (
+          <UndoNotice
+            title="Cleared opened history"
+            itemTitle={`${lastClearedOpenedHistory.count} ${lastClearedOpenedHistory.count === 1 ? "piece" : "pieces"} removed`}
+            theme={theme}
+            onUndo={onUndoOpenedHistoryClear}
+          />
+        )}
+        {openedItems.map((item) => (
+          <LibraryItem
+            key={`library-opened-${item.id}`}
+            item={item}
+            theme={theme}
+            labelOverride="Opened privately"
+            reasonOverride="Opened from your issue"
+            actionLabel="Remove"
+            actionIcon="close-circle-outline"
+            showSavedCue={item.saved}
+            onAction={() => onRemoveOpenedItem(item)}
+            onOpen={() => onOpenDetail(item)}
+          />
+        ))}
       </>
     ) : (
-      <EmptyState
-        icon="lock-closed-outline"
-        title="No private reading history yet."
-        body="Open a piece from Today or a Smartfeed and it will appear here for you only. You can return to it without making it public or saving it."
-        theme={theme}
-      />
+      <>
+        {lastRemovedOpenedItem && (
+          <UndoNotice
+            title="Removed from opened history"
+            itemTitle={lastRemovedOpenedItem.title}
+            theme={theme}
+            onUndo={onUndoOpenedItemRemoval}
+          />
+        )}
+        {lastClearedOpenedHistory && (
+          <UndoNotice
+            title="Cleared opened history"
+            itemTitle={`${lastClearedOpenedHistory.count} ${lastClearedOpenedHistory.count === 1 ? "piece" : "pieces"} removed`}
+            theme={theme}
+            onUndo={onUndoOpenedHistoryClear}
+          />
+        )}
+        <EmptyState
+          icon="lock-closed-outline"
+          title="No private reading history yet."
+          body="Open a piece from Today or a Smartfeed and it will appear here for you only. You can return to it without making it public or saving it."
+          theme={theme}
+        />
+      </>
     );
   }
 
@@ -243,7 +597,7 @@ function LibraryTabContent({
       {regularSavedItems.length > 0 && (
         <>
           <SectionHeader title={savedUserItems.length > 0 ? "Saved from Weevrbird" : "Saved for later"} theme={theme} />
-          {regularSavedItems.map((item) => <LibraryItem key={`library-saved-${item.id}`} item={item} theme={theme} onOpen={() => onOpenDetail(item)} />)}
+          {regularSavedItems.map((item) => <LibraryItem key={`library-saved-${item.id}`} item={item} theme={theme} opened={openedItemIds.has(item.id)} onOpen={() => onOpenDetail(item)} />)}
         </>
       )}
       {usefulItems.length > 0 && (
@@ -254,7 +608,7 @@ function LibraryTabContent({
               key={`library-useful-${item.id}`}
               item={item}
               theme={theme}
-              labelOverride="Useful signal"
+              labelOverride="Worth returning to"
               reasonOverride="Marked useful from your issue"
               onOpen={() => onOpenDetail(item)}
             />
@@ -262,6 +616,31 @@ function LibraryTabContent({
         </>
       )}
     </>
+  );
+}
+
+function UndoNotice({ title, itemTitle, theme, onUndo }: {
+  title: string;
+  itemTitle?: string;
+  theme: AppTheme;
+  onUndo: () => void;
+}) {
+  return (
+    <View style={[styles.undoNotice, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+      <View style={styles.undoCopy}>
+        <Text style={[styles.undoTitle, { color: theme.text }]}>{title}</Text>
+        {itemTitle && <Text style={[styles.meta, { color: theme.muted }]} numberOfLines={1}>{itemTitle}</Text>}
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={itemTitle ? `Undo ${title.toLowerCase()}: ${itemTitle}` : `Undo ${title.toLowerCase()}`}
+        onPress={onUndo}
+        style={({ pressed }) => [styles.undoButton, pressed && styles.libraryItemActionPressed, { backgroundColor: theme.panelAlt }]}
+      >
+        <Ionicons name="arrow-undo-outline" color={theme.accent} size={15} />
+        <Text style={[styles.undoButtonText, { color: theme.accent }]}>Undo</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -337,7 +716,7 @@ function LibraryShelfDetail({ collection, theme, selectedInterests, onBack, onOp
 }
 
 function getShelfPurpose(collection: LibraryCollection) {
-  if (collection.title.includes("Atlanta")) return "A local memory shelf for places, plans, and city signals you expect to use again.";
+  if (collection.title.includes("Atlanta")) return "A local memory shelf for places, plans, and city notes you expect to use again.";
   if (collection.title.includes("attention")) return "A slower reading shelf for ideas that shape how you want to think and design.";
   if (collection.title.includes("artists")) return "A practical shelf for tools, resources, and references worth keeping close.";
 
@@ -391,9 +770,7 @@ function ShelfContributorRow({ person, item, selectedInterests, theme }: {
 
   return (
     <View style={styles.shelfContributorRow}>
-      <View style={[styles.shelfContributorAvatar, { borderColor: `${theme.accent}44`, backgroundColor: `${theme.accent}12` }]}>
-        <Text style={[styles.shelfContributorAvatarText, { color: theme.accent }]}>{avatars[person.avatar] ?? person.displayName.charAt(0)}</Text>
-      </View>
+      <ProfileMark index={person.avatar} size={38} />
       <View style={styles.shelfContributorCopy}>
         <View style={styles.shelfContributorTopLine}>
           <Text style={[styles.shelfContributorName, { color: theme.text }]}>{person.displayName}</Text>
@@ -441,13 +818,7 @@ function formatList(items: string[]) {
 }
 
 function formatContributionType(itemType: FeedItem["itemType"]) {
-  if (itemType === "recommendation") return "Recommendation";
-  if (itemType === "question") return "Question";
-  if (itemType === "discussion") return "Discussion";
-  if (itemType === "long_read") return "Long read";
-  if (itemType === "link") return "Link";
-  if (itemType === "note") return "Note";
-  return "Contribution";
+  return formatFeedItemType(itemType);
 }
 
 function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
@@ -486,22 +857,29 @@ function ShelfRow({ collection, itemCount, theme, onOpen }: {
   );
 }
 
-function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
+function LibraryItem({ item, theme, labelOverride, reasonOverride, actionLabel, actionIcon, opened = false, showSavedCue = false, onAction, onOpen }: {
   item: FeedItem;
   theme: AppTheme;
   labelOverride?: string;
   reasonOverride?: string;
+  actionLabel?: string;
+  actionIcon?: keyof typeof Ionicons.glyphMap;
+  opened?: boolean;
+  showSavedCue?: boolean;
+  onAction?: () => void;
   onOpen: () => void;
 }) {
+  const itemTitle = item.title ?? "this piece";
+  const publishedLabel = item.publishedAt || "Recent";
   const isUserContribution = item.authorId === "you";
   const icon = isUserContribution ? "checkmark-circle-outline" : item.imported ? "book-outline" : "chatbubble-ellipses-outline";
   const reason = reasonOverride ?? getSaveReason(item);
   const whySaved = getWhySavedNote(item);
-  const label = labelOverride ?? (isUserContribution ? "From You" : item.imported ? "Reading" : item.itemType.replace("_", " "));
+  const label = labelOverride ?? (isUserContribution ? "From You" : item.imported ? "Reading" : formatFeedItemType(item.itemType));
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title}`}
+      accessibilityLabel={`Open ${itemTitle}`}
       onPress={onOpen}
       style={({ pressed }) => [styles.libraryItem, pressed && styles.libraryItemPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
     >
@@ -510,17 +888,44 @@ function LibraryItem({ item, theme, labelOverride, reasonOverride, onOpen }: {
       </View>
       <View style={styles.libraryCopy}>
         <Text style={[styles.libraryMeta, { color: theme.accent }]}>{label}</Text>
-        <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
-        <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird"} / {item.publishedAt}</Text>
+        <Text style={[styles.libraryTitle, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
+        <Text style={[styles.meta, { color: theme.muted }]}>{item.sourceName ?? "Weevrbird pick"} / {publishedLabel}</Text>
         <Text style={[styles.libraryReason, { color: theme.muted }]}>{reason}</Text>
+        {opened && (
+          <View style={[styles.whySavedRow, { backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="time-outline" color={theme.accent} size={14} />
+            <Text style={[styles.whySavedText, { color: theme.accent }]}>Opened before</Text>
+          </View>
+        )}
+        {showSavedCue && (
+          <View style={[styles.whySavedRow, { backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="bookmark" color={theme.accent} size={14} />
+            <Text style={[styles.whySavedText, { color: theme.accent }]}>Saved in Library</Text>
+          </View>
+        )}
         {whySaved && (
           <View style={[styles.whySavedRow, { backgroundColor: theme.panelAlt }]}>
-            <Ionicons name="sparkles-outline" color={theme.accent} size={14} />
+            <Ionicons name="checkmark-circle-outline" color={theme.accent} size={14} />
             <Text style={[styles.whySavedText, { color: theme.accent }]}>{whySaved}</Text>
           </View>
         )}
       </View>
-      <Ionicons name={item.saved ? "bookmark" : "bookmark-outline"} color={theme.accent} size={20} />
+      {onAction && actionLabel ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${actionLabel} ${itemTitle}`}
+          onPress={(event) => {
+            event.stopPropagation();
+            onAction();
+          }}
+          style={({ pressed }) => [styles.libraryItemAction, pressed && styles.libraryItemActionPressed]}
+        >
+          <Ionicons name={actionIcon ?? "ellipsis-horizontal-circle-outline"} color={theme.muted} size={19} />
+          <Text style={[styles.libraryItemActionText, { color: theme.muted }]}>{actionLabel}</Text>
+        </Pressable>
+      ) : (
+        <Ionicons name={item.saved ? "bookmark" : "bookmark-outline"} color={theme.accent} size={20} />
+      )}
     </Pressable>
   );
 }
@@ -615,6 +1020,69 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15
   },
+  searchClearButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  searchClearButtonPressed: {
+    opacity: 0.68,
+    transform: [{ scale: 0.94 }]
+  },
+  quickSearchRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: -8
+  },
+  quickSearchChip: {
+    minHeight: 32,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4
+  },
+  quickSearchChipPressed: {
+    opacity: 0.72,
+    transform: [{ scale: 0.97 }]
+  },
+  quickSearchText: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold"
+  },
+  quickSearchCount: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold"
+  },
+  searchResultStack: {
+    gap: spacing.xs
+  },
+  searchStatusRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs
+  },
+  searchStatusPill: {
+    minHeight: 28,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4
+  },
+  searchStatusText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontFamily: "Inter_700Bold"
+  },
   libraryTabs: {
     flexDirection: "row",
     borderBottomWidth: 1,
@@ -644,6 +1112,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontFamily: "Inter_600SemiBold"
+  },
+  undoNotice: {
+    borderWidth: 1,
+    borderRadius: 10,
+    minHeight: 58,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  undoCopy: {
+    flex: 1,
+    gap: 2
+  },
+  undoTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  undoButton: {
+    minHeight: 34,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.sm,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5
+  },
+  undoButtonText: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold"
   },
   libraryItem: {
     borderWidth: 1,
@@ -790,6 +1290,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontFamily: "Inter_600SemiBold"
+  },
+  libraryItemAction: {
+    minWidth: 62,
+    minHeight: 34,
+    borderRadius: radii.round,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2
+  },
+  libraryItemActionPressed: {
+    opacity: 0.64,
+    transform: [{ scale: 0.96 }]
+  },
+  libraryItemActionText: {
+    fontSize: 10,
+    lineHeight: 13,
+    fontFamily: "Inter_700Bold"
   },
   whySavedRow: {
     alignSelf: "flex-start",

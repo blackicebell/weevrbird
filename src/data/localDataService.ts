@@ -1,13 +1,13 @@
 import { feedItems, interests, launchFeeds, people } from "./mockData";
 import {
   buildTodayEdition,
-  getArchiveItems as selectArchiveItems,
   getContributionActivityItems,
   getFeedById,
   getDefaultSavedItemIds,
   getJoinedFeeds,
   getLibraryItems,
   getPlacedContributionFeedItems,
+  getReturnItems as selectReturnItems,
   getSavedItems as selectSavedItems,
   getShelfItems as selectShelfItems,
   getVisibleFeedItems,
@@ -56,8 +56,8 @@ export const localDataService = {
   getSavedItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
     return selectSavedItems(getLibraryItems(feedItems, contributions), state);
   },
-  getArchiveItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
-    return selectArchiveItems(getLibraryItems(feedItems, contributions), state);
+  getReturnItems(state: UserContentState, contributions: SubmittedContribution[] = []) {
+    return selectReturnItems(getLibraryItems(feedItems, contributions), state);
   },
   searchLibrary(query: string, contributions: SubmittedContribution[] = []) {
     return searchLibraryItems(getLibraryItems(feedItems, contributions), query);

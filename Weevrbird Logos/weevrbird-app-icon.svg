@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Weevrbird app icon</title>
+  <desc id="desc">Square Weevrbird app icon with a simplified woven weaverbird mark.</desc>
+  <defs>
+    <clipPath id="iconMask">
+      <rect x="64" y="64" width="896" height="896" rx="220"/>
+    </clipPath>
+    <clipPath id="bodyClip">
+      <path d="M226 554c0-166 124-288 295-288 160 0 279 103 279 248 0 153-131 273-296 273-159 0-278-96-278-233Z"/>
+    </clipPath>
+    <linearGradient id="paperGradient" x1="126" x2="898" y1="93" y2="954" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFDF8"/>
+      <stop offset=".52" stop-color="#E9F7F1"/>
+      <stop offset="1" stop-color="#D6F1E5"/>
+    </linearGradient>
+    <linearGradient id="bodyGradient" x1="230" x2="781" y1="275" y2="779" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DBA85B"/>
+      <stop offset=".46" stop-color="#A6B39A"/>
+      <stop offset="1" stop-color="#0F3D2E"/>
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#iconMask)">
+    <rect width="1024" height="1024" fill="url(#paperGradient)"/>
+    <path fill="#D6F1E5" d="M678-38 1034 392 826 1010 398 1001 240 465z" opacity=".54"/>
+    <path fill="none" stroke="#0F3D2E" stroke-opacity=".08" stroke-width="3" d="M-38 656c159-55 301-62 428-20 119 39 229 25 330-43 104-70 225-94 365-72"/>
+    <path fill="#0F3D2E" d="M206 559c0-181 137-317 323-317 176 0 307 114 307 274 0 169-144 303-327 303-178 0-303-107-303-260Z"/>
+    <path fill="url(#bodyGradient)" d="M226 554c0-166 124-288 295-288 160 0 279 103 279 248 0 153-131 273-296 273-159 0-278-96-278-233Z"/>
+    <g clip-path="url(#bodyClip)" fill="none" stroke-linecap="round">
+      <path stroke="#FFFDF8" stroke-opacity=".76" stroke-width="46" d="M158 466c153-82 311-93 475-33 95 35 169 42 255 2"/>
+      <path stroke="#0F3D2E" stroke-opacity=".64" stroke-width="38" d="M145 553c175-76 335-74 480 5 91 50 180 56 284 19"/>
+      <path stroke="#FFFDF8" stroke-opacity=".58" stroke-width="34" d="M167 647c144-54 277-47 399 22 92 52 187 72 295 41"/>
+      <path stroke="#DBA85B" stroke-opacity=".9" stroke-width="31" d="M247 366c35 141 123 251 265 330"/>
+      <path stroke="#C86F4A" stroke-opacity=".78" stroke-width="28" d="M363 304c28 166 121 302 282 407"/>
+      <path stroke="#FFFDF8" stroke-opacity=".42" stroke-width="24" d="M500 287c-2 164 60 313 184 446"/>
+    </g>
+    <path fill="#FFFDF8" fill-opacity=".9" d="M387 586c32-75 97-126 176-137 65-9 125 10 172 48-42 65-105 110-182 122-62 10-120 0-166-33Z"/>
+    <path fill="#0F3D2E" fill-opacity=".88" d="M435 579c29-44 75-71 128-78 39-5 76 2 109 20-34 30-72 48-114 55-45 7-85 2-123 3Z"/>
+    <path fill="#0F3D2E" d="M655 229c73 0 133 47 154 113l89 32-81 44c-14 80-82 140-164 140-90 0-164-73-164-164s75-165 166-165Z"/>
+    <path fill="#A6B39A" d="M645 275c55 0 100 44 100 100s-45 100-100 100-99-44-99-100 44-100 99-100Z"/>
+    <path fill="#FFFDF8" d="M688 360c18 0 31 14 31 31s-13 31-31 31-31-14-31-31 14-31 31-31Z"/>
+    <path fill="#0E1715" d="M699 374c9 0 17 8 17 17s-8 17-17 17-17-8-17-17 8-17 17-17Z"/>
+    <path fill="#DBA85B" d="M793 356 923 403 792 445c17-29 17-60 1-89Z"/>
+    <path fill="#0F3D2E" d="M268 715 92 834c44-89 100-160 167-210 10 33 13 61 9 91Z"/>
+    <path fill="#A6B39A" d="M303 755 193 931c11-98 41-180 90-247 20 24 26 47 20 71Z"/>
+  </g>
+</svg>

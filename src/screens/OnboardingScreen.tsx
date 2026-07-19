@@ -1,14 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
-import { avatars, OnboardingStep } from "../app/editorial";
+import { avatarMarks, OnboardingStep } from "../app/editorial";
+import { normalizeProfileHandle } from "../app/appState";
+import { ProfileMark } from "../components/ProfileMark";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { localDataService } from "../data/localDataService";
-import { palette, radii, spacing } from "../theme/tokens";
+import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 
-const logo = require("../../Weevrbird Logos/PNG-01.png");
+const logo = require("../../assets/icon.png");
 
 export function OnboardingScreen(props: {
   step: OnboardingStep;
@@ -19,25 +21,68 @@ export function OnboardingScreen(props: {
   setSelectedInterests: (next: string[]) => void;
   selectedAvatar: number;
   setSelectedAvatar: (next: number) => void;
+  profileName: string;
+  setProfileName: (next: string) => void;
+  profileHandle: string;
+  setProfileHandle: (next: string) => void;
+  profileBio: string;
+  setProfileBio: (next: string) => void;
   finish: () => void;
   theme: AppTheme;
 }) {
-  const { step, setStep, selectedCity, setSelectedCity, selectedInterests, setSelectedInterests, selectedAvatar, setSelectedAvatar, finish, theme } = props;
-  const cityOptions = ["Atlanta", "Decatur", "Brooklyn", "Houston", "Chicago", "Washington DC"];
-  const progressSteps: OnboardingStep[] = ["welcome", "city", "interests", "avatar", "ready"];
+  const {
+    step,
+    setStep,
+    selectedCity,
+    setSelectedCity,
+    selectedInterests,
+    setSelectedInterests,
+    selectedAvatar,
+    setSelectedAvatar,
+    profileName,
+    setProfileName,
+    profileHandle,
+    setProfileHandle,
+    profileBio,
+    setProfileBio,
+    finish,
+    theme
+  } = props;
+  const locationOptions = [
+    "Global",
+    "Atlanta",
+    "Brooklyn",
+    "Houston",
+    "Chicago",
+    "Washington DC",
+    "Lagos",
+    "London",
+    "Toronto",
+    "United States",
+    "Nigeria",
+    "United Kingdom"
+  ];
+  const progressSteps: OnboardingStep[] = ["welcome", "city", "interests", "avatar", "profile", "ready"];
   const currentStepIndex = progressSteps.indexOf(step);
+  const canGoBack = currentStepIndex > 0;
   const previewInterests = selectedInterests.filter((interest) => interest !== selectedCity);
   const interests = localDataService.getInterests();
+  const selectedInterestCount = selectedInterests.filter((interest) => interest !== selectedCity).length;
   const issueBuildItems = [
     { label: selectedCity, icon: "location-outline" as keyof typeof Ionicons.glyphMap },
-    { label: previewInterests[0] ?? "Local culture", icon: "albums-outline" as keyof typeof Ionicons.glyphMap },
-    { label: previewInterests[1] ?? "Useful conversations", icon: "chatbubbles-outline" as keyof typeof Ionicons.glyphMap },
-    { label: "Personal archive", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap }
+    { label: previewInterests[0] ? `${previewInterests[0]} section` : "Stories worth reading", icon: "albums-outline" as keyof typeof Ionicons.glyphMap },
+    { label: previewInterests[1] ? `${previewInterests[1]} section` : "Useful community notes", icon: "chatbubbles-outline" as keyof typeof Ionicons.glyphMap },
+    { label: "Saved pieces stay in your Library", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap }
   ];
   const productPromises = [
-    { title: "Read finite issues", body: "Start with what changed and stop when you are caught up.", icon: "newspaper-outline" as keyof typeof Ionicons.glyphMap },
-    { title: "Save useful signal", body: "Keep the pieces, places, and questions you may need later.", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap },
-    { title: "Contribute privately", body: "Write first, then place it only where it belongs.", icon: "create-outline" as keyof typeof Ionicons.glyphMap }
+    { title: "A daily edition", body: "A short set of articles, updates, questions, and recommendations selected around your interests.", icon: "newspaper-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "Smartfeeds", body: "Focused sections for a city, topic, or community. They stay finite so you can actually catch up.", icon: "albums-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "A useful library", body: "Save links, places, reads, and conversations so good information does not disappear.", icon: "bookmark-outline" as keyof typeof Ionicons.glyphMap }
+  ];
+  const howItWorks = [
+    { title: "We gather", body: "Trusted outside sources and community posts become candidates.", icon: "cloud-download-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "We filter", body: "Your city, interests, saved items, and muted topics shape what appears.", icon: "options-outline" as keyof typeof Ionicons.glyphMap },
+    { title: "You decide", body: "Read, save, or add your own note. Nothing has to become a loud public post.", icon: "checkmark-done-outline" as keyof typeof Ionicons.glyphMap }
   ];
 
   const toggleInterest = (interest: string) => {
@@ -49,20 +94,56 @@ export function OnboardingScreen(props: {
     }
   };
 
+  const selectLocation = (location: string) => {
+    const previousLocations = new Set(locationOptions);
+    const selectedWithoutOldLocation = selectedInterests.filter((interest) => !previousLocations.has(interest));
+
+    setSelectedCity(location);
+    setSelectedInterests(Array.from(new Set([location, ...selectedWithoutOldLocation])));
+  };
+
+  const goBack = () => {
+    const previousStep = progressSteps[currentStepIndex - 1];
+    if (previousStep) setStep(previousStep);
+  };
+
+  const canContinueInterests = selectedInterestCount >= 3;
+  const cleanHandle = normalizeProfileHandle(profileHandle);
+  const canContinueProfile = profileName.trim().length >= 2 && cleanHandle.length >= 3 && profileBio.trim().length >= 24;
+
   return (
     <View style={styles.onboarding}>
       <View style={styles.brandRow}>
         <Image source={logo} style={styles.logo} resizeMode="contain" />
         <Text style={[styles.wordmark, { color: theme.text }]}>Weevrbird</Text>
       </View>
-      <OnboardingProgress index={currentStepIndex} total={progressSteps.length} theme={theme} />
+      <View style={styles.progressHeader}>
+        {canGoBack ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back one onboarding step"
+            onPress={goBack}
+            style={({ pressed }) => [styles.backStepButton, pressed && styles.pressableChoicePressed]}
+          >
+            <Ionicons name="chevron-back" color={theme.text} size={18} />
+            <Text style={[styles.backStepText, { color: theme.text }]}>Back</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.backStepPlaceholder} />
+        )}
+        <OnboardingProgress index={currentStepIndex} total={progressSteps.length} theme={theme} />
+      </View>
 
+      <ScrollView
+        contentContainerStyle={styles.onboardingScroll}
+        showsVerticalScrollIndicator={false}
+      >
       {step === "welcome" && (
         <View style={styles.onboardingPanel}>
-          <Text style={[styles.kicker, { color: theme.accent }]}>Your first issue starts here.</Text>
-          <Text style={[styles.heroTitle, { color: theme.text }]}>A calmer way to follow what is worth your attention.</Text>
+          <Text style={[styles.kicker, { color: theme.accent }]}>A personal information app</Text>
+          <Text style={[styles.heroTitle, { color: theme.text }]}>Keep up with what is useful without opening five different feeds.</Text>
           <Text style={[styles.body, { color: theme.muted }]}>
-            Pick a city, a few interests, and a pen-name style. Weevrbird turns them into one useful daily issue, a personal archive, and a quieter way to contribute.
+            Weevrbird builds a daily edition from trusted sources, local updates, community recommendations, and your saved context. It is made for catching up, keeping what matters, and contributing with more intent.
           </Text>
           <View style={[styles.promisePanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
             {productPromises.map((promise) => (
@@ -75,23 +156,29 @@ export function OnboardingScreen(props: {
 
       {step === "city" && (
         <View style={styles.onboardingPanel}>
-          <Text style={[styles.kicker, { color: theme.accent }]}>Set the local lens.</Text>
-          <Text style={[styles.screenTitle, { color: theme.text }]}>Where should your issue start?</Text>
-          <Text style={[styles.body, { color: theme.muted }]}>No precise location needed. This simply gives Today a place to begin.</Text>
+          <Text style={[styles.kicker, { color: theme.accent }]}>Start with place</Text>
+          <Text style={[styles.screenTitle, { color: theme.text }]}>What location should Today understand first?</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Choose a city, country, or Global. This helps Weevrbird start with the right local guides, official updates, events, and broader sources. You can change it later.</Text>
           <View style={styles.chipWrap}>
-            {cityOptions.map((city) => (
-              <Chip key={city} label={city} selected={selectedCity === city} onPress={() => setSelectedCity(city)} theme={theme} />
+            {locationOptions.map((location) => (
+              <Chip key={location} label={location} selected={selectedCity === location} onPress={() => selectLocation(location)} theme={theme} />
             ))}
           </View>
+          <InlineNote
+            icon="shield-checkmark-outline"
+            title="No exact location needed"
+            body="Weevrbird only needs a broad starting point for the first edition."
+            theme={theme}
+          />
           <PrimaryButton label="Continue" icon="arrow-forward" onPress={() => setStep("interests")} theme={theme} />
         </View>
       )}
 
       {step === "interests" && (
         <View style={styles.onboardingPanel}>
-          <Text style={[styles.kicker, { color: theme.accent }]}>Choose the sections.</Text>
-          <Text style={[styles.screenTitle, { color: theme.text }]}>What should Weevrbird watch for?</Text>
-          <Text style={[styles.body, { color: theme.muted }]}>Pick at least three. These become the first sections in your issue, and you can tune them later.</Text>
+          <Text style={[styles.kicker, { color: theme.accent }]}>Shape your sections</Text>
+          <Text style={[styles.screenTitle, { color: theme.text }]}>What should Weevrbird pay attention to?</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Pick at least three. These become your first Smartfeeds: focused sections that combine outside sources, community posts, and saved context.</Text>
           <View style={styles.cardGrid}>
             {interests.slice(0, 10).map((interest) => (
               <Pressable
@@ -111,30 +198,90 @@ export function OnboardingScreen(props: {
               </Pressable>
             ))}
           </View>
-          <PrimaryButton label="Continue" icon="arrow-forward" onPress={() => setStep("avatar")} theme={theme} />
+          <Text style={[styles.selectionHint, { color: canContinueInterests ? theme.muted : theme.accent }]}>
+            {canContinueInterests ? `${selectedInterestCount} sections selected` : `Choose ${3 - selectedInterestCount} more to continue`}
+          </Text>
+          <PrimaryButton label="Continue" icon="arrow-forward" onPress={() => setStep("avatar")} theme={theme} disabled={!canContinueInterests} />
         </View>
       )}
 
       {step === "avatar" && (
         <View style={styles.onboardingPanel}>
-          <Text style={[styles.kicker, { color: theme.accent }]}>Choose your mark.</Text>
-          <Text style={[styles.screenTitle, { color: theme.text }]}>Pick a quiet profile mark</Text>
-          <Text style={[styles.body, { color: theme.muted }]}>Profiles start with a simple letter mark so the focus stays on what people notice, save, and place into the right Smartfeed.</Text>
+          <Text style={[styles.kicker, { color: theme.accent }]}>Your profile starts private</Text>
+          <Text style={[styles.screenTitle, { color: theme.text }]}>Choose a simple profile mark.</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Your profile is built around what you notice, save, and contribute. A small bird mark keeps the focus on your taste and context, not popularity.</Text>
           <View style={styles.avatarGrid}>
-            {avatars.map((letter, index) => (
-              <AvatarButton key={letter} label={letter} index={index} selected={selectedAvatar === index} onPress={() => setSelectedAvatar(index)} theme={theme} />
+            {avatarMarks.map((mark, index) => (
+              <AvatarButton key={mark.id} index={index} selected={selectedAvatar === index} onPress={() => setSelectedAvatar(index)} theme={theme} />
             ))}
           </View>
-          <PrimaryButton label="Build my first issue" icon="sparkles-outline" onPress={() => setStep("ready")} theme={theme} />
+          <InlineNote
+            icon="create-outline"
+            title="Contributions begin private"
+            body="Write a link, question, recommendation, or note first. Then choose where it belongs."
+            theme={theme}
+          />
+          <PrimaryButton label="Continue" icon="arrow-forward" onPress={() => setStep("profile")} theme={theme} />
+        </View>
+      )}
+
+      {step === "profile" && (
+        <View style={styles.onboardingPanel}>
+          <Text style={[styles.kicker, { color: theme.accent }]}>Create your profile</Text>
+          <Text style={[styles.screenTitle, { color: theme.text }]}>Choose the name your contributions can carry.</Text>
+          <Text style={[styles.body, { color: theme.muted }]}>Use a pen name, not a legal name. It tells people what you usually notice, save, and contribute.</Text>
+          <View style={[styles.profileDraft, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+            <ProfileMark index={selectedAvatar} size={54} selected />
+            <View style={styles.profileDraftCopy}>
+              <Text style={[styles.profileDraftName, { color: theme.text }]}>{profileName.trim() || "Profile name"}</Text>
+              <Text style={[styles.profileDraftHandle, { color: theme.muted }]}>@{cleanHandle || "handle"} / {selectedCity}</Text>
+            </View>
+          </View>
+          <FieldLabel label="Pen name" theme={theme} />
+          <TextInput
+            accessibilityLabel="Pen name"
+            value={profileName}
+            onChangeText={(value) => setProfileName(value.slice(0, 36))}
+            placeholder="Field Architect"
+            placeholderTextColor={theme.muted}
+            style={[styles.textField, { borderColor: theme.line, backgroundColor: theme.panel, color: theme.text }]}
+          />
+          <FieldLabel label="Handle" theme={theme} />
+          <View style={[styles.handleField, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+            <Text style={[styles.handlePrefix, { color: theme.muted }]}>@</Text>
+            <TextInput
+              accessibilityLabel="Profile handle"
+              value={profileHandle}
+              onChangeText={(value) => setProfileHandle(normalizeProfileHandle(value))}
+              placeholder="fieldarchitect"
+              placeholderTextColor={theme.muted}
+              autoCapitalize="none"
+              style={[styles.handleInput, { color: theme.text }]}
+            />
+          </View>
+          <FieldLabel label="What you pay attention to" theme={theme} />
+          <TextInput
+            accessibilityLabel="What you pay attention to"
+            value={profileBio}
+            onChangeText={(value) => setProfileBio(value.slice(0, 160))}
+            placeholder="Local food, practical tech, independent bookstores, and places worth returning to."
+            placeholderTextColor={theme.muted}
+            multiline
+            style={[styles.textArea, { borderColor: theme.line, backgroundColor: theme.panel, color: theme.text }]}
+          />
+          <Text style={[styles.selectionHint, { color: canContinueProfile ? theme.muted : theme.accent }]}>
+            {canContinueProfile ? "Profile preview ready" : "Add a name, handle, and one specific attention statement"}
+          </Text>
+          <PrimaryButton label="Preview my first edition" icon="arrow-forward" onPress={() => setStep("ready")} theme={theme} disabled={!canContinueProfile} />
         </View>
       )}
 
       {step === "ready" && (
         <View style={styles.onboardingPanel}>
-          <Text style={[styles.kicker, { color: theme.accent }]}>Your first issue is ready.</Text>
-          <Text style={[styles.heroTitle, { color: theme.text }]}>Today is built around {selectedCity}, useful signal, and calmer conversation.</Text>
+          <Text style={[styles.kicker, { color: theme.accent }]}>You are ready</Text>
+          <Text style={[styles.heroTitle, { color: theme.text }]}>Your first edition will start with {selectedCity} and the sections you chose.</Text>
           <View style={[styles.issuePreview, { backgroundColor: theme.panel, borderColor: theme.line }]}>
-            <Text style={[styles.issuePreviewLabel, { color: theme.accent }]}>WHAT WEEVRBIRD WILL HELP YOU DO</Text>
+            <Text style={[styles.issuePreviewLabel, { color: theme.accent }]}>WHAT HAPPENS NEXT</Text>
             {issueBuildItems.map((item) => (
               <View key={item.label} style={styles.issueRow}>
                 <Ionicons name={item.icon} color={theme.accent} size={18} />
@@ -142,11 +289,17 @@ export function OnboardingScreen(props: {
               </View>
             ))}
             <View style={[styles.issueDivider, { backgroundColor: theme.line }]} />
-            <Text style={[styles.issuePromise, { color: theme.muted }]}>Read a finite issue, save what matters, and add useful signal privately before you place it.</Text>
+            <Text style={[styles.issuePromise, { color: theme.muted }]}>Today gives you a finite edition. Smartfeeds organize the topics. Contribute lets you add context when you have something useful. Library keeps what you want to return to.</Text>
+          </View>
+          <View style={styles.howItWorksGrid}>
+            {howItWorks.map((item) => (
+              <MiniExplainer key={item.title} item={item} theme={theme} />
+            ))}
           </View>
           <PrimaryButton label="Open Today" icon="newspaper-outline" onPress={finish} theme={theme} />
         </View>
       )}
+      </ScrollView>
     </View>
   );
 }
@@ -211,27 +364,60 @@ function PromiseRow({ promise, theme }: {
   );
 }
 
-function AvatarButton({ label, index, selected, onPress, theme }: {
-  label: string;
+function InlineNote({ icon, title, body, theme }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+  theme: AppTheme;
+}) {
+  return (
+    <View style={[styles.inlineNote, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+      <View style={[styles.promiseIcon, { backgroundColor: theme.panelAlt }]}>
+        <Ionicons name={icon} color={theme.accent} size={16} />
+      </View>
+      <View style={styles.promiseCopy}>
+        <Text style={[styles.promiseTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.promiseBody, { color: theme.muted }]}>{body}</Text>
+      </View>
+    </View>
+  );
+}
+
+function MiniExplainer({ item, theme }: {
+  item: { title: string; body: string; icon: keyof typeof Ionicons.glyphMap };
+  theme: AppTheme;
+}) {
+  return (
+    <View style={[styles.miniExplainer, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+      <Ionicons name={item.icon} color={theme.accent} size={17} />
+      <Text style={[styles.miniExplainerTitle, { color: theme.text }]}>{item.title}</Text>
+      <Text style={[styles.miniExplainerBody, { color: theme.muted }]}>{item.body}</Text>
+    </View>
+  );
+}
+
+function FieldLabel({ label, theme }: { label: string; theme: AppTheme }) {
+  return <Text style={[styles.fieldLabel, { color: theme.accent }]}>{label}</Text>;
+}
+
+function AvatarButton({ index, selected, onPress, theme }: {
   index: number;
   selected: boolean;
   onPress: () => void;
   theme: AppTheme;
 }) {
-  const colors = [palette.sage, palette.indigo, palette.clay, palette.plum, palette.gold, "#3E6D75", "#866653", "#4E6251"];
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Avatar ${label}`}
+      accessibilityLabel={`Choose ${avatarMarks[index].label} profile mark`}
       accessibilityState={{ selected }}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.avatar,
-        pressed && styles.pressableChoicePressed,
-        { backgroundColor: colors[index % colors.length], borderColor: selected ? theme.text : "transparent" }
+        styles.avatarChoice,
+        pressed && styles.pressableChoicePressed
       ]}
     >
-      <Text style={styles.avatarText}>{label}</Text>
+      <ProfileMark index={index} size={68} selected={selected} showLabel labelColor={theme.text} />
     </Pressable>
   );
 }
@@ -240,14 +426,17 @@ const styles = StyleSheet.create({
   onboarding: {
     flex: 1,
     padding: spacing.lg,
-    justifyContent: "space-between",
     zIndex: 1,
     width: "100%",
     maxWidth: 560,
     alignSelf: "center"
   },
+  onboardingScroll: {
+    flexGrow: 1,
+    justifyContent: "center",
+    paddingVertical: spacing.lg
+  },
   onboardingPanel: {
-    flex: 1,
     justifyContent: "center",
     gap: spacing.lg
   },
@@ -256,10 +445,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.sm
   },
-  progressWrap: {
+  progressHeader: {
+    minHeight: 38,
     flexDirection: "row",
-    gap: 6,
+    alignItems: "center",
+    gap: spacing.sm,
     paddingTop: spacing.sm
+  },
+  backStepButton: {
+    minWidth: 72,
+    minHeight: 34,
+    borderRadius: radii.round,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2
+  },
+  backStepPlaceholder: {
+    minWidth: 72
+  },
+  backStepText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  progressWrap: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 6
   },
   progressDot: {
     flex: 1,
@@ -269,7 +481,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 52,
     height: 52,
-    borderRadius: radii.sm
+    borderRadius: 13
   },
   wordmark: {
     fontSize: 30,
@@ -307,6 +519,14 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     padding: spacing.sm,
     gap: 2
+  },
+  inlineNote: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
   },
   promiseRow: {
     minHeight: 48,
@@ -358,6 +578,78 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm
   },
+  selectionHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  fieldLabel: {
+    marginBottom: -10,
+    fontSize: 12,
+    lineHeight: 16,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase"
+  },
+  textField: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_600SemiBold"
+  },
+  handleField: {
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center"
+  },
+  handlePrefix: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_700Bold"
+  },
+  handleInput: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_600SemiBold"
+  },
+  textArea: {
+    minHeight: 92,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    fontSize: 15,
+    lineHeight: 22,
+    fontFamily: "Inter_500Medium",
+    textAlignVertical: "top"
+  },
+  profileDraft: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  profileDraftCopy: {
+    flex: 1
+  },
+  profileDraftName: {
+    fontSize: 20,
+    lineHeight: 25,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  profileDraftHandle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_600SemiBold"
+  },
   interestCard: {
     width: "48%",
     minHeight: 86,
@@ -380,18 +672,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.md
   },
-  avatar: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    borderWidth: 3,
+  avatarChoice: {
+    width: 82,
+    minHeight: 104,
     alignItems: "center",
     justifyContent: "center"
-  },
-  avatarText: {
-    color: "#FFFDF8",
-    fontSize: 24,
-    fontWeight: "900"
   },
   issuePreview: {
     borderWidth: 1,
@@ -422,6 +707,26 @@ const styles = StyleSheet.create({
   issuePromise: {
     fontSize: 13,
     lineHeight: 20,
+    fontFamily: "Inter_500Medium"
+  },
+  howItWorksGrid: {
+    gap: spacing.sm
+  },
+  miniExplainer: {
+    minHeight: 70,
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    gap: 4
+  },
+  miniExplainerTitle: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  miniExplainerBody: {
+    fontSize: 12,
+    lineHeight: 17,
     fontFamily: "Inter_500Medium"
   }
 });

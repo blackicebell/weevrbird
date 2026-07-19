@@ -5,20 +5,24 @@ import { Pressable, StyleSheet, Text } from "react-native";
 import { radii, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 
-export function PrimaryButton({ label, icon, onPress, theme }: {
+export function PrimaryButton({ label, icon, onPress, theme, disabled = false }: {
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   onPress: () => void;
   theme: AppTheme;
+  disabled?: boolean;
 }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.primaryButton,
-        pressed && styles.primaryButtonPressed,
+        pressed && !disabled && styles.primaryButtonPressed,
+        disabled && styles.primaryButtonDisabled,
         { backgroundColor: theme.text }
       ]}
     >
@@ -41,6 +45,9 @@ const styles = StyleSheet.create({
   primaryButtonPressed: {
     opacity: 0.86,
     transform: [{ scale: 0.98 }]
+  },
+  primaryButtonDisabled: {
+    opacity: 0.42
   },
   primaryButtonText: {
     fontSize: 16,

@@ -68,7 +68,7 @@ export interface ContributionActivity {
   body: string;
   feedName: string;
   meta: string;
-  icon: "chatbubble-ellipses-outline" | "bookmark-outline" | "sparkles-outline";
+  icon: "chatbubble-ellipses-outline" | "bookmark-outline" | "checkmark-circle-outline";
 }
 
 export interface EditionModule {
@@ -87,6 +87,7 @@ export interface EditionModule {
 export interface UserContentState {
   savedItemIds: string[];
   usefulItemIds: string[];
+  openedItemIds: string[];
 }
 
 export interface SubmittedContribution {
@@ -113,5 +114,5 @@ export interface Person {
 export interface AdminMetric {
   label: string;
   value: string;
-  tone: "calm" | "attention" | "good";
+  tone: "neutral" | "attention" | "good";
 }

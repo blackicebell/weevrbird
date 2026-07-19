@@ -13,20 +13,29 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   completeOnboarding,
+  completeEmailSignIn,
+  clearOpenedHistory,
   createDefaultUserAppState,
+  dismissSmartfeedExplainer,
   getUserContentState,
   hydrateUserAppState,
+  markItemOpened,
   placeContribution,
   markContributionActivitySeen,
+  requestEmailLink,
+  removeOpenedItem,
+  restoreOpenedHistory,
+  restoreOpenedItem,
   selectFeed,
   setActiveFilter as setUserActiveFilter,
   setActiveTab as setUserActiveTab,
   setIssuePace as setUserIssuePace,
+  signOut,
   submitContribution,
   toggleSavedItem as toggleUserSavedItem,
   toggleUsefulItem as toggleUserUsefulItem,
@@ -34,14 +43,14 @@ import {
   updateDraftType,
   UserAppState
 } from "./src/app/appState";
-import { AppTab, OnboardingStep } from "./src/app/editorial";
+import { AppTab } from "./src/app/editorial";
 import { clearPersistedAppState, loadPersistedAppState, savePersistedAppState } from "./src/app/persistence";
 import { TabBar } from "./src/components/TabBar";
 import { localDataService } from "./src/data/localDataService";
 import { ContributeScreen } from "./src/screens/ContributeScreen";
 import { DetailScreen } from "./src/screens/DetailScreen";
 import { FeedsScreen } from "./src/screens/FeedsScreen";
-import { LibraryScreen } from "./src/screens/LibraryScreen";
+import { LibraryScreen, LibraryTab } from "./src/screens/LibraryScreen";
 import { OnboardingScreen } from "./src/screens/OnboardingScreen";
 import { ProfileScreen } from "./src/screens/ProfileScreen";
 import { TodayScreen } from "./src/screens/TodayScreen";
@@ -70,25 +79,33 @@ function AppContent() {
     PlayfairDisplay_700Bold
   });
   const qaMode = isContributionQaMode();
-  const persistedState = useMemo(() => loadInitialAppState(), []);
   const defaultSavedItemIds = useMemo(() => localDataService.getDefaultSavedItemIds(), []);
-  const [userAppState, setUserAppState] = useState(() => hydrateUserAppState(persistedState, defaultSavedItemIds));
+  const [userAppState, setUserAppState] = useState(() => hydrateUserAppState({}, defaultSavedItemIds));
+  const [stateHydrated, setStateHydrated] = useState(false);
   const [buildingIssue, setBuildingIssue] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>("welcome");
   const [detailItem, setDetailItem] = useState<FeedItem | null>(null);
   const [activityOpen, setActivityOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tuneOpen, setTuneOpen] = useState(false);
+  const [activeLibraryTab, setActiveLibraryTab] = useState<LibraryTab>("Saved for later");
   const [todaySearch, setTodaySearch] = useState("");
   const [search, setSearch] = useState("");
 
   const selectedFeed = useMemo(() => localDataService.getFeed(userAppState.selectedFeedId), [userAppState.selectedFeedId]);
-  const userContentState = useMemo(() => getUserContentState(userAppState), [userAppState.savedItemIds, userAppState.usefulItemIds]);
+  const userContentState = useMemo(() => getUserContentState(userAppState), [userAppState.savedItemIds, userAppState.usefulItemIds, userAppState.openedItemIds]);
   const joinedFeeds = useMemo(() => localDataService.getJoinedFeeds(), []);
   const savedItems = useMemo(
     () => localDataService.getSavedItems(userContentState, userAppState.submittedContributions),
     [userContentState, userAppState.submittedContributions]
   );
+  const orderedOpenedItems = useMemo(
+    () => localDataService
+      .getReturnItems(userContentState, userAppState.submittedContributions)
+      .filter((item) => userAppState.openedItemIds.includes(item.id))
+      .sort((a, b) => userAppState.openedItemIds.indexOf(a.id) - userAppState.openedItemIds.indexOf(b.id)),
+    [userContentState, userAppState.submittedContributions, userAppState.openedItemIds]
+  );
+  const recentlyOpenedItems = useMemo(() => orderedOpenedItems.slice(0, 2), [orderedOpenedItems]);
   const visibleFeedItems = useMemo(
     () => localDataService.getFeedItems(selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions),
     [selectedFeed.id, userAppState.activeFilter, userContentState, userAppState.submittedContributions]
@@ -116,7 +133,15 @@ function AppContent() {
   };
 
   const setActiveTab = (activeTab: AppTab) => {
+    if (activeTab === "Library") {
+      setActiveLibraryTab("Saved for later");
+    }
     setUserAppState((current) => setUserActiveTab(current, activeTab));
+  };
+
+  const openLibrary = (libraryTab: LibraryTab = "Saved for later") => {
+    setActiveLibraryTab(libraryTab);
+    setUserAppState((current) => setUserActiveTab(current, "Library"));
   };
 
   const toggleSavedItem = (itemId: string) => {
@@ -127,10 +152,39 @@ function AppContent() {
     setUserAppState((current) => toggleUserUsefulItem(current, itemId));
   };
 
+  const clearPrivateReadingHistory = () => {
+    setUserAppState((current) => clearOpenedHistory(current));
+  };
+
+  const removePrivateReadingHistoryItem = (itemId: string) => {
+    setUserAppState((current) => removeOpenedItem(current, itemId));
+  };
+
+  const restorePrivateReadingHistoryItem = (itemId: string) => {
+    setUserAppState((current) => restoreOpenedItem(current, itemId));
+  };
+
+  const restorePrivateReadingHistory = (itemIds: string[]) => {
+    setUserAppState((current) => restoreOpenedHistory(current, itemIds));
+  };
+
+  const requestAccountEmailLink = (email: string, penName?: string) => {
+    setUserAppState((current) => requestEmailLink(current, email, penName));
+  };
+
+  const completeAccountEmailSignIn = () => {
+    setUserAppState((current) => completeEmailSignIn(current));
+  };
+
+  const signOutAccount = () => {
+    setUserAppState((current) => signOut(current));
+  };
+
   const openDetail = (item: FeedItem) => {
     setActivityOpen(false);
     setSearchOpen(false);
     setTuneOpen(false);
+    setUserAppState((current) => markItemOpened(current, item.id));
     setDetailItem(item);
   };
 
@@ -161,10 +215,9 @@ function AppContent() {
   };
 
   const resetApp = () => {
-    clearPersistedAppState();
+    void clearPersistedAppState();
     setUserAppState(createDefaultUserAppState(defaultSavedItemIds));
     setBuildingIssue(false);
-    setOnboardingStep("welcome");
     setDetailItem(null);
     setSearch("");
   };
@@ -172,26 +225,43 @@ function AppContent() {
   useEffect(() => {
     if (!buildingIssue) return;
 
-    const timer = window.setTimeout(() => {
+    const timer = setTimeout(() => {
       setBuildingIssue(false);
       setUserAppState((current) => completeOnboarding(current));
     }, 900);
 
-    return () => window.clearTimeout(timer);
+    return () => clearTimeout(timer);
   }, [buildingIssue]);
 
   useEffect(() => {
-    if (qaMode) return;
-    if (!userAppState.onboarded) {
-      clearPersistedAppState();
-      return;
-    }
+    let cancelled = false;
 
-    savePersistedAppState(userAppState);
-  }, [userAppState]);
+    void loadInitialAppState().then((persistedState) => {
+      if (cancelled) return;
+      setUserAppState(hydrateUserAppState(persistedState, defaultSavedItemIds));
+      setStateHydrated(true);
+    });
 
-  if (!fontsLoaded) {
-    return null;
+    return () => {
+      cancelled = true;
+    };
+  }, [defaultSavedItemIds]);
+
+  useEffect(() => {
+    if (!stateHydrated || qaMode) return;
+    void savePersistedAppState(userAppState);
+  }, [qaMode, stateHydrated, userAppState]);
+
+  if (!fontsLoaded || !stateHydrated) {
+    return (
+      <>
+        <StatusBar style="dark" />
+        <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
+          <AppBackground theme={theme} />
+          <BootScreen theme={theme} />
+        </SafeAreaView>
+      </>
+    );
   }
 
   if (buildingIssue) {
@@ -213,14 +283,20 @@ function AppContent() {
         <SafeAreaView style={[styles.screen, { backgroundColor: theme.bg }]}>
           <AppBackground theme={theme} />
           <OnboardingScreen
-            step={onboardingStep}
-            setStep={setOnboardingStep}
+            step={userAppState.onboardingStep}
+            setStep={(onboardingStep) => updateUserAppState({ onboardingStep })}
             selectedCity={userAppState.selectedCity}
             setSelectedCity={(selectedCity) => updateUserAppState({ selectedCity })}
             selectedInterests={userAppState.selectedInterests}
             setSelectedInterests={(selectedInterests) => updateUserAppState({ selectedInterests })}
             selectedAvatar={userAppState.selectedAvatar}
             setSelectedAvatar={(selectedAvatar) => updateUserAppState({ selectedAvatar })}
+            profileName={userAppState.profileName}
+            setProfileName={(profileName) => updateUserAppState({ profileName })}
+            profileHandle={userAppState.profileHandle}
+            setProfileHandle={(profileHandle) => updateUserAppState({ profileHandle })}
+            profileBio={userAppState.profileBio}
+            setProfileBio={(profileBio) => updateUserAppState({ profileBio })}
             finish={() => setBuildingIssue(true)}
             theme={theme}
           />
@@ -245,6 +321,8 @@ function AppContent() {
               issuePace={userAppState.issuePace}
               savedItemIds={userAppState.savedItemIds}
               usefulItemIds={userAppState.usefulItemIds}
+              recentlyOpenedItems={recentlyOpenedItems}
+              recentlyOpenedCount={orderedOpenedItems.length}
               setSelectedFeed={(feed) => setUserAppState((current) => selectFeed(current, feed.id))}
               setActiveTab={setActiveTab}
               toggleSavedItem={toggleSavedItem}
@@ -252,6 +330,7 @@ function AppContent() {
               onOpenSearch={openSearch}
               onOpenActivity={openActivity}
               onOpenTune={openTune}
+              onOpenLibrary={openLibrary}
               onOpenDetail={openDetail}
             />
           )}
@@ -266,6 +345,8 @@ function AppContent() {
               visibleFeedItems={visibleFeedItems}
               savedItemIds={userAppState.savedItemIds}
               usefulItemIds={userAppState.usefulItemIds}
+              smartfeedExplainerDismissed={userAppState.smartfeedExplainerDismissed}
+              onDismissSmartfeedExplainer={() => setUserAppState((current) => dismissSmartfeedExplainer(current))}
               toggleSavedItem={toggleSavedItem}
               toggleUsefulItem={toggleUsefulItem}
               onOpenDetail={openDetail}
@@ -278,6 +359,11 @@ function AppContent() {
               setDraftType={(draftType) => setUserAppState((current) => updateDraftType(current, draftType))}
               draft={userAppState.draft}
               setDraft={(draft) => setUserAppState((current) => updateDraft(current, draft))}
+              authStatus={userAppState.authStatus}
+              accountEmail={userAppState.accountEmail}
+              profileName={userAppState.profileName}
+              onRequestEmailLink={requestAccountEmailLink}
+              onCompleteEmailSignIn={completeAccountEmailSignIn}
               submittedContributions={userAppState.submittedContributions}
               onSubmitContribution={(contribution) => setUserAppState((current) => submitContribution(current, contribution))}
               onPlaceContribution={(contributionId, feedId) => setUserAppState((current) => placeContribution(current, contributionId, feedId))}
@@ -293,6 +379,13 @@ function AppContent() {
               setSearch={setSearch}
               savedItemIds={userAppState.savedItemIds}
               usefulItemIds={userAppState.usefulItemIds}
+              openedItemIds={userAppState.openedItemIds}
+              activeLibraryTab={activeLibraryTab}
+              setActiveLibraryTab={setActiveLibraryTab}
+              onClearOpenedHistory={clearPrivateReadingHistory}
+              onRemoveOpenedItem={removePrivateReadingHistoryItem}
+              onRestoreOpenedHistory={restorePrivateReadingHistory}
+              onRestoreOpenedItem={restorePrivateReadingHistoryItem}
               toggleSavedItem={toggleSavedItem}
               toggleUsefulItem={toggleUsefulItem}
               onOpenDetail={openDetail}
@@ -302,8 +395,18 @@ function AppContent() {
             <ProfileScreen
               theme={theme}
               selectedAvatar={userAppState.selectedAvatar}
+              profileName={userAppState.profileName}
+              profileHandle={userAppState.profileHandle}
+              profileBio={userAppState.profileBio}
+              authStatus={userAppState.authStatus}
+              accountEmail={userAppState.accountEmail}
+              selectedCity={userAppState.selectedCity}
+              connectionCount={userAppState.connectionIds.length}
               selectedInterests={userAppState.selectedInterests}
               submittedContributions={userAppState.submittedContributions}
+              onRequestEmailLink={requestAccountEmailLink}
+              onCompleteEmailSignIn={completeAccountEmailSignIn}
+              onSignOut={signOutAccount}
               onPlaceContribution={(contributionId, feedId) => setUserAppState((current) => placeContribution(current, contributionId, feedId))}
               onOpenContribute={() => setActiveTab("Contribute")}
               onOpenDetail={openDetail}
@@ -321,6 +424,10 @@ function AppContent() {
                 onBack={closeDetail}
                 onToggleSaved={() => toggleSavedItem(detailItem.id)}
                 onToggleUseful={() => toggleUsefulItem(detailItem.id)}
+                onOpenLibrary={() => {
+                  closeDetail();
+                  openLibrary("Saved for later");
+                }}
               />
             </View>
           )}
@@ -361,7 +468,7 @@ function AppContent() {
                   setSearchOpen(false);
                   const query = todaySearch.trim();
                   setSearch(query);
-                  setActiveTab("Library");
+                  openLibrary("Saved for later");
                 }}
               />
             </View>
@@ -390,6 +497,7 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
   onBack: () => void;
   onSelectPace: (pace: IssuePace) => void;
 }) {
+  const [recentlySelectedPace, setRecentlySelectedPace] = useState<IssuePace | null>(null);
   const options: Array<{ pace: IssuePace; title: string; body: string; meta: string; includes: string[]; icon: keyof typeof Ionicons.glyphMap }> = [
     {
       pace: "Brief",
@@ -428,11 +536,11 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
         >
           <Ionicons name="chevron-back" color={theme.text} size={22} />
         </Pressable>
-        <Text style={[styles.panelKicker, { color: theme.accent }]}>TUNE TODAY</Text>
+        <Text style={[styles.panelKicker, { color: theme.accent }]}>TUNE ISSUE</Text>
       </View>
 
       <Text style={[styles.panelTitle, { color: theme.text }]}>Choose the pace of your issue.</Text>
-      <Text style={[styles.panelBody, { color: theme.muted }]}>This changes how Weevrbird frames the day: quick check-in, balanced catch-up, or a slower read with more context.</Text>
+      <Text style={[styles.panelBody, { color: theme.muted }]}>This changes how Weevrbird frames the day: quick check-in, balanced catch-up, or a slower read with more context. Your choice is saved on this device.</Text>
 
       <View style={styles.activityStack}>
         {options.map((option) => {
@@ -443,7 +551,10 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
               accessibilityRole="radio"
               accessibilityState={{ checked: selected }}
               accessibilityLabel={`Set Today pace to ${option.title}`}
-              onPress={() => onSelectPace(option.pace)}
+              onPress={() => {
+                onSelectPace(option.pace);
+                setRecentlySelectedPace(option.pace);
+              }}
               style={({ pressed }) => [styles.tuneOption, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: selected ? theme.accent : theme.line }]}
             >
               <View style={[styles.activityIcon, { backgroundColor: selected ? `${theme.accent}18` : theme.panelAlt }]}>
@@ -468,6 +579,22 @@ function TunePanel({ theme, selectedPace, onBack, onSelectPace }: {
           );
         })}
       </View>
+      <View style={[styles.tuneConfirmation, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <Ionicons name={recentlySelectedPace ? "checkmark-circle-outline" : "information-circle-outline"} color={theme.accent} size={19} />
+        <View style={styles.activityCopy}>
+          <Text style={[styles.activityTitle, { color: theme.text }]}>{recentlySelectedPace ? `${recentlySelectedPace} issue selected` : `${selectedPace} issue active`}</Text>
+          <Text style={[styles.activityBody, { color: theme.muted }]}>Today updates right away. The same pace will be used the next time Weevrbird builds your issue.</Text>
+        </View>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Return to Today issue"
+        onPress={onBack}
+        style={({ pressed }) => [styles.tuneDoneButton, pressed && styles.activityCardPressed, { backgroundColor: theme.accent }]}
+      >
+        <Text style={styles.tuneDoneButtonText}>Return to issue</Text>
+        <Ionicons name="arrow-forward" color={palette.cream} size={16} />
+      </Pressable>
     </ScrollView>
   );
 }
@@ -578,8 +705,8 @@ function SearchPanel({ theme, selectedCity, query, setQuery, results, savedItemI
 }
 
 function getSearchSuggestions(selectedCity: string, hasContributionContext: boolean) {
-  const baseSuggestions = [selectedCity, "Black Tech", "weekend", "design"];
-  const suggestions = hasContributionContext ? [selectedCity, "private signal", "Black Tech", "weekend", "design"] : baseSuggestions;
+  const baseSuggestions = [selectedCity, "Tech", "weekend", "design"];
+  const suggestions = hasContributionContext ? [selectedCity, "private notes", "Tech", "weekend", "design"] : baseSuggestions;
 
   return Array.from(new Map(suggestions.map((suggestion) => [suggestion.toLowerCase(), suggestion])).values());
 }
@@ -591,12 +718,14 @@ function SearchResultRow({ item, theme, saved, markedUseful, onOpen }: {
   markedUseful: boolean;
   onOpen: () => void;
 }) {
+  const itemTitle = item.title ?? "this piece";
+  const itemSummary = item.excerpt ?? item.body ?? "Open this piece for the useful context Weevrbird saved.";
   const label = item.authorId === "you" ? "From You" : item.sourceName ?? localDataService.getFeed(item.feedId).name;
   const memoryLabel = getSearchMemoryLabel(item, saved, markedUseful);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title}`}
+      accessibilityLabel={`Open ${itemTitle}`}
       onPress={onOpen}
       style={({ pressed }) => [styles.searchResult, pressed && styles.activityCardPressed, { backgroundColor: theme.panel, borderColor: theme.line }]}
     >
@@ -606,8 +735,8 @@ function SearchResultRow({ item, theme, saved, markedUseful, onOpen }: {
       <View style={styles.activityCopy}>
         <Text style={[styles.activityFeed, { color: theme.accent }]}>{label}</Text>
         <Text style={[styles.activityMeta, { color: theme.muted }]}>{memoryLabel}</Text>
-        <Text style={[styles.activityTitle, { color: theme.text }]} numberOfLines={2}>{item.title}</Text>
-        <Text style={[styles.activityBody, { color: theme.muted }]} numberOfLines={2}>{item.excerpt ?? item.body}</Text>
+        <Text style={[styles.activityTitle, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
+        <Text style={[styles.activityBody, { color: theme.muted }]} numberOfLines={2}>{itemSummary}</Text>
       </View>
       <Ionicons name="chevron-forward" color={theme.muted} size={18} />
     </Pressable>
@@ -644,8 +773,8 @@ function ActivityPanel({ theme, activity, seenActivityIds, onBack, onOpenContrib
         <Text style={[styles.panelKicker, { color: theme.accent }]}>CONTRIBUTION ACTIVITY</Text>
       </View>
 
-      <Text style={[styles.panelTitle, { color: theme.text }]}>Where your signal is landing.</Text>
-      <Text style={[styles.panelBody, { color: theme.muted }]}>Responses stay small on purpose: saved, useful, and thoughtful replies that help you understand whether a contribution is worth returning to.</Text>
+      <Text style={[styles.panelTitle, { color: theme.text }]}>Where your contribution is landing.</Text>
+      <Text style={[styles.panelBody, { color: theme.muted }]}>Responses stay focused: saves, useful marks, and thoughtful replies that help you decide whether a contribution is worth returning to.</Text>
 
       {activity.length > 0 ? (
         <View style={styles.activityStack}>
@@ -663,7 +792,7 @@ function ActivityPanel({ theme, activity, seenActivityIds, onBack, onOpenContrib
         <View style={[styles.activityEmpty, { backgroundColor: theme.panel, borderColor: theme.line }]}>
           <Ionicons name="notifications-outline" color={theme.accent} size={24} />
           <Text style={[styles.activityTitle, { color: theme.text }]}>No contribution activity yet.</Text>
-          <Text style={[styles.activityBody, { color: theme.muted }]}>Place a private signal into a Smartfeed and Weevrbird will show the useful response here.</Text>
+          <Text style={[styles.activityBody, { color: theme.muted }]}>Place a private note into a Smartfeed and Weevrbird will show the response here.</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Open contribution composer"
@@ -709,8 +838,8 @@ function ActivityRow({ item, seen, theme, onOpen }: {
   );
 }
 
-function loadInitialAppState(): Partial<UserAppState> {
-  const persistedState = loadPersistedAppState();
+async function loadInitialAppState(): Promise<Partial<UserAppState>> {
+  const persistedState = await loadPersistedAppState();
   if (!isContributionQaMode()) return persistedState;
 
   const params = new URLSearchParams(window.location.search);
@@ -719,9 +848,13 @@ function loadInitialAppState(): Partial<UserAppState> {
 
   return {
     onboarded: true,
+    onboardingStep: "ready",
     selectedCity: "Atlanta",
-    selectedInterests: ["Atlanta", "Black Tech", "UX Design"],
+    selectedInterests: ["Atlanta", "Tech", "UX Design"],
     selectedAvatar: 0,
+    profileName: "Field Architect",
+    profileHandle: "fieldarchitect",
+    profileBio: "Neighborhood design, independent bookstores, practical tech, and the places where people naturally gather.",
     activeTab: tab ?? "Contribute",
     selectedFeedId: feedId,
     activeFilter: "Latest",
@@ -730,6 +863,8 @@ function loadInitialAppState(): Partial<UserAppState> {
     draft: "",
     savedItemIds: ["item-1", "item-3", "local-qa-placed"],
     usefulItemIds: [],
+    openedItemIds: ["item-4", "item-5"],
+    connectionIds: ["maya"],
     submittedContributions: [
       {
         id: "local-qa-placed",
@@ -768,8 +903,8 @@ function IssueBuildScreen({ theme, selectedCity, selectedInterests }: {
   const previewInterests = selectedInterests.filter((interest) => interest !== selectedCity).slice(0, 2);
   const buildRows = [
     `Local lens: ${selectedCity}`,
-    `Sections: ${previewInterests.join(", ") || "Useful signal"}`,
-    "Archive: saved signal you can return to",
+    `Sections: ${previewInterests.join(", ") || "Useful context"}`,
+    "Library: saved pieces you can return to",
     "Contribution: private first, placed with intent"
   ];
 
@@ -786,6 +921,19 @@ function IssueBuildScreen({ theme, selectedCity, selectedInterests }: {
             </View>
           ))}
         </View>
+      </View>
+    </View>
+  );
+}
+
+function BootScreen({ theme }: { theme: ReturnType<typeof useTheme> }) {
+  return (
+    <View style={styles.issueBuildScreen}>
+      <View style={[styles.issueBuildCard, { backgroundColor: theme.panel, borderColor: theme.line }]}>
+        <ActivityIndicator color={theme.accent} />
+        <Text style={[styles.issueBuildKicker, { color: theme.accent }]}>WEEVRBIRD</Text>
+        <Text style={[styles.issueBuildTitle, { color: theme.text }]}>Getting your issue ready.</Text>
+        <Text style={[styles.issueBuildText, { color: theme.muted }]}>Loading your saved pieces, profile, and private reading history.</Text>
       </View>
     </View>
   );
@@ -940,6 +1088,30 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: spacing.md,
     ...shadows.card
+  },
+  tuneConfirmation: {
+    borderWidth: 1,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  tuneDoneButton: {
+    minHeight: 46,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.lg,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  tuneDoneButtonText: {
+    color: palette.cream,
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
   },
   tuneIncludes: {
     flexDirection: "row",

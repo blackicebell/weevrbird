@@ -102,7 +102,7 @@ export function getContributionActivityItems(contributions: SubmittedContributio
         return {
           id: `${contribution.id}-saved`,
           contributionId: contribution.id,
-          title: "Your signal is being saved",
+          title: "Your contribution is being saved",
           body: "People are keeping it for later, even without starting a thread.",
           feedName: feed.name,
           meta: `${engagement.saves} saved / ${engagement.useful} useful`,
@@ -116,19 +116,23 @@ export function getContributionActivityItems(contributions: SubmittedContributio
         title: "Your contribution was placed",
         body: "It is now part of the issue where it can help the right readers.",
         feedName: feed.name,
-        meta: "Waiting for signal",
-        icon: "sparkles-outline"
+        meta: "Waiting for response",
+        icon: "checkmark-circle-outline"
       };
     });
 }
 
-export function getArchiveItems(items: FeedItem[], state: UserContentState) {
+export function getReturnItems(items: FeedItem[], state: UserContentState) {
   const itemsWithState = applyUserContentState(items, state);
   const savedItems = itemsWithState.filter((item) => state.savedItemIds.includes(item.id));
-  const openedItems = itemsWithState.slice(3, 5);
-  const archiveItems = savedItems.concat(openedItems);
+  const openedItems: typeof savedItems = [];
+  state.openedItemIds.forEach((itemId) => {
+    const item = itemsWithState.find((entry) => entry.id === itemId);
+    if (item) openedItems.push(item);
+  });
+  const returnItems = savedItems.concat(openedItems);
 
-  return archiveItems.filter((item, index) => archiveItems.findIndex((entry) => entry.id === item.id) === index).slice(0, 4);
+  return returnItems.filter((item, index) => returnItems.findIndex((entry) => entry.id === item.id) === index).slice(0, 30);
 }
 
 export function getLibraryItems(items: FeedItem[], contributions: SubmittedContribution[]) {
@@ -224,7 +228,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace
       title: "What makes a career community actually useful?",
       body: "A practical prompt for builders, designers, and operators.",
       action: "Join the conversation",
-      reason: "A practical Black Tech thread is active today."
+      reason: "A practical Tech thread is active today."
     },
     {
       id: "worth-your-time",
@@ -234,7 +238,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace
       title: "Worth your time",
       body: "Three selected reads from your joined interests.",
       action: "Add to reading list",
-      reason: "Selected from Atlanta, Black Tech, and Creative Community.",
+      reason: "Selected from Atlanta, Tech, and Creative Community.",
       items: readingItems.slice(0, 3)
     },
     {
@@ -254,7 +258,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace
       layer: "Editorial",
       feed: creative,
       title: "You're caught up",
-      body: "Six useful pieces. Nothing urgent waiting.",
+      body: "Six selected pieces. Today's issue is complete.",
       action: "Open Library",
       reason: "Return later for meaningful updates.",
       items: creativeItems.slice(0, 2)
@@ -267,7 +271,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace
       modules[1],
       {
         ...modules[5],
-        body: "Four useful pieces. Nothing urgent waiting.",
+        body: "Four selected pieces. Today's issue is complete.",
         reason: "Brief issue selected.",
         items: creativeItems.slice(0, 1)
       }
@@ -290,7 +294,7 @@ export function buildTodayEdition(joinedFeeds: Smartfeed[], issuePace: IssuePace
       },
       {
         ...modules[5],
-        body: "Nine useful pieces. More context saved for later.",
+        body: "Nine useful pieces. More context is ready for later.",
         reason: "Deep issue selected.",
         items: creativeItems.slice(0, 3)
       }

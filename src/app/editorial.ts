@@ -4,7 +4,7 @@ import { palette } from "../theme/tokens";
 import { ContentLayer, SmartfeedFilter } from "../types/product";
 
 export type AppTab = "Today" | "Feeds" | "Contribute" | "Library" | "You";
-export type OnboardingStep = "welcome" | "city" | "interests" | "avatar" | "ready";
+export type OnboardingStep = "welcome" | "city" | "interests" | "avatar" | "profile" | "ready";
 
 export const tabs: Array<{ key: AppTab; icon: keyof typeof Ionicons.glyphMap }> = [
   { key: "Today", icon: "newspaper-outline" },
@@ -18,7 +18,7 @@ export const filters: Array<{ key: SmartfeedFilter; label: string }> = [
   { key: "Latest", label: "Today" },
   { key: "Conversations", label: "Discuss" },
   { key: "Reading", label: "Reading Room" },
-  { key: "Saved", label: "Archive" }
+  { key: "Saved", label: "Saved" }
 ];
 
 export const contributionTypes = ["Note", "Question", "Discussion", "Recommendation", "Link", "Long Read"];
@@ -32,13 +32,34 @@ export const contributionMeta: Record<string, { icon: keyof typeof Ionicons.glyp
   "Long Read": { icon: "newspaper-outline", helper: "Write a deeper piece" }
 };
 
-export const avatars = ["W", "A", "C", "M", "S", "L", "T", "N"];
+export const avatarMarks: Array<{
+  id: string;
+  label: string;
+  background: string;
+  foreground: string;
+  accent: string;
+  chest: string;
+  beak: string;
+  crest: boolean;
+  neckTilt: number;
+}> = [
+  { id: "green-weaver", label: "Green Weaver", background: "#DDF0E4", foreground: "#0F3D2E", accent: "#DBA85B", chest: "#A6B39A", beak: "#C86F4A", crest: false, neckTilt: -8 },
+  { id: "blue-finch", label: "Blue Finch", background: "#DCE9F8", foreground: "#173C76", accent: "#4F9E77", chest: "#E8EEF0", beak: "#DBA85B", crest: true, neckTilt: -4 },
+  { id: "clay-sparrow", label: "Clay Sparrow", background: "#F7DDCE", foreground: "#8E442B", accent: "#2D63B5", chest: "#FFF8F2", beak: "#DBA85B", crest: false, neckTilt: -10 },
+  { id: "gold-oriole", label: "Gold Oriole", background: "#E9DDBE", foreground: "#6D4C17", accent: "#0F3D2E", chest: "#DBA85B", beak: "#C86F4A", crest: true, neckTilt: -6 },
+  { id: "teal-heron", label: "Teal Heron", background: "#E8EEF0", foreground: "#3E6D75", accent: "#C86F4A", chest: "#D6F1E5", beak: "#DBA85B", crest: false, neckTilt: -12 },
+  { id: "sage-wren", label: "Sage Wren", background: "#E3E8DA", foreground: "#4E6251", accent: "#DBA85B", chest: "#FFFDF8", beak: "#C86F4A", crest: false, neckTilt: -5 },
+  { id: "plum-martin", label: "Plum Martin", background: "#ECE3EC", foreground: "#5A3D55", accent: "#4F9E77", chest: "#F7DDCE", beak: "#DBA85B", crest: true, neckTilt: -7 },
+  { id: "brown-thrush", label: "Brown Thrush", background: "#E7D7C8", foreground: "#866653", accent: "#173C76", chest: "#FFFDF8", beak: "#DBA85B", crest: false, neckTilt: -9 }
+];
+
+export const avatars = avatarMarks.map((mark) => mark.label);
 
 export const profileCollections = [
   {
     title: "Atlanta places I return to",
     meta: "Five saved places / Updated this week",
-    description: "Coffee, books, galleries, and quiet corners.",
+    description: "Coffee, books, galleries, and tucked-away corners.",
     icon: "map-outline" as keyof typeof Ionicons.glyphMap
   },
   {
@@ -122,7 +143,7 @@ export const feedEditorialMeta: Record<string, {
     secondary: "#F2DBB6"
   },
   "faith-community": {
-    section: "Quiet Read",
+    section: "Reflection",
     edition: "Community Care",
     masthead: "Common Ground",
     issue: "Issue 17",

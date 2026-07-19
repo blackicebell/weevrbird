@@ -3,33 +3,57 @@
     "name": "Weevrbird",
     "slug": "weevrbird",
     "version": "0.1.0",
+    "description": "A personal information app for finite daily editions, Smartfeeds, saved context, and useful contributions.",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "weevrbird",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFDF8"
+    },
     "assetBundlePatterns": [
-      "assets/**/*",
-      "Weevrbird Logos/PNG-01.png",
-      "Weevrbird Logos/PNG-02.png",
-      "Weevrbird Logos/PNG-03.png",
-      "Weevrbird Logos/PNG-04.png",
-      "Weevrbird Logos/PNG-05.png",
-      "Weevrbird Logos/PNG-06.png"
+      "assets/**/*"
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.weevrbird.app"
+      "bundleIdentifier": "com.weevrbird.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.weevrbird.app",
+      "versionCode": 3,
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F4EFE6"
       }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-asset"
-    ]
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1cc9f8e4-96a8-4d29-b644-02e6a9cf1688"
+      }
+    },
+    "owner": "blackicebell"
   }
 }

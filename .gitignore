@@ -3,6 +3,7 @@ node_modules/
 dist/
 web-build/
 coverage/
+qa-screenshots/
 *.log
 .DS_Store
 Weevrbird Logos/._*

@@ -1,30 +1,44 @@
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
+import { ProfileMark } from "../components/ProfileMark";
 import { SectionHeader } from "../components/SectionHeader";
+import { EmailLinkGate } from "../components/EmailLinkGate";
 import {
-  avatars,
   feedEditorialMeta,
   profileCollections,
   profileContributionTypes
 } from "../app/editorial";
+import { AuthStatus } from "../app/appState";
+import { releaseInfo } from "../app/release";
 import { localDataService } from "../data/localDataService";
 import { palette, radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, SubmittedContribution } from "../types/product";
+import { formatFeedItemType } from "../utils/feedItemLabels";
 
-export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submittedContributions, onPlaceContribution, onOpenContribute, onOpenDetail, onResetApp }: {
+export function ProfileScreen({ theme, selectedAvatar, profileName, profileHandle, profileBio, authStatus, accountEmail, selectedCity, connectionCount, selectedInterests, submittedContributions, onRequestEmailLink, onCompleteEmailSignIn, onSignOut, onPlaceContribution, onOpenContribute, onOpenDetail, onResetApp }: {
   theme: AppTheme;
   selectedAvatar: number;
+  profileName: string;
+  profileHandle: string;
+  profileBio: string;
+  authStatus: AuthStatus;
+  accountEmail: string;
+  selectedCity: string;
+  connectionCount: number;
   selectedInterests: string[];
   submittedContributions: SubmittedContribution[];
+  onRequestEmailLink: (email: string, penName?: string) => void;
+  onCompleteEmailSignIn: () => void;
+  onSignOut: () => void;
   onPlaceContribution: (contributionId: string, feedId: string) => void;
   onOpenContribute: () => void;
   onOpenDetail: (item: FeedItem) => void;
   onResetApp: () => void;
 }) {
-  const [connected, setConnected] = useState(false);
   const [activeShelf, setActiveShelf] = useState<(typeof profileCollections)[number] | null>(null);
   const [activeContribution, setActiveContribution] = useState<SubmittedContribution | null>(null);
   const [showAttentionEditor, setShowAttentionEditor] = useState(false);
@@ -63,7 +77,16 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
   }
 
   if (showSafety) {
-    return <ProfileSafetyPanel theme={theme} onBack={() => setShowSafety(false)} onResetApp={onResetApp} />;
+    return (
+      <ProfileSafetyPanel
+        theme={theme}
+        authStatus={authStatus}
+        accountEmail={accountEmail}
+        onBack={() => setShowSafety(false)}
+        onSignOut={onSignOut}
+        onResetApp={onResetApp}
+      />
+    );
   }
 
   if (showContributionBrowser) {
@@ -92,33 +115,49 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
       <View style={[styles.profileMasthead, { backgroundColor: "#FFFDF8", borderColor: "#DDF0E4" }]}>
         <View style={styles.profileIdentityZone}>
           <View style={styles.profileMastheadTop}>
-            <ProfileAvatar label={avatars[selectedAvatar]} index={selectedAvatar} theme={theme} />
+            <ProfileMark index={selectedAvatar} size={58} selected />
             <View style={styles.profileIdentityCopy}>
               <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>ATTENTION MAP</Text>
-              <Text style={[styles.profileName, { color: theme.text }]}>Quiet Architect</Text>
-              <Text style={[styles.profileHandle, { color: theme.muted }]}>@quietarchitect / Atlanta</Text>
+              <Text style={[styles.profileName, { color: theme.text }]}>{profileName}</Text>
+              <Text style={[styles.profileHandle, { color: theme.muted }]}>@{profileHandle} / {selectedCity}</Text>
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={connected ? "Quiet Architect is linked" : "Connect with Quiet Architect"}
-              accessibilityState={{ selected: connected }}
-              style={({ pressed }) => [styles.profileConnectButton, pressed && styles.profileButtonPressed, { backgroundColor: palette.deepForest }]}
-              onPress={() => setConnected((current) => !current)}
-            >
-              <Text style={styles.profileConnectText}>{connected ? "Linked" : "Connect"}</Text>
-            </Pressable>
+            <View style={[styles.ownProfileBadge, { backgroundColor: "#DDF0E4" }]}>
+              <Text style={[styles.ownProfileBadgeText, { color: palette.deepForest }]}>You</Text>
+            </View>
           </View>
         </View>
         <View style={[styles.profileMastheadDivider, { backgroundColor: "#DDF0E4" }]} />
         <Text style={[styles.profileIntroPrompt, { color: palette.deepForest }]}>Attention pattern</Text>
         <Text style={[styles.profileIntro, { color: theme.text }]}>
-          Neighborhood design, independent bookstores, Black visual culture, and the places where people naturally gather.
+          {profileBio}
         </Text>
         <View style={[styles.sharedContext, { borderColor: "#DDF0E4" }]}>
           <Ionicons name="link-outline" color={palette.deepForest} size={17} />
-          <Text style={[styles.sharedContextText, { color: theme.muted }]}>Overlap: Atlanta, Black Tech, and UX Design.</Text>
+          <Text style={[styles.sharedContextText, { color: theme.muted }]}>Overlap: {selectedInterests.slice(0, 3).join(", ")}.</Text>
+        </View>
+        <View style={[styles.privateProfileStats, { borderColor: "#DDF0E4", backgroundColor: "rgba(221, 240, 228, 0.38)" }]}>
+          <View style={styles.privateStatItem}>
+            <Text style={[styles.privateStatValue, { color: theme.text }]}>{connectionCount}</Text>
+            <Text style={[styles.privateStatLabel, { color: theme.muted }]}>Connection{connectionCount === 1 ? "" : "s"}</Text>
+          </View>
+          <View style={styles.privateStatCopy}>
+            <Text style={[styles.privateStatTitle, { color: palette.deepForest }]}>Visible only to you</Text>
+            <Text style={[styles.privateStatBody, { color: theme.muted }]}>Connections help you track who you have linked with without turning your profile into a scoreboard.</Text>
+          </View>
         </View>
       </View>
+
+      <SectionHeader title="Account" action={authStatus === "signed_in" ? "Signed in" : "Email link"} theme={theme} />
+      <EmailLinkGate
+        theme={theme}
+        authStatus={authStatus}
+        accountEmail={accountEmail}
+        profileName={profileName}
+        compact
+        onRequestLink={onRequestEmailLink}
+        onCompleteSignIn={onCompleteEmailSignIn}
+        onSignOut={onSignOut}
+      />
 
       <ProfileChapter theme={theme} />
 
@@ -149,7 +188,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
 
       <SectionHeader title="From This Person" action="Browse" onAction={() => setShowContributionBrowser(true)} theme={theme} />
       <ProfileContribution item={featuredContribution} label="Recommendation in Atlanta" theme={theme} onOpen={() => onOpenDetail(featuredContribution)} />
-      <ProfileContribution item={questionContribution} label="Question in Black Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
+      <ProfileContribution item={questionContribution} label="Question in Tech" theme={theme} onOpen={() => onOpenDetail(questionContribution)} />
 
       <SectionHeader title="Shelves" action="New" onAction={() => setShowShelfDraft(true)} theme={theme} />
       {profileCollections.map((collection) => (
@@ -168,7 +207,7 @@ export function ProfileScreen({ theme, selectedAvatar, selectedInterests, submit
 
       <SectionHeader title="Elsewhere" theme={theme} />
       <View style={[styles.elsewherePanel, { borderColor: theme.line }]}>
-        <ExternalProfileLink icon="globe-outline" title="Personal site" domain="quietarchitect.studio" theme={theme} />
+        <ExternalProfileLink icon="globe-outline" title="Personal site" domain={`${profileHandle}.studio`} theme={theme} />
         <ExternalProfileLink icon="reader-outline" title="Newsletter" domain="fieldnotes.email" theme={theme} />
       </View>
 
@@ -319,15 +358,13 @@ function getSubmittedContributionCategory(type: string) {
 function getPublicContributionCategory(item: FeedItem) {
   if (item.itemType === "recommendation") return "Recommendations";
   if (item.itemType === "question" || item.itemType === "discussion") return "Questions";
+  if (item.itemType === "link" || item.itemType === "long_read" || item.itemType === "external_article" || item.itemType === "external_video" || item.itemType === "external_podcast") return "Reading Lists";
   if (item.itemType === "official_update") return "Notes";
   return "Notes";
 }
 
 function formatContributionLabel(item: FeedItem) {
-  if (item.itemType === "recommendation") return "Recommendation";
-  if (item.itemType === "question" || item.itemType === "discussion") return "Question";
-  if (item.itemType === "official_update") return "Update";
-  return "Contribution";
+  return formatFeedItemType(item.itemType);
 }
 
 function AttentionMapEditor({ theme, selectedInterests, onBack }: {
@@ -362,11 +399,25 @@ function AttentionMapEditor({ theme, selectedInterests, onBack }: {
 }
 
 function NewShelfPanel({ theme, onBack }: { theme: AppTheme; onBack: () => void }) {
-  const draftRows = [
-    "Choose a shelf name",
-    "Save three useful pieces",
-    "Decide whether it is public"
-  ];
+  const starterItems = localDataService.searchLibrary("").slice(0, 4);
+  const [shelfName, setShelfName] = useState("Places and reads worth returning to");
+  const [visibility, setVisibility] = useState<"Private" | "Public">("Private");
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>(starterItems.slice(0, 2).map((item) => item.id));
+  const [savedDraft, setSavedDraft] = useState(false);
+  const trimmedName = shelfName.trim();
+  const canSave = trimmedName.length >= 3 && selectedItemIds.length > 0;
+
+  const toggleStarterItem = (itemId: string) => {
+    setSavedDraft(false);
+    setSelectedItemIds((current) => (
+      current.includes(itemId) ? current.filter((id) => id !== itemId) : current.concat(itemId)
+    ));
+  };
+
+  const saveShelfDraft = () => {
+    if (!canSave) return;
+    setSavedDraft(true);
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -377,33 +428,112 @@ function NewShelfPanel({ theme, onBack }: { theme: AppTheme; onBack: () => void 
         </View>
         <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>NEW SHELF</Text>
         <Text style={[styles.shelfTitle, { color: theme.text }]}>Start from a useful pattern.</Text>
-        <Text style={[styles.body, { color: theme.muted }]}>A shelf should feel like a return path, not a folder. Weevrbird will help group saved pieces when a pattern starts to form.</Text>
+        <Text style={[styles.body, { color: theme.muted }]}>A shelf is a return path. Name the pattern, choose a few starting pieces, then decide whether it stays private.</Text>
       </View>
-      {draftRows.map((row, index) => (
-        <View key={row} style={[styles.attentionEditRow, { borderColor: theme.line, backgroundColor: theme.panel }]}>
-          <Text style={[styles.profileTypeLabel, { color: theme.accent }]}>{index + 1}</Text>
-          <View style={styles.profileCollectionCopy}>
-            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{row}</Text>
-            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{getShelfDraftBody(index)}</Text>
-          </View>
+
+      <View style={[styles.shelfDraftPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <Text style={[styles.moduleEyebrow, { color: theme.accent }]}>SHELF NAME</Text>
+        <TextInput
+          accessibilityLabel="Shelf name"
+          value={shelfName}
+          onChangeText={(value) => {
+            setSavedDraft(false);
+            setShelfName(value.slice(0, 52));
+          }}
+          placeholder="Name this shelf"
+          placeholderTextColor={theme.muted}
+          style={[styles.shelfNameInput, { borderColor: theme.line, color: theme.text, backgroundColor: theme.bg }]}
+        />
+
+        <Text style={[styles.moduleEyebrow, { color: theme.accent }]}>VISIBILITY</Text>
+        <View style={styles.shelfVisibilityRow}>
+          {(["Private", "Public"] as const).map((option) => {
+            const selected = visibility === option;
+
+            return (
+              <Pressable
+                key={`shelf-visibility-${option}`}
+                accessibilityRole="button"
+                accessibilityLabel={`Make shelf ${option.toLowerCase()}`}
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  setSavedDraft(false);
+                  setVisibility(option);
+                }}
+                style={({ pressed }) => [
+                  styles.shelfVisibilityButton,
+                  pressed && styles.profileRowPressed,
+                  {
+                    borderColor: selected ? theme.accent : theme.line,
+                    backgroundColor: selected ? theme.panelAlt : theme.panel
+                  }
+                ]}
+              >
+                <Ionicons name={selected ? "checkmark-circle" : option === "Private" ? "lock-closed-outline" : "globe-outline"} color={selected ? theme.accent : theme.muted} size={18} />
+                <Text style={[styles.shelfVisibilityText, { color: selected ? theme.accent : theme.text }]}>{option}</Text>
+              </Pressable>
+            );
+          })}
         </View>
-      ))}
+
+        <Text style={[styles.moduleEyebrow, { color: theme.accent }]}>STARTING PIECES</Text>
+        <View style={styles.shelfStarterStack}>
+          {starterItems.map((item) => {
+            const selected = selectedItemIds.includes(item.id);
+            const itemTitle = item.title ?? "Untitled piece";
+
+            return (
+              <Pressable
+                key={`starter-shelf-item-${item.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`${selected ? "Remove" : "Add"} ${itemTitle}`}
+                accessibilityState={{ selected }}
+                onPress={() => toggleStarterItem(item.id)}
+                style={({ pressed }) => [
+                  styles.shelfStarterItem,
+                  pressed && styles.profileRowPressed,
+                  {
+                    borderColor: selected ? `${theme.accent}66` : theme.line,
+                    backgroundColor: selected ? theme.panelAlt : theme.bg
+                  }
+                ]}
+              >
+                <Ionicons name={selected ? "checkmark-circle" : "add-circle-outline"} color={selected ? theme.accent : theme.muted} size={19} />
+                <View style={styles.profileCollectionCopy}>
+                  <Text style={[styles.profileCollectionTitle, { color: theme.text }]} numberOfLines={2}>{itemTitle}</Text>
+                  <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{localDataService.getFeed(item.feedId).name} / {formatFeedItemType(item.itemType)}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={savedDraft ? "Shelf draft saved" : "Save shelf draft"}
+          accessibilityState={{ disabled: !canSave, selected: savedDraft }}
+          disabled={!canSave}
+          onPress={saveShelfDraft}
+          style={({ pressed }) => [
+            styles.shelfSaveButton,
+            pressed && canSave && styles.profileButtonPressed,
+            !canSave && styles.shelfSaveButtonDisabled,
+            { backgroundColor: canSave ? theme.accent : theme.line }
+          ]}
+        >
+          <Ionicons name={savedDraft ? "checkmark-circle-outline" : "albums-outline"} color="#FFFDF8" size={18} />
+          <Text style={styles.shelfSaveButtonText}>{savedDraft ? "Shelf draft saved" : "Save shelf draft"}</Text>
+        </Pressable>
+
+        <Text style={[styles.profileCollectionDescription, { color: savedDraft ? theme.accent : theme.muted }]}>
+          {savedDraft
+            ? `${trimmedName} is saved as a ${visibility.toLowerCase()} shelf draft with ${selectedItemIds.length} starting piece${selectedItemIds.length === 1 ? "" : "s"}.`
+            : canSave
+              ? `${selectedItemIds.length} starting piece${selectedItemIds.length === 1 ? "" : "s"} selected.`
+              : "Add a shelf name and at least one piece."}
+        </Text>
+      </View>
     </ScrollView>
-  );
-}
-
-function getShelfDraftBody(index: number) {
-  if (index === 0) return "Keep it specific enough that someone understands why the pieces belong together.";
-  if (index === 1) return "A shelf becomes valuable once it holds more than one piece worth returning to.";
-  return "Private-first keeps collections useful before they become performative.";
-}
-
-function ProfileAvatar({ label, index, theme }: { label: string; index: number; theme: AppTheme }) {
-  const colors = [palette.sage, palette.indigo, palette.clay, palette.plum, palette.gold, "#3E6D75", "#866653", "#4E6251"];
-  return (
-    <View style={[styles.avatar, { backgroundColor: colors[index % colors.length], borderColor: theme.text }]}>
-      <Text style={styles.avatarText}>{label}</Text>
-    </View>
   );
 }
 
@@ -423,18 +553,21 @@ function ProfileChapter({ theme }: { theme: AppTheme }) {
 function ProfileContribution({ item, label, theme, onOpen }: { item: FeedItem; label: string; theme: AppTheme; onOpen: () => void }) {
   const feed = localDataService.getFeed(item.feedId);
   const editorial = feedEditorialMeta[feed.id] ?? feedEditorialMeta.atlanta;
+  const itemTitle = item.title ?? "this piece";
+  const itemSummary = item.body ?? item.excerpt ?? "A useful piece saved into this profile context.";
+  const publishedLabel = item.publishedAt || "Recent";
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title}`}
+      accessibilityLabel={`Open ${itemTitle}`}
       onPress={onOpen}
       style={({ pressed }) => [styles.profileContribution, pressed && styles.profileRowPressed, { borderColor: editorial.secondary }]}
     >
       <Text style={[styles.moduleEyebrow, { color: editorial.accent }]}>{label}</Text>
-      <Text style={[styles.profileContributionTitle, { color: theme.text }]}>{item.title}</Text>
-      <Text style={[styles.body, { color: theme.muted }]} numberOfLines={2}>{item.body ?? item.excerpt}</Text>
+      <Text style={[styles.profileContributionTitle, { color: theme.text }]}>{itemTitle}</Text>
+      <Text style={[styles.body, { color: theme.muted }]} numberOfLines={2}>{itemSummary}</Text>
       <Text style={[styles.profileContributionSignal, { color: editorial.accent }]}>{getContributionSignal(item)}</Text>
-      <Text style={[styles.meta, { color: theme.muted }]}>{editorial.masthead} / {item.publishedAt}</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>{editorial.masthead} / {publishedLabel}</Text>
     </Pressable>
   );
 }
@@ -640,43 +773,177 @@ function ProfileShelfDetail({ collection, theme, onBack, onOpenDetail }: {
         <Text style={[styles.body, { color: theme.muted }]}>{collection.description}</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>{collection.meta}</Text>
       </View>
-      {shelfItems.map((item) => (
-        <Pressable
-          key={`shelf-item-${item.id}`}
-          accessibilityRole="button"
-          accessibilityLabel={`Open ${item.title}`}
-          onPress={() => onOpenDetail(item)}
-          style={({ pressed }) => [styles.shelfItem, pressed && styles.profileRowPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
-        >
-          <Text style={[styles.moduleEyebrow, { color: theme.accent }]}>{item.sourceName ?? "Weevrbird"}</Text>
-          <Text style={[styles.shelfItemTitle, { color: theme.text }]}>{item.title}</Text>
-          <Text style={[styles.meta, { color: theme.muted }]}>{item.publishedAt} / {item.replies} replies</Text>
-        </Pressable>
-      ))}
+      {shelfItems.map((item) => {
+        const itemTitle = item.title ?? "this piece";
+        const publishedLabel = item.publishedAt || "Recent";
+        const replyCount = Number.isFinite(item.replies) ? item.replies : 0;
+        const replyLabel = replyCount === 1 ? "1 reply" : `${replyCount} replies`;
+
+        return (
+          <Pressable
+            key={`shelf-item-${item.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={`Open ${itemTitle}`}
+            onPress={() => onOpenDetail(item)}
+            style={({ pressed }) => [styles.shelfItem, pressed && styles.profileRowPressed, { borderColor: theme.line, backgroundColor: theme.panel }]}
+          >
+            <Text style={[styles.moduleEyebrow, { color: theme.accent }]}>{item.sourceName ?? "Weevrbird pick"}</Text>
+            <Text style={[styles.shelfItemTitle, { color: theme.text }]}>{itemTitle}</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>{publishedLabel} / {replyLabel}</Text>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
 
-function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; onBack: () => void; onResetApp: () => void }) {
+function ProfileSafetyPanel({ theme, authStatus, accountEmail, onBack, onSignOut, onResetApp }: {
+  theme: AppTheme;
+  authStatus: AuthStatus;
+  accountEmail: string;
+  onBack: () => void;
+  onSignOut: () => void;
+  onResetApp: () => void;
+}) {
   const [acknowledgedControl, setAcknowledgedControl] = useState<string | null>(null);
   const [discoverableThroughContributions, setDiscoverableThroughContributions] = useState(true);
   const [showPeopleSuggestions, setShowPeopleSuggestions] = useState(true);
   const [showMutualLinks, setShowMutualLinks] = useState(false);
   const [connectRequestScope, setConnectRequestScope] = useState("Shared interests");
+  const [resetArmed, setResetArmed] = useState(false);
+  const [supportStatus, setSupportStatus] = useState<"idle" | "copied" | "unavailable">("idle");
+  const [deleteRequestStatus, setDeleteRequestStatus] = useState<"idle" | "copied" | "unavailable">("idle");
+  const [privacySummaryStatus, setPrivacySummaryStatus] = useState<"idle" | "copied" | "unavailable">("idle");
+  const [signedOutHere, setSignedOutHere] = useState(false);
   const controls = [
     { icon: "volume-mute-outline", title: "Mute profile", done: "Profile muted", body: "Hide this person's contributions without changing what others see from you." },
-    { icon: "person-remove-outline", title: "Disconnect quietly", done: "Disconnected quietly", body: "Remove the mutual link and stop seeing new contributions from this profile. They will not be notified." },
+    { icon: "person-remove-outline", title: "Disconnect profile", done: "Profile disconnected", body: "Remove the mutual link and stop seeing new contributions from this profile. They will not be notified." },
     { icon: "flag-outline", title: "Report concern", done: "Concern noted", body: "Send a moderation note if something feels unsafe, spammy, or out of place." }
   ];
+  const signedIn = authStatus === "signed_in";
+  const supportEmail = releaseInfo.supportEmail;
+
+  const copySupportEmail = async () => {
+    try {
+      await Clipboard.setStringAsync([
+        `Support: ${supportEmail}`,
+        `App: Weevrbird ${releaseInfo.version}`,
+        `iOS build: ${releaseInfo.iosBuildNumber}`,
+        `Android code: ${releaseInfo.androidVersionCode}`,
+        accountEmail ? `Account: ${accountEmail}` : "Account: not linked"
+      ].join("\n"));
+      setSupportStatus("copied");
+    } catch {
+      setSupportStatus("unavailable");
+    }
+  };
+
+  const handleSignOut = () => {
+    onSignOut();
+    setSignedOutHere(true);
+  };
+
+  const copyDeletionRequest = async () => {
+    try {
+      await Clipboard.setStringAsync([
+        "I want to delete my Weevrbird account data.",
+        `Account: ${accountEmail || "not linked"}`,
+        `App: Weevrbird ${releaseInfo.version}`,
+        `iOS build: ${releaseInfo.iosBuildNumber}`,
+        `Android code: ${releaseInfo.androidVersionCode}`,
+        `Support: ${supportEmail}`
+      ].join("\n"));
+      setDeleteRequestStatus("copied");
+    } catch {
+      setDeleteRequestStatus("unavailable");
+    }
+  };
+
+  const copyPrivacySummary = async () => {
+    try {
+      await Clipboard.setStringAsync([
+        "Weevrbird privacy summary",
+        `App: Weevrbird ${releaseInfo.version}`,
+        "This build stores onboarding, interests, saved pieces, opened history, contribution drafts, profile setup, and private connection count on this device.",
+        "Location preference is broad only. The app does not request precise GPS location in this build.",
+        "The app uses local bird profile marks and does not upload user photos, videos, or custom avatar images in this build.",
+        "Email identity is used for contribution/profile identity once linked."
+      ].join("\n"));
+      setPrivacySummaryStatus("copied");
+    } catch {
+      setPrivacySummaryStatus("unavailable");
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <BackButton label="Back to profile" theme={theme} onPress={onBack} />
       <View style={[styles.safetyHero, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         <Text style={[styles.moduleEyebrow, { color: palette.deepForest }]}>PRIVACY AND SAFETY</Text>
-        <Text style={[styles.shelfTitle, { color: theme.text }]}>Quiet controls for your attention.</Text>
+        <Text style={[styles.shelfTitle, { color: theme.text }]}>Privacy controls for your attention.</Text>
         <Text style={[styles.body, { color: theme.muted }]}>These actions are private. Weevrbird should give you control without turning safety into a performance.</Text>
       </View>
+      <SectionHeader title="Data and Account" action={signedIn ? "Email linked" : "Local only"} theme={theme} />
+      <View style={[styles.dataAccountPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <View style={styles.dataFactRow}>
+          <Ionicons name="phone-portrait-outline" color={theme.accent} size={20} />
+          <View style={styles.profileCollectionCopy}>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>Saved on this device</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Onboarding, interests, library saves, reading history, drafts, and profile setup are kept locally in this build.</Text>
+          </View>
+        </View>
+        <View style={styles.dataFactRow}>
+          <Ionicons name={signedIn ? "mail-open-outline" : "mail-outline"} color={theme.accent} size={20} />
+          <View style={styles.profileCollectionCopy}>
+            <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{signedIn ? accountEmail : "No email linked"}</Text>
+            <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{signedIn ? "Your email protects contribution identity. Cross-device sync still needs production backend support." : "Reading still works. Link email before public contributions or profile recovery."}</Text>
+          </View>
+        </View>
+      </View>
+      <AccountActionRow
+        icon={supportStatus === "copied" ? "checkmark-circle-outline" : supportStatus === "unavailable" ? "alert-circle-outline" : "help-circle-outline"}
+        title={supportStatus === "copied" ? "Support details copied" : "Copy support details"}
+        body={supportStatus === "unavailable" ? "Could not copy support details. Try again after checking clipboard access." : `${supportEmail} / includes app version and build.`}
+        accent={supportStatus === "unavailable" ? palette.red : theme.accent}
+        theme={theme}
+        onPress={() => { void copySupportEmail(); }}
+      />
+      <AccountActionRow
+        icon={privacySummaryStatus === "copied" ? "checkmark-circle-outline" : privacySummaryStatus === "unavailable" ? "alert-circle-outline" : "document-text-outline"}
+        title={privacySummaryStatus === "copied" ? "Privacy summary copied" : "Copy privacy summary"}
+        body={privacySummaryStatus === "unavailable" ? "Could not copy the privacy summary. Try again after checking clipboard access." : "Copies a plain-language summary of what this build stores and does not collect."}
+        accent={privacySummaryStatus === "unavailable" ? palette.red : theme.accent}
+        theme={theme}
+        onPress={() => { void copyPrivacySummary(); }}
+      />
+      <AccountActionRow
+        icon={deleteRequestStatus === "copied" ? "checkmark-circle-outline" : deleteRequestStatus === "unavailable" ? "alert-circle-outline" : "trash-outline"}
+        title={deleteRequestStatus === "copied" ? "Deletion request copied" : "Copy deletion request"}
+        body={deleteRequestStatus === "unavailable" ? "Could not copy the deletion request. Try again after checking clipboard access." : "Copies a support request with account and build details. This does not clear local device state."}
+        accent={palette.red}
+        theme={theme}
+        onPress={() => { void copyDeletionRequest(); }}
+      />
+      {signedIn && (
+        <AccountActionRow
+          icon={signedOutHere ? "checkmark-circle-outline" : "log-out-outline"}
+          title={signedOutHere ? "Signed out on this device" : "Sign out"}
+          body={signedOutHere ? "Your local saved items and preferences remain on this device." : "Disconnect the email identity from this device while keeping local reading state."}
+          accent={theme.accent}
+          theme={theme}
+          onPress={handleSignOut}
+        />
+      )}
+      <View style={[styles.releaseInfoPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+        <Ionicons name="information-circle-outline" color={theme.accent} size={18} />
+        <View style={styles.profileCollectionCopy}>
+          <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>App version</Text>
+          <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>
+            Weevrbird {releaseInfo.version} / iOS build {releaseInfo.iosBuildNumber} / Android code {releaseInfo.androidVersionCode}
+          </Text>
+        </View>
+      </View>
+
       <SectionHeader title="Discovery Controls" theme={theme} />
       <View style={[styles.discoveryControlsPanel, { borderColor: theme.line, backgroundColor: theme.panel }]}>
         <DiscoveryToggleRow
@@ -766,16 +1033,26 @@ function ProfileSafetyPanel({ theme, onBack, onResetApp }: { theme: AppTheme; on
       })}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Reset Weevrbird"
-        onPress={onResetApp}
+        accessibilityLabel={resetArmed ? "Confirm reset Weevrbird" : "Reset Weevrbird"}
+        accessibilityState={{ selected: resetArmed }}
+        onPress={() => {
+          if (!resetArmed) {
+            setResetArmed(true);
+            return;
+          }
+
+          onResetApp();
+        }}
         style={({ pressed }) => [styles.resetRow, pressed && styles.profileRowPressed, { borderColor: "rgba(158, 61, 52, 0.24)", backgroundColor: "rgba(158, 61, 52, 0.06)" }]}
       >
-        <Ionicons name="refresh-circle-outline" color={palette.red} size={24} />
+        <Ionicons name={resetArmed ? "warning-outline" : "refresh-circle-outline"} color={palette.red} size={24} />
         <View style={styles.profileCollectionCopy}>
-          <Text style={[styles.profileCollectionTitle, { color: palette.red }]}>Reset Weevrbird</Text>
-          <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>Clear your local setup and return to the first onboarding screen.</Text>
+          <Text style={[styles.profileCollectionTitle, { color: palette.red }]}>{resetArmed ? "Tap again to reset" : "Reset Weevrbird"}</Text>
+          <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>
+            {resetArmed ? "This clears your local profile, saved items, and contribution drafts on this device." : "Clear your local setup and return to the first onboarding screen."}
+          </Text>
         </View>
-        <Ionicons name="chevron-forward" color={palette.red} size={17} />
+        <Ionicons name={resetArmed ? "checkmark-circle-outline" : "chevron-forward"} color={palette.red} size={17} />
       </Pressable>
     </ScrollView>
   );
@@ -811,8 +1088,37 @@ function DiscoveryToggleRow({ icon, title, body, enabled, onToggle, theme }: {
 
 function getSafetyAcknowledgement(title: string) {
   if (title === "Mute profile") return "Their contributions will stay out of your issue unless you choose to bring them back.";
-  if (title === "Disconnect quietly") return "You will stop seeing new contributions from this profile. They will not be notified.";
+  if (title === "Disconnect profile") return "You will stop seeing new contributions from this profile. They will not be notified.";
   return "A private moderation note has been prepared for review.";
+}
+
+function AccountActionRow({ icon, title, body, accent, theme, onPress }: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  body: string;
+  accent: string;
+  theme: AppTheme;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.accountActionRow,
+        pressed && styles.profileRowPressed,
+        { borderColor: theme.line, backgroundColor: theme.panel }
+      ]}
+    >
+      <Ionicons name={icon} color={accent} size={21} />
+      <View style={styles.profileCollectionCopy}>
+        <Text style={[styles.profileCollectionTitle, { color: theme.text }]}>{title}</Text>
+        <Text style={[styles.profileCollectionDescription, { color: theme.muted }]}>{body}</Text>
+      </View>
+      <Ionicons name="chevron-forward" color={theme.muted} size={17} />
+    </Pressable>
+  );
 }
 
 function BackButton({ label, theme, onPress }: { label: string; theme: AppTheme; onPress: () => void }) {
@@ -830,22 +1136,38 @@ function ExternalProfileLink({ icon, title, domain, theme }: {
   domain: string;
   theme: AppTheme;
 }) {
-  const [opened, setOpened] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "unavailable">("idle");
+  const copied = copyStatus === "copied";
+  const unavailable = copyStatus === "unavailable";
+  const copyLink = async () => {
+    try {
+      await Clipboard.setStringAsync(`https://${domain}`);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("unavailable");
+    }
+  };
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={opened ? `${title} link ready` : `Open ${title}`}
-      accessibilityState={{ selected: opened }}
-      onPress={() => setOpened(true)}
-      style={({ pressed }) => [styles.externalProfileLink, opened && styles.externalProfileLinkOpened, pressed && styles.profileRowPressed, { borderColor: opened ? `${theme.accent}44` : "transparent" }]}
+      accessibilityLabel={copied ? `${title} link copied` : `Copy ${title} link`}
+      accessibilityState={{ selected: copied }}
+      onPress={() => { void copyLink(); }}
+      style={({ pressed }) => [
+        styles.externalProfileLink,
+        copied && styles.externalProfileLinkOpened,
+        unavailable && styles.externalProfileLinkUnavailable,
+        pressed && styles.profileRowPressed,
+        { borderColor: copied ? `${theme.accent}44` : unavailable ? `${palette.red}44` : "transparent" }
+      ]}
     >
-      <Ionicons name={opened ? "checkmark-circle-outline" : icon} color={opened ? theme.accent : theme.muted} size={17} />
+      <Ionicons name={copied ? "checkmark-circle-outline" : unavailable ? "alert-circle-outline" : icon} color={copied ? theme.accent : unavailable ? palette.red : theme.muted} size={17} />
       <View style={styles.externalProfileCopy}>
-        <Text style={[styles.externalProfileTitle, { color: theme.text }]}>{opened ? `${title} ready` : title}</Text>
-        <Text style={[styles.meta, { color: theme.muted }]}>{opened ? `External link: ${domain}` : domain}</Text>
+        <Text style={[styles.externalProfileTitle, { color: theme.text }]}>{copied ? `${title} copied` : title}</Text>
+        <Text style={[styles.meta, { color: unavailable ? palette.red : theme.muted }]}>{unavailable ? "Could not copy this link." : domain}</Text>
       </View>
-      <Ionicons name={opened ? "checkmark" : "open-outline"} color={opened ? theme.accent : theme.muted} size={16} />
+      <Ionicons name={copied ? "checkmark" : "copy-outline"} color={copied ? theme.accent : theme.muted} size={16} />
     </Pressable>
   );
 }
@@ -917,17 +1239,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontFamily: "Inter_600SemiBold"
   },
-  profileConnectButton: {
-    minHeight: 34,
+  ownProfileBadge: {
+    minHeight: 30,
     borderRadius: radii.round,
     paddingHorizontal: spacing.sm,
     justifyContent: "center",
     alignSelf: "flex-start",
     marginTop: spacing.xs
   },
-  profileConnectText: {
-    color: "#FFFDF8",
+  ownProfileBadgeText: {
     fontSize: 12,
+    lineHeight: 16,
     fontFamily: "Inter_700Bold"
   },
   profileButtonPressed: {
@@ -956,6 +1278,45 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontFamily: "Inter_600SemiBold"
+  },
+  privateProfileStats: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  privateStatItem: {
+    minWidth: 86,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  privateStatValue: {
+    fontSize: 30,
+    lineHeight: 34,
+    fontFamily: "PlayfairDisplay_700Bold"
+  },
+  privateStatLabel: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontFamily: "Inter_700Bold",
+    textTransform: "uppercase",
+    textAlign: "center"
+  },
+  privateStatCopy: {
+    flex: 1,
+    gap: 2
+  },
+  privateStatTitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  privateStatBody: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontFamily: "Inter_500Medium"
   },
   profileChapter: {
     borderTopWidth: 1,
@@ -1212,6 +1573,9 @@ const styles = StyleSheet.create({
   externalProfileLinkOpened: {
     backgroundColor: "rgba(15, 61, 46, 0.04)"
   },
+  externalProfileLinkUnavailable: {
+    backgroundColor: "rgba(158, 61, 52, 0.05)"
+  },
   externalProfileCopy: {
     flex: 1
   },
@@ -1257,6 +1621,72 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontFamily: "PlayfairDisplay_700Bold"
   },
+  shelfDraftPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    gap: spacing.md,
+    ...shadows.card
+  },
+  shelfNameInput: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: "Inter_600SemiBold"
+  },
+  shelfVisibilityRow: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  shelfVisibilityButton: {
+    flex: 1,
+    minHeight: 42,
+    borderWidth: 1,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
+  shelfVisibilityText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontFamily: "Inter_700Bold"
+  },
+  shelfStarterStack: {
+    gap: spacing.sm
+  },
+  shelfStarterItem: {
+    minHeight: 66,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm
+  },
+  shelfSaveButton: {
+    minHeight: 46,
+    borderRadius: radii.round,
+    paddingHorizontal: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm
+  },
+  shelfSaveButtonDisabled: {
+    opacity: 0.62
+  },
+  shelfSaveButtonText: {
+    color: "#FFFDF8",
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
   shelfItem: {
     borderWidth: 1,
     borderRadius: 10,
@@ -1274,6 +1704,36 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
     ...shadows.card
+  },
+  dataAccountPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    gap: spacing.md,
+    ...shadows.card
+  },
+  dataFactRow: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
+  },
+  accountActionRow: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    ...shadows.card
+  },
+  releaseInfoPanel: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md
   },
   discoveryControlsPanel: {
     borderWidth: 1,

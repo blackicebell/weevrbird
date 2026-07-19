@@ -4,11 +4,13 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { EmptyState } from "../components/EmptyState";
 import { FeedCard } from "../components/FeedCard";
+import { ProfileMark } from "../components/ProfileMark";
 import { localDataService } from "../data/localDataService";
-import { avatars, feedEditorialMeta, filters } from "../app/editorial";
+import { feedEditorialMeta, filters } from "../app/editorial";
 import { radii, shadows, spacing } from "../theme/tokens";
 import { AppTheme } from "../theme/useTheme";
 import { FeedItem, Person, Smartfeed, SmartfeedFilter } from "../types/product";
+import { formatFeedItemType } from "../utils/feedItemLabels";
 
 export function FeedsScreen(props: {
   theme: AppTheme;
@@ -20,11 +22,13 @@ export function FeedsScreen(props: {
   visibleFeedItems: FeedItem[];
   savedItemIds: string[];
   usefulItemIds: string[];
+  smartfeedExplainerDismissed: boolean;
+  onDismissSmartfeedExplainer: () => void;
   toggleSavedItem: (itemId: string) => void;
   toggleUsefulItem: (itemId: string) => void;
   onOpenDetail: (item: FeedItem) => void;
 }) {
-  const { theme, selectedFeed, selectedInterests, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
+  const { theme, selectedFeed, selectedInterests, setSelectedFeed, activeFilter, setActiveFilter, visibleFeedItems, savedItemIds, usefulItemIds, smartfeedExplainerDismissed, onDismissSmartfeedExplainer, toggleSavedItem, toggleUsefulItem, onOpenDetail } = props;
   const editorial = feedEditorialMeta[selectedFeed.id] ?? feedEditorialMeta.atlanta;
   const pace = getFeedPace(selectedFeed);
   const feedFit = getFeedFitSignal(selectedFeed);
@@ -40,6 +44,25 @@ export function FeedsScreen(props: {
       <Text style={[styles.kicker, { color: theme.accent }]}>MAGAZINE SECTIONS</Text>
       <Text style={[styles.screenTitle, { color: theme.text }]}>Smartfeeds</Text>
       <Text style={[styles.body, { color: theme.muted }]}>Each Smartfeed behaves like a section of your personal magazine, not another endless timeline.</Text>
+      {!smartfeedExplainerDismissed && (
+        <View style={[styles.smartfeedExplainer, { borderColor: theme.line, backgroundColor: theme.panel }]}>
+          <View style={[styles.smartfeedExplainerIcon, { backgroundColor: theme.panelAlt }]}>
+            <Ionicons name="albums-outline" color={theme.accent} size={18} />
+          </View>
+          <View style={styles.smartfeedExplainerCopy}>
+            <Text style={[styles.smartfeedExplainerTitle, { color: theme.text }]}>Finite sections, not endless feeds</Text>
+            <Text style={[styles.meta, { color: theme.muted }]}>Smartfeeds gather the strongest pieces for a topic, then stop so you can actually catch up.</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss Smartfeed explanation"
+            onPress={onDismissSmartfeedExplainer}
+            style={({ pressed }) => [styles.smartfeedExplainerClose, pressed && styles.chipPressed]}
+          >
+            <Ionicons name="close" color={theme.muted} size={18} />
+          </Pressable>
+        </View>
+      )}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.feedRail}>
         {feeds.map((feed) => <FeedJournalTab key={feed.id} feed={feed} selected={selectedFeed.id === feed.id} theme={theme} onPress={() => setSelectedFeed(feed)} />)}
       </ScrollView>
@@ -144,7 +167,13 @@ export function FeedsScreen(props: {
               onOpen={() => onOpenDetail(item)}
             />
           ))}
-          <FeedCaughtUp theme={theme} editorial={editorial} feed={selectedFeed} count={visibleFeedItems.length} />
+          <FeedCaughtUp
+            theme={theme}
+            editorial={editorial}
+            feed={selectedFeed}
+            count={visibleFeedItems.length}
+            savedCount={visibleFeedItems.filter((item) => savedItemIds.includes(item.id)).length}
+          />
         </>
       ) : (
         <EmptyState
@@ -174,7 +203,7 @@ function FromYouFeedMarker({ theme, editorial, feed, count }: {
       <View style={styles.fromYouMarkerCopy}>
         <Text style={[styles.fromYouMarkerTitle, { color: theme.text }]}>Placed from your review</Text>
         <Text style={[styles.meta, { color: theme.muted }]}>
-          {count} signal{count === 1 ? "" : "s"} you chose to make visible in {feed.name}.
+          {count} contribution{count === 1 ? "" : "s"} you chose to make visible in {feed.name}.
         </Text>
       </View>
     </View>
@@ -200,7 +229,7 @@ function PeopleContributingHere({ people, items, feed, selectedInterests, theme,
           <Ionicons name="people-outline" color={editorial.accent} size={19} />
         </View>
       </View>
-      <Text style={[styles.meta, { color: theme.muted }]}>Shown through recent public contributions, not follower counts.</Text>
+      <Text style={[styles.meta, { color: theme.muted }]}>Shown through recent public contributions, not popularity counts.</Text>
       <View style={styles.peopleContributingList}>
         {people.slice(0, 3).map((person) => (
           <ContributingPersonRow
@@ -225,16 +254,15 @@ function ContributingPersonRow({ person, item, selectedInterests, theme, accent 
   accent: string;
 }) {
   const sharedInterests = getSharedInterests(person.interests, selectedInterests);
-  const context = item ? `${formatContributionType(item.itemType)} / ${item.publishedAt}` : "Recent public contribution";
+  const publishedLabel = item?.publishedAt || "Recent";
+  const context = item ? `${formatContributionType(item.itemType)} / ${publishedLabel}` : "Recent public contribution";
   const reason = sharedInterests.length > 0
     ? `Shares ${formatList(sharedInterests)}`
     : person.bio;
 
   return (
     <View style={styles.contributingPersonRow}>
-      <View style={[styles.contributingPersonAvatar, { borderColor: `${accent}44`, backgroundColor: `${accent}10` }]}>
-        <Text style={[styles.contributingPersonAvatarText, { color: accent }]}>{avatars[person.avatar] ?? person.displayName.charAt(0)}</Text>
-      </View>
+      <ProfileMark index={person.avatar} size={38} />
       <View style={styles.contributingPersonCopy}>
         <View style={styles.contributingPersonTopLine}>
           <Text style={[styles.contributingPersonName, { color: theme.text }]}>{person.displayName}</Text>
@@ -288,16 +316,17 @@ function EditorNote({ theme, editorial, feed }: { theme: AppTheme; editorial: (t
       <View style={[styles.editorNoteRule, { backgroundColor: editorial.accent }]} />
       <Text style={[styles.kicker, { color: editorial.accent }]}>EDITOR'S NOTE</Text>
       <Text style={[styles.editorNoteTitle, { color: theme.text }]}>{feed.name} is curated for a slower skim.</Text>
-      <Text style={[styles.body, { color: theme.muted }]}>This section is intentionally finite: start with the strongest piece, keep the useful bits, then leave when the edition closes.</Text>
+      <Text style={[styles.body, { color: theme.muted }]}>This section is intentionally finite: start with the strongest piece, keep the useful bits, then move on when you are caught up.</Text>
     </View>
   );
 }
 
-function FeedCaughtUp({ theme, editorial, feed, count }: {
+function FeedCaughtUp({ theme, editorial, feed, count, savedCount }: {
   theme: AppTheme;
   editorial: (typeof feedEditorialMeta)[string];
   feed: Smartfeed;
   count: number;
+  savedCount: number;
 }) {
   return (
     <View style={[styles.feedCaughtUp, { borderColor: editorial.secondary }]}>
@@ -309,22 +338,22 @@ function FeedCaughtUp({ theme, editorial, feed, count }: {
       <Text style={[styles.body, { color: theme.muted, textAlign: "center" }]}>No infinite scroll here. This section will feel new again when something meaningful changes.</Text>
       <View style={[styles.feedCaughtUpNext, { borderColor: editorial.secondary, backgroundColor: theme.dark ? "rgba(245, 238, 228, 0.05)" : "rgba(255, 255, 252, 0.62)" }]}>
         <Ionicons name="compass-outline" color={editorial.accent} size={17} />
-        <Text style={[styles.feedCaughtUpNextText, { color: theme.muted }]}>Next: save anything worth returning to, check Archive, or add a useful signal for {feed.name}.</Text>
+        <Text style={[styles.feedCaughtUpNextText, { color: theme.muted }]}>Next: save anything worth returning to, open Library, or add a useful note for {feed.name}.</Text>
       </View>
       <View style={styles.feedCaughtUpStats}>
-        <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>{count} stories read</Text>
-        <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>1 discussion saved</Text>
+        <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>{count} piece{count === 1 ? "" : "s"} shown</Text>
+        <Text style={[styles.feedCaughtUpStat, { color: editorial.accent }]}>{savedCount} saved from this section</Text>
       </View>
     </View>
   );
 }
 
 function getFeedPace(feed: Smartfeed) {
-  if (feed.type === "city") return { pace: "Morning + evening", bestFor: "Local signal" };
-  if (feed.id === "black-tech") return { pace: "Daily brief", bestFor: "Career signal" };
+  if (feed.type === "city") return { pace: "Morning + evening", bestFor: "Local context" };
+  if (feed.id === "black-tech") return { pace: "Daily brief", bestFor: "Career context" };
   if (feed.id === "creative-community") return { pace: "Slow reads", bestFor: "Studio notes" };
   if (feed.id === "food-culture") return { pace: "Weekend rhythm", bestFor: "Places to try" };
-  return { pace: "Quiet updates", bestFor: "Useful finds" };
+  return { pace: "Periodic updates", bestFor: "Useful finds" };
 }
 
 function getPeopleContributingHere(items: FeedItem[]) {
@@ -344,13 +373,7 @@ function getPeopleContributingHere(items: FeedItem[]) {
 }
 
 function formatContributionType(itemType: FeedItem["itemType"]) {
-  if (itemType === "recommendation") return "Recommendation";
-  if (itemType === "question") return "Question";
-  if (itemType === "discussion") return "Discussion";
-  if (itemType === "long_read") return "Long read";
-  if (itemType === "link") return "Link";
-  if (itemType === "note") return "Note";
-  return "Contribution";
+  return formatFeedItemType(itemType);
 }
 
 function getSharedInterests(personInterests: string[], selectedInterests: string[]) {
@@ -412,7 +435,7 @@ function getFeedEmptyState(filter: SmartfeedFilter, feed: Smartfeed): {
 
   return {
     icon: "leaf-outline",
-    title: "This section is quiet right now.",
+    title: "No new pieces here right now.",
     body: `${feed.name} has no new pieces in this issue. When something meaningful changes, it will appear here.`
   };
 }
@@ -424,7 +447,7 @@ function getFilterContext(filter: SmartfeedFilter, feed: Smartfeed): {
   if (filter === "Conversations") {
     return {
       icon: "chatbubble-ellipses-outline",
-      body: `Discuss shows questions and replies moving through ${feed.name}.`
+      body: `Conversations shows questions and replies moving through ${feed.name}.`
     };
   }
 
@@ -438,13 +461,13 @@ function getFilterContext(filter: SmartfeedFilter, feed: Smartfeed): {
   if (filter === "Saved") {
     return {
       icon: "bookmark-outline",
-      body: `Archive shows what you saved from ${feed.name} for later.`
+      body: `Saved keeps what you want to return to from ${feed.name}.`
     };
   }
 
   return {
     icon: "newspaper-outline",
-    body: `Today shows the freshest useful signals from ${feed.name}.`
+    body: `Today shows the freshest useful pieces from ${feed.name}.`
   };
 }
 
@@ -518,6 +541,38 @@ const styles = StyleSheet.create({
   feedRail: {
     gap: spacing.md,
     paddingRight: spacing.lg
+  },
+  smartfeedExplainer: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    ...shadows.card
+  },
+  smartfeedExplainerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  smartfeedExplainerCopy: {
+    flex: 1,
+    gap: 2
+  },
+  smartfeedExplainerTitle: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontFamily: "Inter_700Bold"
+  },
+  smartfeedExplainerClose: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center"
   },
   feedJournalTab: {
     width: 166,

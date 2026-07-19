@@ -13,9 +13,9 @@ export const launchFeeds: Smartfeed[] = [
   },
   {
     id: "black-tech",
-    name: "Black Tech",
+    name: "Tech",
     type: "community",
-    description: "Founders, designers, engineers, operators, and useful career signals.",
+    description: "Founders, designers, engineers, operators, and useful career context.",
     members: "940 builders",
     newItems: 7,
     palette: "#2D63B5",
@@ -113,7 +113,7 @@ export const feedItems: FeedItem[] = [
     feedId: "creative-community",
     sourceName: "Independent Design Radio",
     title: "Designing for slower attention",
-    excerpt: "A conversation about editorial interfaces, quieter social spaces, and the value of letting people read before reacting.",
+    excerpt: "A conversation about editorial interfaces, smaller social spaces, and the value of letting people read before reacting.",
     url: "https://example.com/design-podcast",
     publishedAt: "Yesterday",
     createdAt: "2026-07-16T15:00:00Z",
@@ -180,7 +180,7 @@ export const people: Person[] = [
     username: "dking",
     city: "Atlanta",
     bio: "Product operator, community builder, and practical startup notes collector.",
-    interests: ["Black Tech", "Startups", "UX"],
+    interests: ["Tech", "Startups", "UX"],
     linked: false,
     avatar: 1
   },
@@ -189,7 +189,7 @@ export const people: Person[] = [
     displayName: "Imani Brooks",
     username: "imani",
     city: "Decatur",
-    bio: "Finding quiet places, local gems, and useful rituals.",
+    bio: "Finding tucked-away places, local gems, and useful rituals.",
     interests: ["Local Food", "Travel", "Faith"],
     linked: false,
     avatar: 2
@@ -208,9 +208,9 @@ export const people: Person[] = [
 
 export const interests = [
   "Atlanta",
-  "Black Tech",
+  "Tech",
   "UX Design",
-  "Nigerian Business",
+  "Business",
   "Faith",
   "Solo Travel",
   "Local Food",
@@ -225,5 +225,5 @@ export const adminMetrics: AdminMetric[] = [
   { label: "Reports awaiting review", value: "8", tone: "attention" },
   { label: "External items imported", value: "214", tone: "good" },
   { label: "Ingestion failures", value: "3", tone: "attention" },
-  { label: "Active joined feeds", value: "42", tone: "calm" }
+  { label: "Active joined feeds", value: "42", tone: "neutral" }
 ];

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">Weevrbird logo lockup</title>
+  <desc id="desc">Weevrbird wordmark paired with a woven weaverbird vector mark.</desc>
+  <defs>
+    <clipPath id="bodyClip">
+      <path d="M151 276c0-91 68-158 162-158 88 0 153 56 153 136 0 84-72 150-163 150-87 0-152-53-152-128Z"/>
+    </clipPath>
+    <linearGradient id="bodyGradient" x1="151" x2="464" y1="123" y2="401" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#DBA85B"/>
+      <stop offset=".5" stop-color="#A6B39A"/>
+      <stop offset="1" stop-color="#0F3D2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="520" fill="none"/>
+  <path fill="#0F3D2E" d="M140 278c0-99 75-174 177-174 97 0 169 62 169 151 0 93-79 166-179 166-98 0-167-59-167-143Z"/>
+  <path fill="url(#bodyGradient)" d="M151 276c0-91 68-158 162-158 88 0 153 56 153 136 0 84-72 150-163 150-87 0-152-53-152-128Z"/>
+  <g clip-path="url(#bodyClip)" fill="none" stroke-linecap="round">
+    <path stroke="#FFFDF8" stroke-opacity=".76" stroke-width="25" d="M114 228c84-45 171-51 261-18 52 19 93 23 140 1"/>
+    <path stroke="#0F3D2E" stroke-opacity=".64" stroke-width="21" d="M106 276c96-42 184-41 263 3 50 27 99 31 156 10"/>
+    <path stroke="#FFFDF8" stroke-opacity=".58" stroke-width="19" d="M118 328c79-30 152-26 219 12 50 28 102 39 161 22"/>
+    <path stroke="#DBA85B" stroke-opacity=".9" stroke-width="17" d="M162 173c19 77 68 138 146 181"/>
+    <path stroke="#C86F4A" stroke-opacity=".78" stroke-width="15" d="M226 139c15 91 66 166 154 223"/>
+  </g>
+  <path fill="#FFFDF8" fill-opacity=".9" d="M240 294c18-41 53-69 96-75 36-5 69 5 95 26-23 36-58 60-100 67-34 5-66 0-91-18Z"/>
+  <path fill="#0F3D2E" fill-opacity=".88" d="M266 290c16-24 41-39 70-43 21-2 42 1 60 11-19 16-39 26-63 30-24 4-46 1-67 2Z"/>
+  <path fill="#0F3D2E" d="M387 98c40 0 73 26 84 62l49 18-45 24c-7 44-45 77-90 77-50 0-90-40-90-90s41-91 92-91Z"/>
+  <path fill="#A6B39A" d="M381 124c30 0 55 24 55 55s-25 55-55 55-55-24-55-55 25-55 55-55Z"/>
+  <path fill="#FFFDF8" d="M405 171c10 0 17 8 17 17s-7 17-17 17-17-8-17-17 7-17 17-17Z"/>
+  <path fill="#0E1715" d="M411 178c5 0 9 5 9 10s-4 9-9 9-9-4-9-9 4-10 9-10Z"/>
+  <path fill="#DBA85B" d="M462 169 534 194 462 218c10-16 10-33 0-49Z"/>
+  <path fill="#0F3D2E" d="M174 364 77 430c24-49 55-88 92-116 5 18 7 34 5 50Z"/>
+  <path fill="#A6B39A" d="M193 386 133 483c6-54 22-99 49-136 11 13 14 26 11 39Z"/>
+  <text x="600" y="258" fill="#0E1715" font-family="Playfair Display, Georgia, serif" font-size="132" font-weight="700" letter-spacing="0">Weevrbird</text>
+  <text x="606" y="326" fill="#0F3D2E" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" letter-spacing="5">PERSONAL DISCOVERY</text>
+</svg>

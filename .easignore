@@ -1,0 +1,12 @@
+.git/
+.expo/
+node_modules/
+dist/
+web-build/
+coverage/
+qa-screenshots/
+*.log
+.DS_Store
+
+# Brand source files stay in the repo/workspace, but native builds only need assets/**/*.
+Weevrbird Logos/
