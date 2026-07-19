@@ -4,7 +4,8 @@ const requiredImages = [
   { path: "assets/icon.png", width: 1024, height: 1024 },
   { path: "assets/adaptive-icon.png", width: 1024, height: 1024 },
   { path: "assets/splash-icon.png", width: 1024, height: 1024 },
-  { path: "assets/favicon.png", width: 48, height: 48 }
+  { path: "assets/favicon.png", width: 48, height: 48 },
+  { path: "assets/store/google-play/feature-graphic.png", width: 1024, height: 500 }
 ];
 
 async function main() {

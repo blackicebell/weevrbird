@@ -104,7 +104,7 @@ Suggested answers for the current curated prototype:
 ## Store Assets Still Needed
 
 - Phone screenshots for Today, Feeds, Contribute, Library, and Profile.
-- Feature graphic for Google Play.
+- Google Play feature graphic: `assets/store/google-play/feature-graphic.png`.
 - Public privacy policy URL.
 - Support URL or final support email.
 - Final source-policy review for enabled external sources.
