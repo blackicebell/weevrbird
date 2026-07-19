@@ -4,6 +4,8 @@ const requiredFiles = [
   "docs/store-readiness.md",
   "docs/privacy-policy-draft.md",
   "docs/terms-of-use-draft.md",
+  ".github/workflows/pages.yml",
+  "public/index.html",
   "public/privacy.html",
   "public/terms.html"
 ];
@@ -12,8 +14,11 @@ const requiredSnippets = [
   ["docs/store-readiness.md", "docs/terms-of-use-draft.md"],
   ["docs/store-readiness.md", "public/privacy.html"],
   ["docs/store-readiness.md", "public/terms.html"],
+  ["docs/store-readiness.md", ".github/workflows/pages.yml"],
   ["docs/privacy-policy-draft.md", "support@weevrbird.app"],
   ["docs/terms-of-use-draft.md", "support@weevrbird.app"],
+  ["public/index.html", "privacy.html"],
+  ["public/index.html", "terms.html"],
   ["public/privacy.html", "support@weevrbird.app"],
   ["public/terms.html", "support@weevrbird.app"],
   ["src/app/release.ts", "supportEmail: \"support@weevrbird.app\""]

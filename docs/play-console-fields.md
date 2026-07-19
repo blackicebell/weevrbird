@@ -75,6 +75,12 @@ Hostable static pages:
 
 - Privacy policy page: `public/privacy.html`
 - Terms of Use page: `public/terms.html`
+- GitHub Pages workflow: `.github/workflows/pages.yml`
+
+Expected GitHub Pages URLs after Pages is enabled for the repository:
+
+- Privacy policy: `https://blackicebell.github.io/weevrbird/privacy.html`
+- Terms of Use: `https://blackicebell.github.io/weevrbird/terms.html`
 
 Before public release, publish a real privacy policy URL and confirm whether the production app adds:
 
@@ -115,7 +121,7 @@ Suggested answers for the current curated prototype:
   - `assets/store/google-play/screenshots/04-library.png`
 - `assets/store/google-play/screenshots/05-profile.png`
 - Google Play feature graphic: `assets/store/google-play/feature-graphic.png`.
-- Public privacy policy URL using `public/privacy.html`.
+- Public privacy policy URL using `public/privacy.html` or the deployed GitHub Pages URL.
 - Support URL or final support email.
 - Final source-policy review for enabled external sources.
 

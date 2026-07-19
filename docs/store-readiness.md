@@ -132,3 +132,11 @@ iOS production build status:
 - The build requires Apple Developer login before EAS can continue.
 - Run it interactively when ready to sign in:
   - `npm run build:ios:production`
+
+Policy hosting status:
+
+- Static policy pages live in `public/`.
+- GitHub Pages deployment is configured in `.github/workflows/pages.yml`.
+- After GitHub Pages is enabled for the repository, use:
+  - `https://blackicebell.github.io/weevrbird/privacy.html`
+  - `https://blackicebell.github.io/weevrbird/terms.html`
