@@ -9,7 +9,7 @@ Use this as a working entry sheet for Google Play internal testing and early sto
 - App name: Weevrbird
 - Package name: `com.weevrbird.app`
 - Current version name: `0.1.0`
-- Current Android version code: `4`
+- Current Android version code: `6`
 - Category suggestion: News & Magazines
 - App type: App
 - Pricing: Free
@@ -132,8 +132,8 @@ Suggested answers for the current curated prototype:
 
 ## Current Upload
 
-- AAB: `https://expo.dev/artifacts/eas/CQQ7KhRyvjeSFstcT5fvMfKDr0suE_ojYcClcku3hAY.aab`
-- Build commit: `ff6ffef`
+- AAB: `https://expo.dev/artifacts/eas/HESrVBePdREI43_XvJAyWkqopf2JFuedBESwan_u3JM.aab`
+- Build commit: `da2f7b5`
 - Handoff docs:
   - `docs/store-readiness.md`
   - `docs/internal-testing-qa.md`

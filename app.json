@@ -26,7 +26,7 @@
     },
     "android": {
       "package": "com.weevrbird.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#F4EFE6"

@@ -95,10 +95,10 @@ Current Android internal testing build:
 - Platform: Android
 - Package: `com.weevrbird.app`
 - Version: `0.1.0`
-- Version code: `4`
+- Version code: `6`
 - Target SDK: `35`
-- Commit: `ff6ffef`
-- AAB: `https://expo.dev/artifacts/eas/CQQ7KhRyvjeSFstcT5fvMfKDr0suE_ojYcClcku3hAY.aab`
+- Commit: `da2f7b5`
+- AAB: `https://expo.dev/artifacts/eas/HESrVBePdREI43_XvJAyWkqopf2JFuedBESwan_u3JM.aab`
 
 Google Play upload path:
 
