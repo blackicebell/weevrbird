@@ -84,3 +84,49 @@ Do not claim cross-device sync, production account deletion, live email authenti
    - `npm run build:ios:production`
 5. Test the installed build on a real phone.
 6. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
+
+## Current Internal Testing Handoff
+
+Current Android internal testing build:
+
+- Platform: Android
+- Package: `com.weevrbird.app`
+- Version: `0.1.0`
+- Version code: `4`
+- Target SDK: `35`
+- Commit: `ff6ffef`
+- AAB: `https://expo.dev/artifacts/eas/CQQ7KhRyvjeSFstcT5fvMfKDr0suE_ojYcClcku3hAY.aab`
+
+Google Play upload path:
+
+1. Open Google Play Console.
+2. Select Weevrbird.
+3. Go to Testing, then Internal testing.
+4. Create a new release.
+5. Upload the AAB above.
+6. Save, review, and roll out to internal testers.
+
+Automated Android submit status:
+
+- `npm run submit:android:production` is configured.
+- The latest submit attempt was stopped because EAS only found a Google service-account key for another app.
+- Do not use that key for Weevrbird.
+- Create or upload a dedicated Weevrbird Google Play service-account key before using automated submit.
+
+Dedicated Google Play service-account setup:
+
+1. In Google Play Console, open Setup, then API access.
+2. Link or select the Google Cloud project used for Weevrbird.
+3. Create a service account for Play uploads.
+4. Grant it access only to Weevrbird.
+5. Give it release permissions needed for internal testing uploads.
+6. Download the JSON key.
+7. Run `npm run submit:android:production`.
+8. Choose Upload a new service account key and provide the Weevrbird JSON key.
+
+iOS production build status:
+
+- `npm run build:ios:production` is configured to use the Xcode 26 EAS image.
+- The build requires Apple Developer login before EAS can continue.
+- Run it interactively when ready to sign in:
+  - `npm run build:ios:production`
