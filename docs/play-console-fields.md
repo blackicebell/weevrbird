@@ -82,6 +82,8 @@ Expected GitHub Pages URLs after Pages is enabled for the repository:
 - Privacy policy: `https://blackicebell.github.io/weevrbird/privacy.html`
 - Terms of Use: `https://blackicebell.github.io/weevrbird/terms.html`
 
+Only paste these into Play Console after the URLs return HTTP 200. A 404 means GitHub Pages still needs to be enabled or the deploy workflow has not finished.
+
 Before public release, publish a real privacy policy URL and confirm whether the production app adds:
 
 - Backend account storage

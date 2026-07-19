@@ -137,6 +137,16 @@ Policy hosting status:
 
 - Static policy pages live in `public/`.
 - GitHub Pages deployment is configured in `.github/workflows/pages.yml`.
+- GitHub Pages must be enabled in repository settings with Source set to GitHub Actions.
+- Before using the URLs in a store form, verify they return HTTP 200.
 - After GitHub Pages is enabled for the repository, use:
   - `https://blackicebell.github.io/weevrbird/privacy.html`
   - `https://blackicebell.github.io/weevrbird/terms.html`
+
+Policy URL verification:
+
+```powershell
+$ProgressPreference='SilentlyContinue'
+Invoke-WebRequest -Uri 'https://blackicebell.github.io/weevrbird/privacy.html' -UseBasicParsing
+Invoke-WebRequest -Uri 'https://blackicebell.github.io/weevrbird/terms.html' -UseBasicParsing
+```
