@@ -85,7 +85,8 @@ Do not claim cross-device sync, production account deletion, live email authenti
 5. Test the installed build on a real phone using `docs/internal-testing-qa.md`.
 6. Invite testers with `docs/internal-testing-invite.md`.
 7. Fill Play Console using `docs/play-console-fields.md`.
-8. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
+8. Fill App Store Connect using `docs/app-store-connect-fields.md`.
+9. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
 
 ## Current Internal Testing Handoff
 

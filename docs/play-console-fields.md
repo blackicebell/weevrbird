@@ -123,7 +123,7 @@ Suggested answers for the current curated prototype:
   - `assets/store/google-play/screenshots/02-smartfeeds.png`
   - `assets/store/google-play/screenshots/03-contribute.png`
   - `assets/store/google-play/screenshots/04-library.png`
-- `assets/store/google-play/screenshots/05-profile.png`
+  - `assets/store/google-play/screenshots/05-profile.png`
 - Google Play feature graphic: `assets/store/google-play/feature-graphic.png`.
 - Public privacy policy URL using `public/privacy.html` or the deployed GitHub Pages URL.
 - Support URL or final support email.
