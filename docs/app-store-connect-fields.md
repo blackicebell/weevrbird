@@ -103,9 +103,17 @@ Do not claim production cross-device sync, production account deletion, live ema
 
 ## Screenshots
 
-The current Google Play screenshots can be reused as visual references, but App Store screenshots should be generated/exported in Apple-required sizes before submission.
+Apple accepts 6.9-inch iPhone portrait screenshots at `1320 x 2868`, `1290 x 2796`, or `1260 x 2736`. This repo exports the large `1320 x 2868` set.
 
-Reference images:
+App Store iPhone 6.9-inch screenshots:
+
+- `assets/store/app-store/iphone-69/01-today.png`
+- `assets/store/app-store/iphone-69/02-smartfeeds.png`
+- `assets/store/app-store/iphone-69/03-contribute.png`
+- `assets/store/app-store/iphone-69/04-library.png`
+- `assets/store/app-store/iphone-69/05-profile.png`
+
+Google Play reference images:
 
 - `assets/store/google-play/screenshots/01-today.png`
 - `assets/store/google-play/screenshots/02-smartfeeds.png`

@@ -2,8 +2,10 @@ import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import sharp from "sharp";
 
-const outputDir = "assets/store/google-play/screenshots";
+const googlePlayOutputDir = "assets/store/google-play/screenshots";
+const appStoreOutputDir = "assets/store/app-store/iphone-69";
 const size = { width: 1080, height: 1920 };
+const appStoreSize = { width: 1320, height: 2868 };
 
 const palette = {
   ink: "#0E1715",
@@ -81,14 +83,28 @@ const screens = [
   }
 ];
 
-await mkdir(outputDir, { recursive: true });
+await mkdir(googlePlayOutputDir, { recursive: true });
+await mkdir(appStoreOutputDir, { recursive: true });
 
 for (const screen of screens) {
   const svg = renderScreen(screen);
-  const output = `${outputDir}/${screen.file}`;
-  await mkdir(dirname(output), { recursive: true });
-  await sharp(Buffer.from(svg)).png().toFile(output);
-  console.log(`exported ${output}`);
+  const googlePlayOutput = `${googlePlayOutputDir}/${screen.file}`;
+  const appStoreOutput = `${appStoreOutputDir}/${screen.file}`;
+  await mkdir(dirname(googlePlayOutput), { recursive: true });
+  await mkdir(dirname(appStoreOutput), { recursive: true });
+
+  const source = Buffer.from(svg);
+  await sharp(source).png().toFile(googlePlayOutput);
+  console.log(`exported ${googlePlayOutput}`);
+
+  await sharp(source)
+    .resize(appStoreSize.width, appStoreSize.height, {
+      fit: "contain",
+      background: palette.mint
+    })
+    .png()
+    .toFile(appStoreOutput);
+  console.log(`exported ${appStoreOutput}`);
 }
 
 function renderScreen(screen) {

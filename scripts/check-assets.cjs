@@ -10,7 +10,12 @@ const requiredImages = [
   { path: "assets/store/google-play/screenshots/02-smartfeeds.png", width: 1080, height: 1920 },
   { path: "assets/store/google-play/screenshots/03-contribute.png", width: 1080, height: 1920 },
   { path: "assets/store/google-play/screenshots/04-library.png", width: 1080, height: 1920 },
-  { path: "assets/store/google-play/screenshots/05-profile.png", width: 1080, height: 1920 }
+  { path: "assets/store/google-play/screenshots/05-profile.png", width: 1080, height: 1920 },
+  { path: "assets/store/app-store/iphone-69/01-today.png", width: 1320, height: 2868 },
+  { path: "assets/store/app-store/iphone-69/02-smartfeeds.png", width: 1320, height: 2868 },
+  { path: "assets/store/app-store/iphone-69/03-contribute.png", width: 1320, height: 2868 },
+  { path: "assets/store/app-store/iphone-69/04-library.png", width: 1320, height: 2868 },
+  { path: "assets/store/app-store/iphone-69/05-profile.png", width: 1320, height: 2868 }
 ];
 
 async function main() {
