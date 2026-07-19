@@ -2,8 +2,8 @@ import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import sharp from "sharp";
 
-const googlePlayOutputDir = "assets/store/google-play/screenshots";
-const appStoreOutputDir = "assets/store/app-store/iphone-69";
+const googlePlayOutputDir = "store-assets/google-play/screenshots";
+const appStoreOutputDir = "store-assets/app-store/iphone-69";
 const size = { width: 1080, height: 1920 };
 const appStoreSize = { width: 1320, height: 2868 };
 

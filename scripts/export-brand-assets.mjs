@@ -40,7 +40,7 @@ for (const asset of outputs) {
   console.log(`exported ${asset.output}`);
 }
 
-const featureGraphicOutput = "assets/store/google-play/feature-graphic.png";
+const featureGraphicOutput = "store-assets/google-play/feature-graphic.png";
 const featureBackground = Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500">
   <defs>

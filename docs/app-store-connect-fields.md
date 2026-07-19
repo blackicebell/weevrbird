@@ -107,19 +107,19 @@ Apple accepts 6.9-inch iPhone portrait screenshots at `1320 x 2868`, `1290 x 279
 
 App Store iPhone 6.9-inch screenshots:
 
-- `assets/store/app-store/iphone-69/01-today.png`
-- `assets/store/app-store/iphone-69/02-smartfeeds.png`
-- `assets/store/app-store/iphone-69/03-contribute.png`
-- `assets/store/app-store/iphone-69/04-library.png`
-- `assets/store/app-store/iphone-69/05-profile.png`
+- `store-assets/app-store/iphone-69/01-today.png`
+- `store-assets/app-store/iphone-69/02-smartfeeds.png`
+- `store-assets/app-store/iphone-69/03-contribute.png`
+- `store-assets/app-store/iphone-69/04-library.png`
+- `store-assets/app-store/iphone-69/05-profile.png`
 
 Google Play reference images:
 
-- `assets/store/google-play/screenshots/01-today.png`
-- `assets/store/google-play/screenshots/02-smartfeeds.png`
-- `assets/store/google-play/screenshots/03-contribute.png`
-- `assets/store/google-play/screenshots/04-library.png`
-- `assets/store/google-play/screenshots/05-profile.png`
+- `store-assets/google-play/screenshots/01-today.png`
+- `store-assets/google-play/screenshots/02-smartfeeds.png`
+- `store-assets/google-play/screenshots/03-contribute.png`
+- `store-assets/google-play/screenshots/04-library.png`
+- `store-assets/google-play/screenshots/05-profile.png`
 
 ## iOS Build Status
 
