@@ -82,7 +82,7 @@ Do not claim cross-device sync, production account deletion, live email authenti
 4. Build production binaries:
    - `npm run build:android:production`
    - `npm run build:ios:production`
-5. Test the installed build on a real phone.
+5. Test the installed build on a real phone using `docs/internal-testing-qa.md`.
 6. Submit only after store metadata, privacy links, screenshots, and source-policy notes are ready.
 
 ## Current Internal Testing Handoff
