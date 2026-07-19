@@ -84,6 +84,8 @@ Expected GitHub Pages URLs after Pages is enabled for the repository:
 
 Only paste these into Play Console after the URLs return HTTP 200. A 404 means GitHub Pages still needs to be enabled or the deploy workflow has not finished.
 
+If GitHub Pages is blocked, use `docs/hosting-fallback.md` to publish the same files on another static host.
+
 Before public release, publish a real privacy policy URL and confirm whether the production app adds:
 
 - Backend account storage
