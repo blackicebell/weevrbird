@@ -71,6 +71,11 @@ Do not claim in Play Console that Weevrbird has production cross-device sync, pr
 
 Use `docs/privacy-policy-draft.md` as the source draft.
 
+Hostable static pages:
+
+- Privacy policy page: `public/privacy.html`
+- Terms of Use page: `public/terms.html`
+
 Before public release, publish a real privacy policy URL and confirm whether the production app adds:
 
 - Backend account storage
@@ -108,9 +113,9 @@ Suggested answers for the current curated prototype:
   - `assets/store/google-play/screenshots/02-smartfeeds.png`
   - `assets/store/google-play/screenshots/03-contribute.png`
   - `assets/store/google-play/screenshots/04-library.png`
-  - `assets/store/google-play/screenshots/05-profile.png`
+- `assets/store/google-play/screenshots/05-profile.png`
 - Google Play feature graphic: `assets/store/google-play/feature-graphic.png`.
-- Public privacy policy URL.
+- Public privacy policy URL using `public/privacy.html`.
 - Support URL or final support email.
 - Final source-policy review for enabled external sources.
 

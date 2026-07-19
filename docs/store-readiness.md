@@ -60,9 +60,9 @@ Do not claim cross-device sync, production account deletion, live email authenti
 
 ## Required Before Public Launch
 
-- Publish a privacy policy URL. A working draft lives in `docs/privacy-policy-draft.md`.
+- Publish a privacy policy URL. A working draft lives in `docs/privacy-policy-draft.md`, and a hostable page lives at `public/privacy.html`.
 - Publish a support URL or support email.
-- Decide whether Terms of Use are needed before accepting public contributions. A working draft lives in `docs/terms-of-use-draft.md`.
+- Decide whether Terms of Use are needed before accepting public contributions. A working draft lives in `docs/terms-of-use-draft.md`, and a hostable page lives at `public/terms.html`.
 - Connect production email-link auth.
 - Add account deletion or a clear support path for deleting account data.
 - Implement backend storage for accounts, contributions, saves, reports, blocks, and source imports.
