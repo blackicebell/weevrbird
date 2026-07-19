@@ -23,6 +23,7 @@
     "check:legal": "node scripts/check-legal-docs.cjs",
     "check:pasted-content": "node scripts/check-pasted-content.cjs",
     "export:brand": "node scripts/export-brand-assets.mjs",
+    "export:store-screenshots": "node scripts/export-store-screenshots.mjs",
     "release:next:android": "node scripts/bump-build-number.cjs android --dry-run",
     "release:next:ios": "node scripts/bump-build-number.cjs ios --dry-run",
     "release:next:all": "node scripts/bump-build-number.cjs all --dry-run",

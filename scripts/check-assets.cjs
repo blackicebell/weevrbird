@@ -5,7 +5,12 @@ const requiredImages = [
   { path: "assets/adaptive-icon.png", width: 1024, height: 1024 },
   { path: "assets/splash-icon.png", width: 1024, height: 1024 },
   { path: "assets/favicon.png", width: 48, height: 48 },
-  { path: "assets/store/google-play/feature-graphic.png", width: 1024, height: 500 }
+  { path: "assets/store/google-play/feature-graphic.png", width: 1024, height: 500 },
+  { path: "assets/store/google-play/screenshots/01-today.png", width: 1080, height: 1920 },
+  { path: "assets/store/google-play/screenshots/02-smartfeeds.png", width: 1080, height: 1920 },
+  { path: "assets/store/google-play/screenshots/03-contribute.png", width: 1080, height: 1920 },
+  { path: "assets/store/google-play/screenshots/04-library.png", width: 1080, height: 1920 },
+  { path: "assets/store/google-play/screenshots/05-profile.png", width: 1080, height: 1920 }
 ];
 
 async function main() {
